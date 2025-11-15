@@ -1,0 +1,26 @@
+---
+description: Defines how UI page document should be generated.
+alwaysApply: false
+---
+
+This document outlines the standard template for creating UI page documentation. Following this template ensures consistency and clarity across all page specifications.
+
+---
+
+# Page Name
+*Provide a concise, one-sentence summary of the page's primary purpose.*
+
+## Navigation
+*List all possible navigation paths **from** this page. For each path, specify the user action that triggers it (e.g., clicking a button, a link) and the destination page.*
+
+## Layout
+*Describe the overall layout structure of the page (e.g., two-column, grid-based). List the main UI components and their arrangement.*
+
+### Wireframe
+*Create an ASCII art representation of the page's layout. This should visually depict the placement of the main components. If the page includes unique pop-ups or modals, represent them separately below the main wireframe.*
+
+### Component Descriptions
+*Provide a detailed list of the components mentioned in the Layout section. For each component, describe its purpose, behavior, and any relevant states (e.g., disabled, active).*
+
+## Other Information
+*This section is for any additional information not covered above. This may include user interaction flows, specific business rules, permissions, edge cases, or other functional and non-functional requirements.*

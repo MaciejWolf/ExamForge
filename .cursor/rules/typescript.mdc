@@ -1,0 +1,9 @@
+---
+globs: *ts,*tsx
+alwaysApply: false
+---
+- When defining data structures, prefer `type` to `interface`
+- Avoid using `any`. Prefer generics and discriminated unions instead.
+- Prefer rich typing in functional programming manner
+- Prefer arrow functions over `function` keyword or classes.
+- Avoid comments.

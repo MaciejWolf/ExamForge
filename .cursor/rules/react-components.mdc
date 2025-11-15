@@ -1,0 +1,44 @@
+---
+globs: *tsx
+description: Provides conventions and best practices for writing React components, including patterns for component declarations, prop typing, styling, data fetching, and state management in this codebase.
+alwaysApply: false
+---
+This document provides best practices for authoring React components in this codebase.
+
+**Component Basics**
+- Always use arrow functions for components.
+- Type component props explicitly using TypeScript.
+
+```typescript
+type Props = {
+  x: number;
+  y: number;
+};
+
+export const MyComponent = (props: Props) => {
+  // component implementation
+};
+```
+
+**Styling**
+- Use Tailwind CSS utility classes for styling.
+- Prefer Shadcn UI components when available for consistency and accessibility.
+
+**Data Fetching**
+- Use React Query for all asynchronous API calls and caching.
+- Encapsulate network requests in custom hooks when possible.
+
+**State Management**
+- Use Zustand for global or shared local state management.
+- Co-locate component-specific state with the component (React useState, useReducer) if it is not shared.
+
+**Shadcn**
+- Before starting implementation, determine which shadcn components will be used. Install them if needed.
+
+**General Guidelines**
+- Organize code for clarity and reusability.
+- Prefer composition over inheritance.
+- Write components that are as stateless and presentational as possible, separating logic/data-fetching into hooks.
+
+Refer to project examples for preferred folder structure and naming conventions.
+Prefer vertical slices/feature folders
