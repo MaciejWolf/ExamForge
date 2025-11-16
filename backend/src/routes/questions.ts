@@ -34,8 +34,6 @@ const router = Router({ mergeParams: true }); // mergeParams to access poolId fr
  *                         type: string
  *                       content:
  *                         type: string
- *                       points:
- *                         type: number
  *                       answers:
  *                         type: array
  *                         items:
@@ -97,13 +95,10 @@ router.get('/', verifyAuth, (req: AuthRequest, res: Response) => {
  *             type: object
  *             required:
  *               - content
- *               - points
  *               - answers
  *             properties:
  *               content:
  *                 type: string
- *               points:
- *                 type: number
  *               answers:
  *                 type: array
  *                 items:
@@ -134,7 +129,7 @@ router.post('/', verifyAuth, (req: AuthRequest, res: Response) => {
     }
 
     const { poolId } = req.params;
-    const { content, points, answers } = req.body;
+    const { content, answers } = req.body;
 
     // Validate pool exists
     const pool = mockDataService.getPoolById(poolId, examinerId);
@@ -145,10 +140,6 @@ router.post('/', verifyAuth, (req: AuthRequest, res: Response) => {
     // Validate input
     if (!content || typeof content !== 'string' || !content.trim()) {
       return res.status(400).json({ error: 'Question content is required' });
-    }
-
-    if (!points || typeof points !== 'number' || points <= 0) {
-      return res.status(400).json({ error: 'Points must be a positive number' });
     }
 
     if (!Array.isArray(answers) || answers.length < 2 || answers.length > 6) {
@@ -174,7 +165,6 @@ router.post('/', verifyAuth, (req: AuthRequest, res: Response) => {
     const newQuestion = mockDataService.createQuestion(
       poolId,
       content.trim(),
-      points,
       answers,
       examinerId
     );
@@ -218,13 +208,10 @@ router.post('/', verifyAuth, (req: AuthRequest, res: Response) => {
  *             type: object
  *             required:
  *               - content
- *               - points
  *               - answers
  *             properties:
  *               content:
  *                 type: string
- *               points:
- *                 type: number
  *               answers:
  *                 type: array
  *                 items:
@@ -255,7 +242,7 @@ router.put('/:questionId', verifyAuth, (req: AuthRequest, res: Response) => {
     }
 
     const { poolId, questionId } = req.params;
-    const { content, points, answers } = req.body;
+    const { content, answers } = req.body;
 
     // Validate pool exists
     const pool = mockDataService.getPoolById(poolId, examinerId);
@@ -266,10 +253,6 @@ router.put('/:questionId', verifyAuth, (req: AuthRequest, res: Response) => {
     // Validate input
     if (!content || typeof content !== 'string' || !content.trim()) {
       return res.status(400).json({ error: 'Question content is required' });
-    }
-
-    if (!points || typeof points !== 'number' || points <= 0) {
-      return res.status(400).json({ error: 'Points must be a positive number' });
     }
 
     if (!Array.isArray(answers) || answers.length < 2 || answers.length > 6) {
@@ -296,7 +279,6 @@ router.put('/:questionId', verifyAuth, (req: AuthRequest, res: Response) => {
       questionId,
       poolId,
       content.trim(),
-      points,
       answers,
       examinerId
     );

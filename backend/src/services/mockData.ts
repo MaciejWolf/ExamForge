@@ -16,7 +16,6 @@ export interface Question {
   id: string;
   pool_id: string;
   content: string;
-  points: number;
   answers: Answer[];
   createdAt: string;
 }
@@ -25,7 +24,7 @@ export interface TestTemplate {
   id: string;
   name: string;
   examiner_id: string;
-  poolSelections: Array<{ poolId: string; questionsToDraw: number }>;
+  poolSelections: Array<{ poolId: string; questionsToDraw: number; points: number }>;
   createdAt: string;
 }
 
@@ -67,7 +66,7 @@ let mockTemplates: TestTemplate[] = [];
 let mockTestSessions: TestSession[] = [];
 let mockParticipants: Participant[] = [];
 const participantAnswers = new Map<string, ParticipantAnswer[]>(); // Map<participantId, ParticipantAnswer[]>
-const sessionQuestions = new Map<string, Question[]>(); // Map<sessionId, Question[]> - stores selected questions for each session
+const participantQuestions = new Map<string, Question[]>(); // Map<participantId, Question[]> - stores selected questions for each participant
 const initializedUsers = new Set<string>();
 let nextId = 1;
 let nextQuestionId = 1;
@@ -168,7 +167,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: mathPoolId,
       content: 'What is 2+2?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: '3', isCorrect: false },
         { id: String(nextAnswerId++), text: '4', isCorrect: true },
@@ -181,7 +179,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: mathPoolId,
       content: 'Solve: 3x = 15',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: '3', isCorrect: false },
         { id: String(nextAnswerId++), text: '5', isCorrect: true },
@@ -193,7 +190,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: mathPoolId,
       content: 'What is the value of π (pi)?',
-      points: 4,
       answers: [
         { id: String(nextAnswerId++), text: '3.14', isCorrect: true },
         { id: String(nextAnswerId++), text: '2.71', isCorrect: false },
@@ -206,7 +202,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: mathPoolId,
       content: 'What is the square root of 64?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: '6', isCorrect: false },
         { id: String(nextAnswerId++), text: '7', isCorrect: false },
@@ -219,7 +214,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: mathPoolId,
       content: 'Calculate: 15 × 4',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: '50', isCorrect: false },
         { id: String(nextAnswerId++), text: '60', isCorrect: true },
@@ -232,7 +226,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: mathPoolId,
       content: 'What is the area of a circle with radius 5? (Use π = 3.14)',
-      points: 5,
       answers: [
         { id: String(nextAnswerId++), text: '31.4', isCorrect: false },
         { id: String(nextAnswerId++), text: '78.5', isCorrect: true },
@@ -246,7 +239,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: physicsPoolId,
       content: 'What is the speed of light in vacuum?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: '3 × 10^8 m/s', isCorrect: true },
         { id: String(nextAnswerId++), text: '3 × 10^6 m/s', isCorrect: false },
@@ -259,7 +251,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: physicsPoolId,
       content: 'What is Newton\'s second law of motion?',
-      points: 4,
       answers: [
         { id: String(nextAnswerId++), text: 'F = ma', isCorrect: true },
         { id: String(nextAnswerId++), text: 'E = mc²', isCorrect: false },
@@ -272,7 +263,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: physicsPoolId,
       content: 'What is the unit of electric current?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: 'Volt', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Ampere', isCorrect: true },
@@ -285,7 +275,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: physicsPoolId,
       content: 'What is the formula for kinetic energy?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'KE = ½mv²', isCorrect: true },
         { id: String(nextAnswerId++), text: 'KE = mgh', isCorrect: false },
@@ -298,7 +287,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: physicsPoolId,
       content: 'What is the acceleration due to gravity on Earth?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: '9.8 m/s²', isCorrect: true },
         { id: String(nextAnswerId++), text: '10 m/s²', isCorrect: false },
@@ -312,7 +300,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: chemistryPoolId,
       content: 'What is the chemical symbol for water?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: 'H2O', isCorrect: true },
         { id: String(nextAnswerId++), text: 'CO2', isCorrect: false },
@@ -325,7 +312,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: chemistryPoolId,
       content: 'What is the atomic number of carbon?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: '6', isCorrect: true },
         { id: String(nextAnswerId++), text: '12', isCorrect: false },
@@ -338,7 +324,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: chemistryPoolId,
       content: 'What is the pH of a neutral solution?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: '5', isCorrect: false },
         { id: String(nextAnswerId++), text: '7', isCorrect: true },
@@ -351,7 +336,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: chemistryPoolId,
       content: 'What is the most abundant gas in Earth\'s atmosphere?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'Oxygen', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Nitrogen', isCorrect: true },
@@ -364,7 +348,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: chemistryPoolId,
       content: 'What type of bond is formed when electrons are shared between atoms?',
-      points: 4,
       answers: [
         { id: String(nextAnswerId++), text: 'Ionic bond', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Covalent bond', isCorrect: true },
@@ -378,7 +361,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: csPoolId,
       content: 'What does HTML stand for?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: 'HyperText Markup Language', isCorrect: true },
         { id: String(nextAnswerId++), text: 'High-Level Text Markup Language', isCorrect: false },
@@ -391,7 +373,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: csPoolId,
       content: 'What is the time complexity of binary search?',
-      points: 4,
       answers: [
         { id: String(nextAnswerId++), text: 'O(n)', isCorrect: false },
         { id: String(nextAnswerId++), text: 'O(log n)', isCorrect: true },
@@ -404,7 +385,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: csPoolId,
       content: 'What is a variable that stores a memory address called?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'Array', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Pointer', isCorrect: true },
@@ -417,7 +397,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: csPoolId,
       content: 'What does API stand for?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: 'Application Programming Interface', isCorrect: true },
         { id: String(nextAnswerId++), text: 'Automated Program Integration', isCorrect: false },
@@ -430,7 +409,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: csPoolId,
       content: 'Which data structure follows LIFO (Last In First Out) principle?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'Queue', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Stack', isCorrect: true },
@@ -444,7 +422,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: historyPoolId,
       content: 'In which year did World War II end?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: '1944', isCorrect: false },
         { id: String(nextAnswerId++), text: '1945', isCorrect: true },
@@ -457,7 +434,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: historyPoolId,
       content: 'Which event is considered the start of World War II in Europe?',
-      points: 4,
       answers: [
         { id: String(nextAnswerId++), text: 'Invasion of Poland', isCorrect: true },
         { id: String(nextAnswerId++), text: 'Attack on Pearl Harbor', isCorrect: false },
@@ -470,7 +446,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: historyPoolId,
       content: 'Who was the leader of Nazi Germany during World War II?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: 'Benito Mussolini', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Adolf Hitler', isCorrect: true },
@@ -483,7 +458,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: historyPoolId,
       content: 'Which battle is considered the turning point of World War II in the Pacific?',
-      points: 4,
       answers: [
         { id: String(nextAnswerId++), text: 'Battle of Midway', isCorrect: true },
         { id: String(nextAnswerId++), text: 'Battle of Guadalcanal', isCorrect: false },
@@ -497,7 +471,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: biologyPoolId,
       content: 'What is the powerhouse of the cell?',
-      points: 2,
       answers: [
         { id: String(nextAnswerId++), text: 'Nucleus', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Mitochondria', isCorrect: true },
@@ -510,7 +483,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: biologyPoolId,
       content: 'Which organelle contains the cell\'s genetic material?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'Mitochondria', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Nucleus', isCorrect: true },
@@ -523,7 +495,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: biologyPoolId,
       content: 'What is the function of ribosomes?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'Energy production', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Protein synthesis', isCorrect: true },
@@ -536,7 +507,6 @@ const initializeSamplePools = (examinerId: string) => {
       id: String(nextQuestionId++),
       pool_id: biologyPoolId,
       content: 'Which type of cell lacks a nucleus?',
-      points: 3,
       answers: [
         { id: String(nextAnswerId++), text: 'Eukaryotic cell', isCorrect: false },
         { id: String(nextAnswerId++), text: 'Prokaryotic cell', isCorrect: true },
@@ -564,8 +534,8 @@ const initializeSamplePools = (examinerId: string) => {
       name: 'Math & Physics Combined Test',
       examiner_id: examinerId,
       poolSelections: [
-        { poolId: mathPoolId, questionsToDraw: 3 },
-        { poolId: physicsPoolId, questionsToDraw: 2 },
+        { poolId: mathPoolId, questionsToDraw: 3, points: 10 },
+        { poolId: physicsPoolId, questionsToDraw: 2, points: 8 },
       ],
       createdAt: new Date('2024-02-25').toISOString(),
     },
@@ -574,9 +544,9 @@ const initializeSamplePools = (examinerId: string) => {
       name: 'Science Comprehensive Exam',
       examiner_id: examinerId,
       poolSelections: [
-        { poolId: physicsPoolId, questionsToDraw: 3 },
-        { poolId: chemistryPoolId, questionsToDraw: 3 },
-        { poolId: biologyPoolId, questionsToDraw: 2 },
+        { poolId: physicsPoolId, questionsToDraw: 3, points: 12 },
+        { poolId: chemistryPoolId, questionsToDraw: 3, points: 10 },
+        { poolId: biologyPoolId, questionsToDraw: 2, points: 6 },
       ],
       createdAt: new Date('2024-02-26').toISOString(),
     },
@@ -585,7 +555,7 @@ const initializeSamplePools = (examinerId: string) => {
       name: 'Computer Science Basics',
       examiner_id: examinerId,
       poolSelections: [
-        { poolId: csPoolId, questionsToDraw: 4 },
+        { poolId: csPoolId, questionsToDraw: 4, points: 14 },
       ],
       createdAt: new Date('2024-02-27').toISOString(),
     },
@@ -594,9 +564,9 @@ const initializeSamplePools = (examinerId: string) => {
       name: 'General Knowledge Test',
       examiner_id: examinerId,
       poolSelections: [
-        { poolId: mathPoolId, questionsToDraw: 2 },
-        { poolId: historyPoolId, questionsToDraw: 2 },
-        { poolId: csPoolId, questionsToDraw: 2 },
+        { poolId: mathPoolId, questionsToDraw: 2, points: 6 },
+        { poolId: historyPoolId, questionsToDraw: 2, points: 8 },
+        { poolId: csPoolId, questionsToDraw: 2, points: 6 },
       ],
       createdAt: new Date('2024-02-28').toISOString(),
     },
@@ -759,7 +729,6 @@ export const getQuestionById = (questionId: string, poolId: string, examinerId: 
 export const createQuestion = (
   poolId: string,
   content: string,
-  points: number,
   answers: Omit<Answer, 'id'>[],
   examinerId: string
 ): Question | null => {
@@ -786,7 +755,6 @@ export const createQuestion = (
     id: String(nextQuestionId++),
     pool_id: poolId,
     content: content.trim(),
-    points,
     answers: answers.map((a) => ({
       id: String(nextAnswerId++),
       text: a.text.trim(),
@@ -805,7 +773,6 @@ export const updateQuestion = (
   questionId: string,
   poolId: string,
   content: string,
-  points: number,
   answers: Omit<Answer, 'id'>[],
   examinerId: string
 ): Question | null => {
@@ -833,7 +800,6 @@ export const updateQuestion = (
 
   // Update question
   question.content = content.trim();
-  question.points = points;
   question.answers = answers.map((a) => ({
     id: String(nextAnswerId++),
     text: a.text.trim(),
@@ -870,7 +836,7 @@ export const getTemplateById = (templateId: string, examinerId: string): TestTem
 
 export const createTemplate = (
   name: string,
-  poolSelections: Array<{ poolId: string; questionsToDraw: number }>,
+  poolSelections: Array<{ poolId: string; questionsToDraw: number; points: number }>,
   examinerId: string
 ): TestTemplate => {
   // Validate name uniqueness within examiner's templates
@@ -889,6 +855,11 @@ export const createTemplate = (
     // Validate questionsToDraw is positive integer
     if (!Number.isInteger(selection.questionsToDraw) || selection.questionsToDraw <= 0) {
       throw new Error('Questions to draw must be a positive integer');
+    }
+
+    // Validate points is positive number
+    if (typeof selection.points !== 'number' || selection.points <= 0) {
+      throw new Error('Points must be a positive number');
     }
 
     // Verify pool belongs to examiner
@@ -921,7 +892,7 @@ export const createTemplate = (
 export const updateTemplate = (
   templateId: string,
   name: string,
-  poolSelections: Array<{ poolId: string; questionsToDraw: number }>,
+  poolSelections: Array<{ poolId: string; questionsToDraw: number; points: number }>,
   examinerId: string
 ): TestTemplate | null => {
   const template = getTemplateById(templateId, examinerId);
@@ -947,6 +918,11 @@ export const updateTemplate = (
     // Validate questionsToDraw is positive integer
     if (!Number.isInteger(selection.questionsToDraw) || selection.questionsToDraw <= 0) {
       throw new Error('Questions to draw must be a positive integer');
+    }
+
+    // Validate points is positive number
+    if (typeof selection.points !== 'number' || selection.points <= 0) {
+      throw new Error('Points must be a positive number');
     }
 
     // Verify pool belongs to examiner
@@ -1087,11 +1063,11 @@ export const getTestSessionsDetailsByExaminer = (examinerId: string): TestSessio
   });
 };
 
-// Helper function to get questions for a test session based on its template
-const getSessionQuestions = (sessionId: string, examinerId: string): Question[] => {
+// Helper function to get questions for a participant based on their session's template
+const getParticipantQuestions = (participantId: string, sessionId: string, examinerId: string): Question[] => {
   // Return cached questions if available
-  if (sessionQuestions.has(sessionId)) {
-    return sessionQuestions.get(sessionId)!;
+  if (participantQuestions.has(participantId)) {
+    return participantQuestions.get(participantId)!;
   }
 
   const session = getTestSessionById(sessionId, examinerId);
@@ -1102,8 +1078,8 @@ const getSessionQuestions = (sessionId: string, examinerId: string): Question[] 
 
   const selectedQuestions: Question[] = [];
   
-  // Use session ID as seed for deterministic random selection
-  let seed = parseInt(sessionId.replace(/\D/g, '')) || 0;
+  // Use participant ID as seed for deterministic random selection per participant
+  let seed = parseInt(participantId.replace(/\D/g, '')) || 0;
   const seededRandom = () => {
     seed = (seed * 9301 + 49297) % 233280;
     return seed / 233280;
@@ -1117,8 +1093,8 @@ const getSessionQuestions = (sessionId: string, examinerId: string): Question[] 
     selectedQuestions.push(...selected);
   }
 
-  // Cache the selected questions for this session
-  sessionQuestions.set(sessionId, selectedQuestions);
+  // Cache the selected questions for this participant
+  participantQuestions.set(participantId, selectedQuestions);
   return selectedQuestions;
 };
 
@@ -1127,12 +1103,32 @@ export const generateMockParticipantData = (sessionId: string, examinerId: strin
   const session = getTestSessionById(sessionId, examinerId);
   if (!session) return;
 
+  const template = getTemplateById(session.template_id, examinerId);
+  if (!template) return;
+
+  // Calculate max score from template pool selections (same for all participants)
+  const maxScore = template.poolSelections.reduce((sum, ps) => sum + ps.points, 0);
+
   const participants = getParticipantsBySession(sessionId, examinerId);
-  const questions = getSessionQuestions(sessionId, examinerId);
-  const maxScore = questions.reduce((sum, q) => sum + q.points, 0);
 
   // Update participants with mock data
   participants.forEach((participant, index) => {
+    // Get unique questions for this participant
+    const questions = getParticipantQuestions(participant.id, sessionId, examinerId);
+    
+    // Calculate points per question for each pool selection
+    const questionPointsMap = new Map<string, number>();
+    let questionIndex = 0;
+    for (const poolSelection of template.poolSelections) {
+      const pointsPerQuestion = Math.round(poolSelection.points / poolSelection.questionsToDraw);
+      for (let i = 0; i < poolSelection.questionsToDraw; i++) {
+        if (questionIndex < questions.length) {
+          questionPointsMap.set(questions[questionIndex].id, pointsPerQuestion);
+          questionIndex++;
+        }
+      }
+    }
+
     const statusRoll = Math.random();
     let status: Participant['status'] = 'not_started';
     let startedAt: string | undefined;
@@ -1170,6 +1166,7 @@ export const generateMockParticipantData = (sessionId: string, examinerId: strin
     // Generate answers for completed and in-progress participants
     if (status === 'completed' || status === 'in_progress') {
       const answers: ParticipantAnswer[] = questions.map((question, qIndex) => {
+        const pointsPerQuestion = questionPointsMap.get(question.id) || 0;
         const isCorrect = status === 'completed' 
           ? (qIndex < questions.length * (totalScore! / maxScore) + Math.random() * 0.2 - 0.1)
           : Math.random() < 0.5; // Random for in-progress
@@ -1183,8 +1180,8 @@ export const generateMockParticipantData = (sessionId: string, examinerId: strin
           question_id: question.id,
           selected_answer_id: selectedAnswer?.id || null,
           is_correct: isCorrect,
-          points_earned: isCorrect ? question.points : 0,
-          points_possible: question.points,
+          points_earned: isCorrect ? pointsPerQuestion : 0,
+          points_possible: pointsPerQuestion,
         };
       });
 
@@ -1242,40 +1239,86 @@ export interface QuestionAnalysis {
   correct_responses: number;
   total_responses: number;
   correct_percentage: number;
+  participants_count: number;
 }
 
 export const calculateQuestionAnalysis = (sessionId: string, examinerId: string): QuestionAnalysis[] => {
   const session = getTestSessionById(sessionId, examinerId);
   if (!session) return [];
 
-  const questions = getSessionQuestions(sessionId, examinerId);
+  const template = getTemplateById(session.template_id, examinerId);
+  if (!template) return [];
+
   const participants = getParticipantsBySession(sessionId, examinerId);
   const completedParticipants = participants.filter((p) => p.status === 'completed');
 
-  return questions.map((question, index) => {
+  // Collect all unique questions across all participants
+  const allQuestionsMap = new Map<string, Question>();
+  const questionToPoolSelectionMap = new Map<string, { poolId: string; pointsPerQuestion: number }>();
+
+  completedParticipants.forEach((participant) => {
+    const questions = getParticipantQuestions(participant.id, sessionId, examinerId);
+    
+    // Calculate points per question for each pool selection
+    let questionIndex = 0;
+    for (const poolSelection of template.poolSelections) {
+      const pointsPerQuestion = Math.round(poolSelection.points / poolSelection.questionsToDraw);
+      for (let i = 0; i < poolSelection.questionsToDraw; i++) {
+        if (questionIndex < questions.length) {
+          const question = questions[questionIndex];
+          allQuestionsMap.set(question.id, question);
+          // Store points per question (same for all questions from same pool selection)
+          if (!questionToPoolSelectionMap.has(question.id)) {
+            questionToPoolSelectionMap.set(question.id, {
+              poolId: poolSelection.poolId,
+              pointsPerQuestion,
+            });
+          }
+          questionIndex++;
+        }
+      }
+    }
+  });
+
+  // Convert map to array and analyze each question
+  const allQuestions = Array.from(allQuestionsMap.values());
+  
+  return allQuestions.map((question, index) => {
     const correctAnswer = question.answers.find((a) => a.isCorrect);
     let correctCount = 0;
+    let participantsWhoHadThisQuestion = 0;
 
+    // Count only participants who actually received this question
     completedParticipants.forEach((participant) => {
-      const answers = participantAnswers.get(participant.id) || [];
-      const answer = answers.find((a) => a.question_id === question.id);
-      if (answer && answer.is_correct) {
-        correctCount++;
+      const participantQuestions = getParticipantQuestions(participant.id, sessionId, examinerId);
+      const hasQuestion = participantQuestions.some((q) => q.id === question.id);
+      
+      if (hasQuestion) {
+        participantsWhoHadThisQuestion++;
+        const answers = participantAnswers.get(participant.id) || [];
+        const answer = answers.find((a) => a.question_id === question.id);
+        if (answer && answer.is_correct) {
+          correctCount++;
+        }
       }
     });
 
-    const totalResponses = completedParticipants.length;
-    const correctPercentage = totalResponses > 0 ? (correctCount / totalResponses) * 100 : 0;
+    const poolSelectionInfo = questionToPoolSelectionMap.get(question.id);
+    const pointsPerQuestion = poolSelectionInfo?.pointsPerQuestion || 0;
+    const correctPercentage = participantsWhoHadThisQuestion > 0 
+      ? (correctCount / participantsWhoHadThisQuestion) * 100 
+      : 0;
 
     return {
       question_id: question.id,
       question_number: index + 1,
       question_content: question.content,
       correct_answer: correctAnswer?.text || 'N/A',
-      points: question.points,
+      points: pointsPerQuestion,
       correct_responses: correctCount,
-      total_responses: totalResponses,
+      total_responses: participantsWhoHadThisQuestion,
       correct_percentage: Math.round(correctPercentage * 100) / 100,
+      participants_count: participantsWhoHadThisQuestion,
     };
   });
 };
@@ -1301,7 +1344,7 @@ export const getParticipantDetails = (
   if (!participant) return null;
 
   const answers = participantAnswers.get(participantId) || [];
-  const questions = getSessionQuestions(sessionId, examinerId);
+  const questions = getParticipantQuestions(participantId, sessionId, examinerId);
 
   return {
     participant,

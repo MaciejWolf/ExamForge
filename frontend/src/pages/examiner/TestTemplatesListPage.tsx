@@ -40,7 +40,7 @@ const TestTemplatesListPage = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<TestTemplate | null>(null);
   const [templateName, setTemplateName] = useState('');
-  const [poolSelections, setPoolSelections] = useState<Record<string, number>>({});
+  const [poolSelections, setPoolSelections] = useState<Record<string, { questionsToDraw: number; points: number }>>({});
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -89,9 +89,9 @@ const TestTemplatesListPage = () => {
   const openEditDialog = async (template: TestTemplate) => {
     setCurrentTemplate(template);
     setTemplateName(template.name);
-    const selections: Record<string, number> = {};
+    const selections: Record<string, { questionsToDraw: number; points: number }> = {};
     template.poolSelections.forEach((sel) => {
-      selections[sel.poolId] = sel.questionsToDraw;
+      selections[sel.poolId] = { questionsToDraw: sel.questionsToDraw, points: sel.points };
     });
     setPoolSelections(selections);
     // Refresh pools to ensure we have the latest pool data
@@ -111,7 +111,7 @@ const TestTemplatesListPage = () => {
 
   const handlePoolToggle = (poolId: string, checked: boolean) => {
     if (checked) {
-      setPoolSelections({ ...poolSelections, [poolId]: 1 });
+      setPoolSelections({ ...poolSelections, [poolId]: { questionsToDraw: 1, points: 1 } });
     } else {
       const newSelections = { ...poolSelections };
       delete newSelections[poolId];
@@ -121,15 +121,30 @@ const TestTemplatesListPage = () => {
 
   const handleQuestionsToDrawChange = (poolId: string, value: string) => {
     const numValue = parseInt(value, 10);
+    const current = poolSelections[poolId] || { questionsToDraw: 0, points: 0 };
     if (!isNaN(numValue) && numValue > 0) {
-      setPoolSelections({ ...poolSelections, [poolId]: numValue });
+      setPoolSelections({ ...poolSelections, [poolId]: { ...current, questionsToDraw: numValue } });
     } else if (value === '') {
-      setPoolSelections({ ...poolSelections, [poolId]: 0 });
+      setPoolSelections({ ...poolSelections, [poolId]: { ...current, questionsToDraw: 0 } });
+    }
+  };
+
+  const handlePointsChange = (poolId: string, value: string) => {
+    const numValue = parseFloat(value);
+    const current = poolSelections[poolId] || { questionsToDraw: 0, points: 0 };
+    if (!isNaN(numValue) && numValue > 0) {
+      setPoolSelections({ ...poolSelections, [poolId]: { ...current, points: numValue } });
+    } else if (value === '') {
+      setPoolSelections({ ...poolSelections, [poolId]: { ...current, points: 0 } });
     }
   };
 
   const calculateTotalQuestions = (): number => {
-    return Object.values(poolSelections).reduce((sum, count) => sum + count, 0);
+    return Object.values(poolSelections).reduce((sum, sel) => sum + (sel.questionsToDraw || 0), 0);
+  };
+
+  const calculateTotalPoints = (): number => {
+    return Object.values(poolSelections).reduce((sum, sel) => sum + (sel.points || 0), 0);
   };
 
   const validateForm = (): boolean => {
@@ -145,7 +160,7 @@ const TestTemplatesListPage = () => {
     }
 
     for (const poolId of selectedPools) {
-      const questionsToDraw = poolSelections[poolId];
+      const selection = poolSelections[poolId];
       const pool = pools.find((p) => p.id === poolId);
 
       if (!pool) {
@@ -153,8 +168,13 @@ const TestTemplatesListPage = () => {
         return false;
       }
 
-      if (!questionsToDraw || questionsToDraw <= 0) {
+      if (!selection || !selection.questionsToDraw || selection.questionsToDraw <= 0) {
         toast.error(`Questions to draw must be a positive number for pool "${pool.name}"`);
+        return false;
+      }
+
+      if (!selection.points || selection.points <= 0) {
+        toast.error(`Points must be a positive number for pool "${pool.name}"`);
         return false;
       }
 
@@ -165,9 +185,9 @@ const TestTemplatesListPage = () => {
         return false;
       }
 
-      if (questionsToDraw > pool.questionCount) {
+      if (selection.questionsToDraw > pool.questionCount) {
         toast.error(
-          `Cannot draw ${questionsToDraw} questions from pool "${pool.name}" (only ${pool.questionCount} available)`
+          `Cannot draw ${selection.questionsToDraw} questions from pool "${pool.name}" (only ${pool.questionCount} available)`
         );
         return false;
       }
@@ -180,9 +200,10 @@ const TestTemplatesListPage = () => {
     if (!validateForm()) return;
 
     try {
-      const selections: PoolSelection[] = Object.entries(poolSelections).map(([poolId, questionsToDraw]) => ({
+      const selections: PoolSelection[] = Object.entries(poolSelections).map(([poolId, selection]) => ({
         poolId,
-        questionsToDraw,
+        questionsToDraw: selection.questionsToDraw,
+        points: selection.points,
       }));
 
       await testTemplatesApi.create({
@@ -204,9 +225,10 @@ const TestTemplatesListPage = () => {
     if (!currentTemplate || !validateForm()) return;
 
     try {
-      const selections: PoolSelection[] = Object.entries(poolSelections).map(([poolId, questionsToDraw]) => ({
+      const selections: PoolSelection[] = Object.entries(poolSelections).map(([poolId, selection]) => ({
         poolId,
-        questionsToDraw,
+        questionsToDraw: selection.questionsToDraw,
+        points: selection.points,
       }));
 
       await testTemplatesApi.update(currentTemplate.id, {
@@ -405,7 +427,7 @@ const TestTemplatesListPage = () => {
                                   </div>
                                   {isSelected && (
                                     <p className="ml-6 text-sm text-red-600 mt-1">
-                                      {questionsToDraw} question{questionsToDraw !== 1 ? 's' : ''} to draw
+                                      {questionsToDraw} question{questionsToDraw !== 1 ? 's' : ''} to draw, {points} point{points !== 1 ? 's' : ''}
                                     </p>
                                   )}
                                 </div>
@@ -416,7 +438,9 @@ const TestTemplatesListPage = () => {
                           <div className="space-y-3">
                             {poolsToShow.map((pool) => {
                               const isSelected = pool.id in poolSelections;
-                              const questionsToDraw = poolSelections[pool.id] || 0;
+                              const selection = poolSelections[pool.id] || { questionsToDraw: 0, points: 0 };
+                              const questionsToDraw = selection.questionsToDraw || 0;
+                              const points = selection.points || 0;
                               const hasQuestions = pool.questionCount > 0;
                               const canSelect = hasQuestions || isSelected;
                               const isValid = !isSelected || (questionsToDraw > 0 && questionsToDraw <= pool.questionCount);
@@ -502,7 +526,9 @@ const TestTemplatesListPage = () => {
                   <div className="space-y-3">
                     {poolsToShow.map((pool) => {
                       const isSelected = pool.id in poolSelections;
-                      const questionsToDraw = poolSelections[pool.id] || 0;
+                      const selection = poolSelections[pool.id] || { questionsToDraw: 0, points: 0 };
+                      const questionsToDraw = selection.questionsToDraw || 0;
+                      const points = selection.points || 0;
                       const hasQuestions = pool.questionCount > 0;
                       const canSelect = hasQuestions || isSelected; // Can select if has questions OR already selected
                       const isValid = !isSelected || (questionsToDraw > 0 && questionsToDraw <= pool.questionCount);
@@ -554,6 +580,21 @@ const TestTemplatesListPage = () => {
                                   (Available: {pool.questionCount} questions)
                                 </span>
                               </div>
+                              <div className="flex items-center gap-2">
+                                <Label htmlFor={`points-${pool.id}`} className="text-sm">
+                                  Points for this pool:
+                                </Label>
+                                <Input
+                                  id={`points-${pool.id}`}
+                                  type="number"
+                                  min="0.01"
+                                  step="0.01"
+                                  value={points || ''}
+                                  onChange={(e) => handlePointsChange(pool.id, e.target.value)}
+                                  className="w-24"
+                                  disabled={!hasQuestions}
+                                />
+                              </div>
                               {!isValid && questionsToDraw > 0 && (
                                 <p className="text-sm text-red-500">
                                   Cannot exceed {pool.questionCount} available questions
@@ -574,11 +615,15 @@ const TestTemplatesListPage = () => {
               })()}
             </div>
 
-            {/* Total Questions Display */}
-            <div className="border-t pt-4">
+            {/* Total Questions and Points Display */}
+            <div className="border-t pt-4 space-y-2">
               <div className="flex justify-between items-center">
                 <Label className="text-base font-semibold">Total Questions:</Label>
                 <span className="text-lg font-bold">{calculateTotalQuestions()}</span>
+              </div>
+              <div className="flex justify-between items-center">
+                <Label className="text-base font-semibold">Total Points:</Label>
+                <span className="text-lg font-bold">{calculateTotalPoints()}</span>
               </div>
             </div>
           </div>
@@ -635,10 +680,16 @@ const TestTemplatesListPage = () => {
                 </div>
               </div>
 
-              <div className="border-t pt-4">
+              <div className="border-t pt-4 space-y-2">
                 <div className="flex justify-between items-center">
                   <Label className="text-base font-semibold">Total Questions:</Label>
                   <span className="text-lg font-bold">{getTotalQuestions(currentTemplate)}</span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-semibold">Total Points:</Label>
+                  <span className="text-lg font-bold">
+                    {currentTemplate.poolSelections.reduce((sum, sel) => sum + sel.points, 0)}
+                  </span>
                 </div>
               </div>
             </div>

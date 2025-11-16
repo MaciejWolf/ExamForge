@@ -27,26 +27,24 @@ export interface Question {
   id: string;
   pool_id: string;
   content: string;
-  points: number;
   answers: Answer[];
   createdAt: string;
 }
 
 export interface CreateQuestionRequest {
   content: string;
-  points: number;
   answers: Omit<Answer, 'id'>[];
 }
 
 export interface UpdateQuestionRequest {
   content: string;
-  points: number;
   answers: Omit<Answer, 'id'>[];
 }
 
 export interface PoolSelection {
   poolId: string;
   questionsToDraw: number;
+  points: number;
 }
 
 export interface TestTemplate {
@@ -101,6 +99,7 @@ export interface QuestionAnalysis {
   correct_responses: number;
   total_responses: number;
   correct_percentage: number;
+  participants_count: number;
 }
 
 export interface TestSessionReport {

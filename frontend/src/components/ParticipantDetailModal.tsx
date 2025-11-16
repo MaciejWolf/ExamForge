@@ -210,11 +210,16 @@ export const ParticipantDetailModal = ({
                         const answer = detail.answers.find((a) => a.question_id === question.id);
                         const isCorrect = answer?.is_correct ?? false;
                         const pointsEarned = answer?.points_earned ?? 0;
-                        const pointsPossible = answer?.points_possible ?? question.points;
+                        const pointsPossible = answer?.points_possible ?? 0;
 
                         return (
                           <TableRow key={question.id}>
-                            <TableCell className="font-medium">Q{index + 1}</TableCell>
+                            <TableCell>
+                              <div className="space-y-1">
+                                <p className="font-medium">Q{index + 1}</p>
+                                <p className="text-sm text-muted-foreground">{question.content}</p>
+                              </div>
+                            </TableCell>
                             <TableCell>
                               <div className="space-y-1">
                                 <p>{getAnswerText(question, answer)}</p>
@@ -237,7 +242,7 @@ export const ParticipantDetailModal = ({
                               )}
                             </TableCell>
                             <TableCell>
-                              {pointsEarned}/{pointsPossible}
+                              {pointsEarned}
                             </TableCell>
                           </TableRow>
                         );

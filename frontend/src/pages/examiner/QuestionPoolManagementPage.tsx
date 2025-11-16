@@ -38,7 +38,6 @@ const QuestionPoolManagementPage = () => {
   
   // Form state
   const [questionContent, setQuestionContent] = useState('');
-  const [questionPoints, setQuestionPoints] = useState<number>(1);
   const [answers, setAnswers] = useState<Omit<Answer, 'id'>[]>([
     { text: '', isCorrect: false },
     { text: '', isCorrect: true },
@@ -76,7 +75,6 @@ const QuestionPoolManagementPage = () => {
 
   const resetForm = () => {
     setQuestionContent('');
-    setQuestionPoints(1);
     setAnswers([
       { text: '', isCorrect: false },
       { text: '', isCorrect: true },
@@ -92,7 +90,6 @@ const QuestionPoolManagementPage = () => {
   const openEditDialog = (question: Question) => {
     setCurrentQuestion(question);
     setQuestionContent(question.content);
-    setQuestionPoints(question.points);
     setAnswers(question.answers.map((a) => ({ text: a.text, isCorrect: a.isCorrect })));
     setIsEditOpen(true);
   };
@@ -139,11 +136,6 @@ const QuestionPoolManagementPage = () => {
       return false;
     }
 
-    if (questionPoints <= 0) {
-      toast.error('Points must be a positive number');
-      return false;
-    }
-
     if (answers.length < 2 || answers.length > 6) {
       toast.error('Question must have between 2 and 6 answers');
       return false;
@@ -171,7 +163,6 @@ const QuestionPoolManagementPage = () => {
     try {
       await questionsApi.create(poolId, {
         content: questionContent.trim(),
-        points: questionPoints,
         answers,
       });
       toast.success('Question created successfully');
@@ -191,7 +182,6 @@ const QuestionPoolManagementPage = () => {
     try {
       await questionsApi.update(poolId, currentQuestion.id, {
         content: questionContent.trim(),
-        points: questionPoints,
         answers,
       });
       toast.success('Question updated successfully');
@@ -277,7 +267,6 @@ const QuestionPoolManagementPage = () => {
                     <TableHead className="w-12">#</TableHead>
                     <TableHead>Question</TableHead>
                     <TableHead>Answers</TableHead>
-                    <TableHead>Points</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -297,7 +286,6 @@ const QuestionPoolManagementPage = () => {
                           <span className="text-xs">Correct Answer: {truncateText(getCorrectAnswerText(question), 50)}</span>
                         </div>
                       </TableCell>
-                      <TableCell>{question.points}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -357,18 +345,6 @@ const QuestionPoolManagementPage = () => {
                   placeholder="Enter your question here..."
                   rows={4}
                   className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
-                />
-              </div>
-
-              {/* Points */}
-              <div className="space-y-2">
-                <Label htmlFor="questionPoints">Points</Label>
-                <Input
-                  id="questionPoints"
-                  type="number"
-                  min="1"
-                  value={questionPoints}
-                  onChange={(e) => setQuestionPoints(parseInt(e.target.value) || 1)}
                 />
               </div>
 
