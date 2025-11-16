@@ -2,12 +2,13 @@ import { BrowserRouter, Routes, Route } from "react-router-dom"
 import { AuthProvider } from "./contexts/AuthProvider"
 import { ProtectedRoute } from "./components/ProtectedRoute"
 import { Toaster } from "./components/ui/sonner"
-import { StartPage } from "./pages/common/StartPage"
-import { ExaminerLoginPage } from "./pages/common/ExaminerLoginPage"
-import { ExaminerRegistrationPage } from "./pages/common/ExaminerRegistrationPage"
-import { PasswordRecoveryPage } from "./pages/common/PasswordRecoveryPage"
-import { DashboardPage } from "./pages/common/DashboardPage"
-import QuestionPoolsPage from "./pages/QuestionPoolsPage"
+import { StartPage } from "./pages/StartPage"
+import { ExaminerLoginPage } from "./pages/auth/ExaminerLoginPage"
+import { ExaminerRegistrationPage } from "./pages/auth/ExaminerRegistrationPage"
+import { PasswordRecoveryPage } from "./pages/auth/PasswordRecoveryPage"
+import { DashboardPage } from "./pages/examiner/DashboardPage"
+import QuestionPoolsPage from "./pages/examiner/QuestionPoolsPage"
+import QuestionPoolManagementPage from "./pages/examiner/QuestionPoolManagementPage"
 
 export const App = () => {
   return (
@@ -31,6 +32,14 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <QuestionPoolsPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/question-pools/:id"
+            element={
+              <ProtectedRoute>
+                <QuestionPoolManagementPage />
               </ProtectedRoute>
             }
           />

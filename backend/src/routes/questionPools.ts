@@ -1,6 +1,7 @@
 import { Router, Response } from 'express';
 import { verifyAuth, AuthRequest } from '../middleware/auth';
 import * as mockDataService from '../services/mockData';
+import questionsRouter from './questions';
 
 const router = Router();
 
@@ -195,6 +196,9 @@ router.delete('/:id', verifyAuth, (req: AuthRequest, res: Response) => {
     res.status(500).json({ error: 'Internal server error' });
   }
 });
+
+// Mount questions router as nested route
+router.use('/:poolId/questions', questionsRouter);
 
 export default router;
 
