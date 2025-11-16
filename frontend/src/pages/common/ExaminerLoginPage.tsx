@@ -4,15 +4,29 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useAuth } from "@/hooks/useAuth"
 
 export const ExaminerLoginPage = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const { signIn } = useAuth()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // No API call - button does nothing
+    setLoading(true)
+    setError(null)
+
+    const { error } = await signIn(email, password)
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    } else {
+      navigate("/dashboard")
+    }
   }
 
   return (
@@ -46,8 +60,11 @@ export const ExaminerLoginPage = () => {
                 autoComplete="current-password"
               />
             </div>
-            <Button type="submit" className="w-full">
-              Log In
+            {error && (
+              <div className="text-sm text-red-500 text-center">{error}</div>
+            )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Logging in..." : "Log In"}
             </Button>
             <div className="space-y-2 text-center text-sm">
               <button

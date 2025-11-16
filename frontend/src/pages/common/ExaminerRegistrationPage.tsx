@@ -4,16 +4,38 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Label } from "@/components/ui/label"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { useAuth } from "@/hooks/useAuth"
 
 export const ExaminerRegistrationPage = () => {
   const [email, setEmail] = useState("")
   const [password, setPassword] = useState("")
   const [confirmPassword, setConfirmPassword] = useState("")
+  const [loading, setLoading] = useState(false)
+  const [error, setError] = useState<string | null>(null)
   const navigate = useNavigate()
+  const { signUp } = useAuth()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // No API call - button does nothing
+    setLoading(true)
+    setError(null)
+
+    // Validate password confirmation
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      setLoading(false)
+      return
+    }
+
+    const { error } = await signUp(email, password)
+
+    if (error) {
+      setError(error.message)
+      setLoading(false)
+    } else {
+      // Redirect to login page after successful registration
+      navigate("/login")
+    }
   }
 
   return (
@@ -58,8 +80,11 @@ export const ExaminerRegistrationPage = () => {
                 autoComplete="new-password"
               />
             </div>
-            <Button type="submit" className="w-full">
-              Register
+            {error && (
+              <div className="text-sm text-red-500 text-center">{error}</div>
+            )}
+            <Button type="submit" className="w-full" disabled={loading}>
+              {loading ? "Registering..." : "Register"}
             </Button>
             <div className="text-center text-sm">
               <button

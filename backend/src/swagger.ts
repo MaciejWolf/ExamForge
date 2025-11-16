@@ -13,6 +13,15 @@ const swaggerOptions: swaggerJSDoc.Options = {
         url: 'http://localhost:3000',
       },
     ],
+    components: {
+      securitySchemes: {
+        bearerAuth: {
+          type: 'http',
+          scheme: 'bearer',
+          bearerFormat: 'JWT',
+        },
+      },
+    },
   },
   apis: ['./src/index.ts'], // Path to the API docs
 };

@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
+import { verifyAuth, AuthRequest } from './middleware/auth';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -60,6 +61,74 @@ app.get('/health', (req: Request, res: Response) => {
  */
 app.post('/echo', (req: Request, res: Response) => {
   res.status(200).json({ received: req.body });
+});
+
+/**
+ * @swagger
+ * /api/auth/verify:
+ *   post:
+ *     summary: Verify authentication token
+ *     description: Verifies a Supabase JWT token and returns user information
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: Token is valid, returns user information
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 valid:
+ *                   type: boolean
+ *                 user:
+ *                   type: object
+ *                   properties:
+ *                     id:
+ *                       type: string
+ *                     email:
+ *                       type: string
+ *       401:
+ *         description: Invalid or missing token
+ */
+app.post('/api/auth/verify', verifyAuth, (req: AuthRequest, res: Response) => {
+  res.status(200).json({
+    valid: true,
+    user: {
+      id: req.user?.id,
+      email: req.user?.email,
+    },
+  });
+});
+
+/**
+ * @swagger
+ * /api/auth/user:
+ *   get:
+ *     summary: Get authenticated user information
+ *     description: Returns information about the currently authenticated user
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: User information retrieved successfully
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 email:
+ *                   type: string
+ *       401:
+ *         description: Invalid or missing token
+ */
+app.get('/api/auth/user', verifyAuth, (req: AuthRequest, res: Response) => {
+  res.status(200).json({
+    id: req.user?.id,
+    email: req.user?.email,
+  });
 });
 
 // Start the server
