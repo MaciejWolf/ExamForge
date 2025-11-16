@@ -28,21 +28,18 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 **Description:** A view that shows all questions belonging to a specific pool. From here, an examiner can add a new question to the pool (`US-005`). This involves a form with fields for the question's content, 2 to 6 possible answers, a way to mark the correct one, and the number of points for the question.
 
 ### 8. Test Templates List Page
-**Description:** This screen displays a list of all saved test templates. It enables the examiner to create, view, edit, or delete templates (`US-006`).
+**Description:** This screen displays a list of all saved test templates. It enables the examiner to create, view, edit, or delete templates (`US-006`). Template creation and editing are handled via modal dialogs on this page, where the examiner can give the template a name and specify rules for test generation, such as selecting various question pools and defining how many questions should be randomly drawn from each. The page includes dialogs for creating new templates, editing existing ones, viewing template details, and confirming deletions.
 
-### 9. Test Template Management Page
-**Description:** A form for creating or modifying a test template. The examiner gives the template a name and specifies rules for test generation, such as selecting various question pools and defining how many questions should be randomly drawn from each (`US-006`).
-
-### 10. Test Session Launch Page
+### 9. Test Session Launch Page
 **Description:** A screen where an examiner initiates a new test. They select an existing test template, set a time limit in minutes, and paste a list of participant identifiers (e.g., names, student IDs). The system then generates and displays a unique access code for each participant (`US-007`).
 
-### 11. Test Session Report Page
+### 10. Test Session Report Page
 **Description:** A detailed report of a completed test session. It displays a list of all participants with their final scores. It also includes aggregate statistics for each question, such as the percentage of correct answers, to help the examiner analyze the test results (`US-011`).
 
 ## Participant-Authenticated Screens (via Access Code)
 
-### 12. Test Interface
+### 11. Test Interface
 **Description:** The screen where the participant takes the test after entering a valid code. It will display one question at a time with single-choice answers. Key elements include navigation buttons ("Next"/ "Previous") and a constantly visible timer counting down the remaining time. Progress is saved automatically in the background (`US-009`). The test ends automatically when the time runs out.
 
-### 13. Test Summary Page
+### 12. Test Summary Page
 **Description:** This screen appears immediately after the test is finished. It shows the participant their total score and provides a complete list of all questions from the test, indicating the answers they gave and highlighting the correct ones (`US-010`).
