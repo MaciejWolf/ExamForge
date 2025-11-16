@@ -36,6 +36,9 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 ### 10. Test Session Report Page
 **Description:** A detailed report of a completed test session. It displays a list of all participants with their final scores. It also includes aggregate statistics for each question, such as the percentage of correct answers, to help the examiner analyze the test results (`US-011`).
 
+#### 10.1. Participant Detail Modal
+**Description:** A modal overlay that displays detailed individual test results for a specific participant. It shows participant metadata (name/ID, access code status), time tracking information (start time, completion time, time taken), final score, and a question-by-question breakdown with answers, correctness indicators, and points earned. The modal is triggered by clicking on a participant's name or score in the Test Session Report Page. For participants who haven't started their test, it shows a simplified view with their identifier, access code status, and a message that they haven't begun yet.
+
 ## Participant-Authenticated Screens (via Access Code)
 
 ### 11. Test Interface
