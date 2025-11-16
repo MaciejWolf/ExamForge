@@ -230,8 +230,7 @@ const QuestionPoolManagementPage = () => {
   const getCorrectAnswerText = (question: Question): string => {
     const correctAnswer = question.answers.find((a) => a.isCorrect);
     if (!correctAnswer) return 'N/A';
-    const index = question.answers.indexOf(correctAnswer) + 1;
-    return `Option ${index} of ${question.answers.length}`;
+    return correctAnswer.text;
   };
 
   return (
@@ -295,7 +294,7 @@ const QuestionPoolManagementPage = () => {
                         <div className="text-sm text-muted-foreground">
                           {question.answers.length} options
                           <br />
-                          <span className="text-xs">Correct: {getCorrectAnswerText(question)}</span>
+                          <span className="text-xs">Correct Answer: {truncateText(getCorrectAnswerText(question), 50)}</span>
                         </div>
                       </TableCell>
                       <TableCell>{question.points}</TableCell>
