@@ -1,15 +1,41 @@
 import express, { Request, Response } from 'express';
+import cors from 'cors';
 import { createClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 import { verifyAuth, AuthRequest } from './middleware/auth';
+import questionPoolsRouter from './routes/questionPools';
 
 // Load environment variables from .env file
 dotenv.config();
 
 const app = express();
 const port = process.env.PORT || 3000;
+
+// CORS middleware - allow requests from frontend
+app.use(cors({
+  origin: (origin, callback) => {
+    // Allow requests with no origin (like mobile apps or curl requests)
+    if (!origin) return callback(null, true);
+    
+    // Allow localhost on any port for development
+    if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
+      return callback(null, true);
+    }
+    
+    // Allow specific frontend URL from environment
+    const allowedOrigin = process.env.FRONTEND_URL;
+    if (allowedOrigin && origin === allowedOrigin) {
+      return callback(null, true);
+    }
+    
+    callback(null, true); // Allow all origins in development
+  },
+  credentials: true,
+  methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+  allowedHeaders: ['Content-Type', 'Authorization'],
+}));
 
 // Middleware to parse JSON bodies. This is needed for POST/PUT requests.
 app.use(express.json());
@@ -18,8 +44,8 @@ app.use(express.json());
 app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
 // Initialize Supabase client
-const supabaseUrl = process.env.PROJECT_URL;
-const supabaseAnonKey = process.env.SUPABASE_KEY;
+const supabaseUrl = process.env.VITE_SUPABASE_URL;
+const supabaseAnonKey = process.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
   throw new Error("Supabase URL and Anon Key must be provided.");
@@ -130,6 +156,9 @@ app.get('/api/auth/user', verifyAuth, (req: AuthRequest, res: Response) => {
     email: req.user?.email,
   });
 });
+
+// --- Question Pools Routes ---
+app.use('/api/question-pools', questionPoolsRouter);
 
 // Start the server
 app.listen(port, () => {
