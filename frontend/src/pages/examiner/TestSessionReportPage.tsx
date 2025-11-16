@@ -14,7 +14,6 @@ import {
 import { ArrowLeft, CheckCircle2, Clock, Circle } from 'lucide-react';
 import { testSessionsApi, type TestSessionReport, type Participant } from '@/services/api';
 import { toast } from 'sonner';
-import { ParticipantDetailModal } from '@/components/ParticipantDetailModal';
 
 type SortField = 'name' | 'score' | 'percentage' | 'status';
 type SortDirection = 'asc' | 'desc';
@@ -24,8 +23,6 @@ const TestSessionReportPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const [report, setReport] = useState<TestSessionReport | null>(null);
   const [loading, setLoading] = useState(true);
-  const [selectedParticipantId, setSelectedParticipantId] = useState<string | null>(null);
-  const [isModalOpen, setIsModalOpen] = useState(false);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -150,8 +147,7 @@ const TestSessionReportPage = () => {
 
   const handleParticipantClick = (participant: Participant) => {
     if (participant.status !== 'not_started') {
-      setSelectedParticipantId(participant.id);
-      setIsModalOpen(true);
+      navigate(`/test-sessions/${sessionId}/participants/${participant.id}`);
     }
   };
 
@@ -440,16 +436,6 @@ const TestSessionReportPage = () => {
         </Card>
       </div>
 
-      {/* Participant Detail Modal */}
-      {sessionId && (
-        <ParticipantDetailModal
-          sessionId={sessionId}
-          participantId={selectedParticipantId}
-          timeLimitMinutes={report.session.time_limit_minutes}
-          open={isModalOpen}
-          onOpenChange={setIsModalOpen}
-        />
-      )}
     </DashboardLayout>
   );
 };
