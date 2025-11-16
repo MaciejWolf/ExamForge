@@ -19,7 +19,7 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 ## Examiner-Authenticated Screens
 
 ### 5. Dashboard / Main Panel
-**Description:** The central hub for an examiner after logging in. This screen will provide primary navigation to the main sections of the application: Question Pools, Test Templates, and Test Session Reports.
+**Description:** The central hub for an examiner after logging in. This screen will provide primary navigation to the main sections of the application: Question Pools, Test Templates, and Test Sessions.
 
 ### 6. Question Pools List Page
 **Description:** This screen displays a list of all question pools created by the examiner. It allows them to create new pools, edit existing ones, or delete them (`US-004`). Creating a new pool would likely open a modal or a dedicated form to enter its unique name.
@@ -33,16 +33,19 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 ### 9. Test Session Launch Page
 **Description:** A screen where an examiner initiates a new test. They select an existing test template, set a time limit in minutes, and paste a list of participant identifiers (e.g., names, student IDs). The system then generates and displays a unique access code for each participant (`US-007`).
 
-### 10. Test Session Report Page
-**Description:** A detailed report of a completed test session. It displays a list of all participants with their final scores. It also includes aggregate statistics for each question, such as the percentage of correct answers, to help the examiner analyze the test results (`US-011`).
+### 10. Test Sessions List Page
+**Description:** This screen displays a list of all test sessions created by the examiner. It shows key information for each session such as the test template used, creation date, time limit, number of participants, and session status (active, completed, etc.). From this page, examiners can navigate to view detailed reports for any completed test session, or see summary information for active sessions. The page provides a centralized view to manage and access all test sessions.
 
-#### 10.1. Participant Detail Modal
+### 11. Test Session Report Page
+**Description:** A detailed report of a completed test session. It displays a list of all participants with their final scores. It also includes aggregate statistics for each question, such as the percentage of correct answers, to help the examiner analyze the test results (`US-011`). This page is accessed by selecting a specific test session from the Test Sessions List Page.
+
+#### 11.1. Participant Detail Modal
 **Description:** A modal overlay that displays detailed individual test results for a specific participant. It shows participant metadata (name/ID, access code status), time tracking information (start time, completion time, time taken), final score, and a question-by-question breakdown with answers, correctness indicators, and points earned. The modal is triggered by clicking on a participant's name or score in the Test Session Report Page. For participants who haven't started their test, it shows a simplified view with their identifier, access code status, and a message that they haven't begun yet.
 
 ## Participant-Authenticated Screens (via Access Code)
 
-### 11. Test Interface
+### 12. Test Interface
 **Description:** The screen where the participant takes the test after entering a valid code. It will display one question at a time with single-choice answers. Key elements include navigation buttons ("Next"/ "Previous") and a constantly visible timer counting down the remaining time. Progress is saved automatically in the background (`US-009`). The test ends automatically when the time runs out.
 
-### 12. Test Summary Page
+### 13. Test Summary Page
 **Description:** This screen appears immediately after the test is finished. It shows the participant their total score and provides a complete list of all questions from the test, indicating the answers they gave and highlighting the correct ones (`US-010`).
