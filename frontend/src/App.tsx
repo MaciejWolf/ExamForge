@@ -9,6 +9,7 @@ import { PasswordRecoveryPage } from "./pages/auth/PasswordRecoveryPage"
 import { DashboardPage } from "./pages/examiner/DashboardPage"
 import QuestionPoolsPage from "./pages/examiner/QuestionPoolsPage"
 import QuestionPoolManagementPage from "./pages/examiner/QuestionPoolManagementPage"
+import TestTemplatesListPage from "./pages/examiner/TestTemplatesListPage"
 
 export const App = () => {
   return (
@@ -40,6 +41,14 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <QuestionPoolManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test-templates"
+            element={
+              <ProtectedRoute>
+                <TestTemplatesListPage />
               </ProtectedRoute>
             }
           />

@@ -5,6 +5,7 @@ import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 import { verifyAuth, AuthRequest } from './middleware/auth';
 import questionPoolsRouter from './routes/questionPools';
+import testTemplatesRouter from './routes/testTemplates';
 
 // Load environment variables from .env file
 dotenv.config();
@@ -148,6 +149,9 @@ app.get('/api/auth/user', verifyAuth, (req: AuthRequest, res: Response) => {
 
 // --- Question Pools Routes ---
 app.use('/api/question-pools', questionPoolsRouter);
+
+// --- Test Templates Routes ---
+app.use('/api/test-templates', testTemplatesRouter);
 
 // Start the server
 app.listen(port, () => {

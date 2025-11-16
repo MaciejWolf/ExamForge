@@ -44,6 +44,29 @@ export interface UpdateQuestionRequest {
   answers: Omit<Answer, 'id'>[];
 }
 
+export interface PoolSelection {
+  poolId: string;
+  questionsToDraw: number;
+}
+
+export interface TestTemplate {
+  id: string;
+  name: string;
+  examiner_id: string;
+  poolSelections: PoolSelection[];
+  createdAt: string;
+}
+
+export interface CreateTemplateRequest {
+  name: string;
+  poolSelections: PoolSelection[];
+}
+
+export interface UpdateTemplateRequest {
+  name: string;
+  poolSelections: PoolSelection[];
+}
+
 async function getAuthToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token || null;
@@ -123,6 +146,36 @@ export const questionsApi = {
 
   async delete(poolId: string, questionId: string): Promise<{ message: string }> {
     return apiRequest<{ message: string }>(`/question-pools/${poolId}/questions/${questionId}`, {
+      method: 'DELETE',
+    });
+  },
+};
+
+export const testTemplatesApi = {
+  async getAll(): Promise<{ templates: TestTemplate[] }> {
+    return apiRequest<{ templates: TestTemplate[] }>('/test-templates');
+  },
+
+  async getById(id: string): Promise<TestTemplate> {
+    return apiRequest<TestTemplate>(`/test-templates/${id}`);
+  },
+
+  async create(data: CreateTemplateRequest): Promise<TestTemplate> {
+    return apiRequest<TestTemplate>('/test-templates', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async update(id: string, data: UpdateTemplateRequest): Promise<TestTemplate> {
+    return apiRequest<TestTemplate>(`/test-templates/${id}`, {
+      method: 'PUT',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async delete(id: string): Promise<{ message: string }> {
+    return apiRequest<{ message: string }>(`/test-templates/${id}`, {
       method: 'DELETE',
     });
   },

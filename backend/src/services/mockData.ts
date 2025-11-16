@@ -21,13 +21,23 @@ export interface Question {
   createdAt: string;
 }
 
+export interface TestTemplate {
+  id: string;
+  name: string;
+  examiner_id: string;
+  poolSelections: Array<{ poolId: string; questionsToDraw: number }>;
+  createdAt: string;
+}
+
 // In-memory mock data storage
 let mockPools: QuestionPool[] = [];
 let mockQuestions: Question[] = [];
+let mockTemplates: TestTemplate[] = [];
 const initializedUsers = new Set<string>();
 let nextId = 1;
 let nextQuestionId = 1;
 let nextAnswerId = 1;
+let nextTemplateId = 1;
 
 // Initialize sample pools for a user if they don't have any
 const initializeSamplePools = (examinerId: string) => {
@@ -276,6 +286,129 @@ export const deleteQuestion = (questionId: string, poolId: string, examinerId: s
   mockQuestions.splice(index, 1);
   updatePoolQuestionCount(poolId);
   
+  return true;
+};
+
+// Test Template CRUD operations
+export const getTemplatesByExaminer = (examinerId: string): TestTemplate[] => {
+  return mockTemplates.filter((template) => template.examiner_id === examinerId);
+};
+
+export const getTemplateById = (templateId: string, examinerId: string): TestTemplate | undefined => {
+  return mockTemplates.find(
+    (template) => template.id === templateId && template.examiner_id === examinerId
+  );
+};
+
+export const createTemplate = (
+  name: string,
+  poolSelections: Array<{ poolId: string; questionsToDraw: number }>,
+  examinerId: string
+): TestTemplate => {
+  // Validate name uniqueness within examiner's templates
+  const existingTemplates = getTemplatesByExaminer(examinerId);
+  if (existingTemplates.some((t) => t.name.toLowerCase() === name.trim().toLowerCase())) {
+    throw new Error('Template name must be unique');
+  }
+
+  // Validate at least one pool selection
+  if (!poolSelections || poolSelections.length === 0) {
+    throw new Error('At least one question pool must be selected');
+  }
+
+  // Validate each pool selection
+  for (const selection of poolSelections) {
+    // Validate questionsToDraw is positive integer
+    if (!Number.isInteger(selection.questionsToDraw) || selection.questionsToDraw <= 0) {
+      throw new Error('Questions to draw must be a positive integer');
+    }
+
+    // Verify pool belongs to examiner
+    const pool = getPoolById(selection.poolId, examinerId);
+    if (!pool) {
+      throw new Error(`Pool with id ${selection.poolId} not found or does not belong to examiner`);
+    }
+
+    // Validate questionsToDraw doesn't exceed available questions
+    const availableQuestions = mockQuestions.filter((q) => q.pool_id === selection.poolId).length;
+    if (selection.questionsToDraw > availableQuestions) {
+      throw new Error(
+        `Cannot draw ${selection.questionsToDraw} questions from pool "${pool.name}" (only ${availableQuestions} available)`
+      );
+    }
+  }
+
+  const newTemplate: TestTemplate = {
+    id: String(nextTemplateId++),
+    name: name.trim(),
+    examiner_id: examinerId,
+    poolSelections,
+    createdAt: new Date().toISOString(),
+  };
+
+  mockTemplates.push(newTemplate);
+  return newTemplate;
+};
+
+export const updateTemplate = (
+  templateId: string,
+  name: string,
+  poolSelections: Array<{ poolId: string; questionsToDraw: number }>,
+  examinerId: string
+): TestTemplate | null => {
+  const template = getTemplateById(templateId, examinerId);
+  if (!template) return null;
+
+  // Validate name uniqueness (excluding current template)
+  const existingTemplates = getTemplatesByExaminer(examinerId);
+  if (
+    existingTemplates.some(
+      (t) => t.id !== templateId && t.name.toLowerCase() === name.trim().toLowerCase()
+    )
+  ) {
+    throw new Error('Template name must be unique');
+  }
+
+  // Validate at least one pool selection
+  if (!poolSelections || poolSelections.length === 0) {
+    throw new Error('At least one question pool must be selected');
+  }
+
+  // Validate each pool selection
+  for (const selection of poolSelections) {
+    // Validate questionsToDraw is positive integer
+    if (!Number.isInteger(selection.questionsToDraw) || selection.questionsToDraw <= 0) {
+      throw new Error('Questions to draw must be a positive integer');
+    }
+
+    // Verify pool belongs to examiner
+    const pool = getPoolById(selection.poolId, examinerId);
+    if (!pool) {
+      throw new Error(`Pool with id ${selection.poolId} not found or does not belong to examiner`);
+    }
+
+    // Validate questionsToDraw doesn't exceed available questions
+    const availableQuestions = mockQuestions.filter((q) => q.pool_id === selection.poolId).length;
+    if (selection.questionsToDraw > availableQuestions) {
+      throw new Error(
+        `Cannot draw ${selection.questionsToDraw} questions from pool "${pool.name}" (only ${availableQuestions} available)`
+      );
+    }
+  }
+
+  // Update template
+  template.name = name.trim();
+  template.poolSelections = poolSelections;
+  return template;
+};
+
+export const deleteTemplate = (templateId: string, examinerId: string): boolean => {
+  const index = mockTemplates.findIndex(
+    (template) => template.id === templateId && template.examiner_id === examinerId
+  );
+  if (index === -1) return false;
+
+  mockTemplates.splice(index, 1);
   return true;
 };
 
