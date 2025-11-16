@@ -21,7 +21,7 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 ### 5. Dashboard / Main Panel
 **Description:** The central hub for an examiner after logging in. This screen will provide primary navigation to the main sections of the application: Question Pools, Test Templates, and Test Session Reports.
 
-### 6. Question Pools Management Page
+### 6. Question Pools List Page
 **Description:** This screen displays a list of all question pools created by the examiner. It allows them to create new pools, edit existing ones, or delete them (`US-004`). Creating a new pool would likely open a modal or a dedicated form to enter its unique name.
 
 ### 7. Question Management Page (within a Pool)

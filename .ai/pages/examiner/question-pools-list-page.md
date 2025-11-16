@@ -1,4 +1,4 @@
-# Question Pools Management Page
+# Question Pools List Page
 
 This page displays a list of all question pools created by the examiner, allowing them to create new pools, edit existing ones, or delete them to organize questions by topic or theme.
 
@@ -31,7 +31,7 @@ The page features a persistent header with the application title and user contro
 |                                                  |
 |  < Back to Dashboard                             |
 |                                                  |
-|  Question Pools Management                       |
+|  Question Pools List                             |
 |                                                  |
 |  [+ Create New Pool]                             |
 |                                                  |
@@ -107,7 +107,7 @@ The page features a persistent header with the application title and user contro
 - **User Information Display:** Shows the currently logged-in examiner's email address in the top-right corner.
 - **Logout Button:** A button in the header that signs the examiner out and returns them to the login page.
 - **Back to Dashboard Link:** A navigation link that returns the examiner to the main dashboard.
-- **Page Title:** A heading that clearly identifies this page as "Question Pools Management."
+- **Page Title:** A heading that clearly identifies this page as "Question Pools List."
 - **Create New Pool Button:** A prominent button that triggers the creation flow for a new question pool. When clicked, it opens a modal or form.
 - **Question Pools Table/List:** A data table or card-based list displaying all question pools created by the examiner. Each row/card includes:
   - **Pool Name:** The unique name of the question pool, which may be clickable to navigate to the questions within.

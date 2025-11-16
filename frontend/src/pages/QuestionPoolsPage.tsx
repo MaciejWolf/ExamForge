@@ -132,7 +132,7 @@ const QuestionPoolsPage = () => {
 
         <Card>
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Question Pools Management</CardTitle>
+            <CardTitle>Question Pools List</CardTitle>
             <Button onClick={() => setIsCreateOpen(true)}>
               <Plus className="mr-2 h-4 w-4" />
               Create New Pool
