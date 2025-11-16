@@ -155,7 +155,7 @@ router.get('/', verifyAuth, (req: AuthRequest, res: Response) => {
       return res.status(401).json({ error: 'User not authenticated' });
     }
 
-    const sessions = mockDataService.getTestSessionsByExaminer(examinerId);
+    const sessions = mockDataService.getTestSessionsDetailsByExaminer(examinerId);
     res.status(200).json({ sessions });
   } catch (error) {
     res.status(500).json({ error: 'Internal server error' });

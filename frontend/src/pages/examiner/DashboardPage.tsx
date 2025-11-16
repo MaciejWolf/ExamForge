@@ -32,7 +32,7 @@ export const DashboardPage = () => {
       title: "Test Reports",
       description: "View completed test results",
       icon: BarChart3,
-      onClick: () => navigate("/test-reports"),
+      onClick: () => navigate("/test-sessions"),
       iconColor: "text-accent"
     }
   ]

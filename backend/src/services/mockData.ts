@@ -34,7 +34,7 @@ export interface TestSession {
   template_id: string;
   examiner_id: string;
   time_limit_minutes: number;
-  status: 'active' | 'completed' | 'cancelled';
+  status: 'active' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
   createdAt: string;
 }
 
@@ -61,6 +61,30 @@ let nextAnswerId = 1;
 let nextTemplateId = 1;
 let nextSessionId = 1;
 let nextParticipantId = 1;
+
+// Access code generation - 9 characters, uppercase alphanumeric, no ambiguous chars
+const generateAccessCode = (): string => {
+  // Exclude ambiguous characters: 0, O, 1, I, l
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  let attempts = 0;
+  const maxAttempts = 100;
+
+  do {
+    code = '';
+    for (let i = 0; i < 9; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    attempts++;
+  } while (mockParticipants.some((p) => p.access_code === code) && attempts < maxAttempts);
+
+  // Check if we still have a duplicate after max attempts
+  if (mockParticipants.some((p) => p.access_code === code)) {
+    throw new Error('Failed to generate unique access code after multiple attempts');
+  }
+
+  return code;
+};
 
 // Initialize sample pools for a user if they don't have any
 const initializeSamplePools = (examinerId: string) => {
@@ -565,6 +589,89 @@ const initializeSamplePools = (examinerId: string) => {
   ];
 
   mockTemplates.push(...sampleTemplates);
+
+  // Initialize sample test sessions
+  const sampleSessions: TestSession[] = [
+    {
+      id: String(nextSessionId++),
+      template_id: sampleTemplates[0].id, // Math & Physics Combined Test
+      examiner_id: examinerId,
+      time_limit_minutes: 60,
+      status: 'completed',
+      createdAt: new Date('2025-11-15').toISOString(),
+    },
+    {
+      id: String(nextSessionId++),
+      template_id: sampleTemplates[1].id, // Science Comprehensive Exam
+      examiner_id: examinerId,
+      time_limit_minutes: 45,
+      status: 'active',
+      createdAt: new Date('2025-11-14').toISOString(),
+    },
+    {
+      id: String(nextSessionId++),
+      template_id: sampleTemplates[2].id, // Computer Science Basics
+      examiner_id: examinerId,
+      time_limit_minutes: 90,
+      status: 'completed',
+      createdAt: new Date('2025-11-13').toISOString(),
+    },
+    {
+      id: String(nextSessionId++),
+      template_id: sampleTemplates[3].id, // General Knowledge Test
+      examiner_id: examinerId,
+      time_limit_minutes: 30,
+      status: 'active',
+      createdAt: new Date('2025-11-12').toISOString(),
+    },
+  ];
+
+  mockTestSessions.push(...sampleSessions);
+
+  // Initialize sample participants for the test sessions
+  const sampleParticipants: Participant[] = [
+    // Participants for first session (completed)
+    ...Array.from({ length: 25 }, (_, i) => ({
+      id: String(nextParticipantId++),
+      session_id: sampleSessions[0].id,
+      identifier: `Student ${i + 1}`,
+      access_code: generateAccessCode(),
+      status: 'completed' as const,
+      score: Math.floor(Math.random() * 100),
+      createdAt: new Date('2025-11-15').toISOString(),
+    })),
+    // Participants for second session (active)
+    ...Array.from({ length: 15 }, (_, i) => ({
+      id: String(nextParticipantId++),
+      session_id: sampleSessions[1].id,
+      identifier: `Participant ${i + 1}`,
+      access_code: generateAccessCode(),
+      status: (i < 10 ? 'completed' : 'pending') as 'completed' | 'pending',
+      score: i < 10 ? Math.floor(Math.random() * 100) : undefined,
+      createdAt: new Date('2025-11-14').toISOString(),
+    })),
+    // Participants for third session (completed)
+    ...Array.from({ length: 30 }, (_, i) => ({
+      id: String(nextParticipantId++),
+      session_id: sampleSessions[2].id,
+      identifier: `CS Student ${i + 1}`,
+      access_code: generateAccessCode(),
+      status: 'completed' as const,
+      score: Math.floor(Math.random() * 100),
+      createdAt: new Date('2025-11-13').toISOString(),
+    })),
+    // Participants for fourth session (active)
+    ...Array.from({ length: 10 }, (_, i) => ({
+      id: String(nextParticipantId++),
+      session_id: sampleSessions[3].id,
+      identifier: `GK Participant ${i + 1}`,
+      access_code: generateAccessCode(),
+      status: 'pending' as const,
+      createdAt: new Date('2025-11-12').toISOString(),
+    })),
+  ];
+
+  mockParticipants.push(...sampleParticipants);
 };
 
 export const getPoolsByExaminer = (examinerId: string): QuestionPool[] => {
@@ -859,30 +966,6 @@ export const deleteTemplate = (templateId: string, examinerId: string): boolean 
   return true;
 };
 
-// Access code generation - 9 characters, uppercase alphanumeric, no ambiguous chars
-const generateAccessCode = (): string => {
-  // Exclude ambiguous characters: 0, O, 1, I, l
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
-  let code = '';
-  let attempts = 0;
-  const maxAttempts = 100;
-
-  do {
-    code = '';
-    for (let i = 0; i < 9; i++) {
-      code += chars.charAt(Math.floor(Math.random() * chars.length));
-    }
-    attempts++;
-  } while (mockParticipants.some((p) => p.access_code === code) && attempts < maxAttempts);
-
-  // Check if we still have a duplicate after max attempts
-  if (mockParticipants.some((p) => p.access_code === code)) {
-    throw new Error('Failed to generate unique access code after multiple attempts');
-  }
-
-  return code;
-};
-
 // Test Session CRUD operations
 export const createTestSession = (
   templateId: string,
@@ -957,5 +1040,36 @@ export const getParticipantsBySession = (sessionId: string, examinerId: string):
   }
 
   return mockParticipants.filter((participant) => participant.session_id === sessionId);
+};
+
+export interface TestSessionDetail {
+  id: string;
+  template_id: string;
+  template_name: string;
+  examiner_id: string;
+  time_limit_minutes: number;
+  status: 'active' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
+  createdAt: string;
+  participant_count: number;
+}
+
+export const getTestSessionsDetailsByExaminer = (examinerId: string): TestSessionDetail[] => {
+  const sessions = getTestSessionsByExaminer(examinerId);
+  
+  return sessions.map((session) => {
+    const template = getTemplateById(session.template_id, examinerId);
+    const participants = mockParticipants.filter((p) => p.session_id === session.id);
+    
+    return {
+      id: session.id,
+      template_id: session.template_id,
+      template_name: template?.name || 'Unknown Template',
+      examiner_id: session.examiner_id,
+      time_limit_minutes: session.time_limit_minutes,
+      status: session.status,
+      createdAt: session.createdAt,
+      participant_count: participants.length,
+    };
+  });
 };
 

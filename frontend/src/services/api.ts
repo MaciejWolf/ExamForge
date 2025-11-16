@@ -82,8 +82,19 @@ export interface TestSession {
   template_id: string;
   examiner_id: string;
   time_limit_minutes: number;
-  status: 'active' | 'completed' | 'cancelled';
+  status: 'active' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
   createdAt: string;
+}
+
+export interface TestSessionDetail {
+  id: string;
+  template_id: string;
+  template_name: string;
+  examiner_id: string;
+  time_limit_minutes: number;
+  status: 'active' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
+  createdAt: string;
+  participant_count: number;
 }
 
 export interface CreateSessionRequest {
@@ -219,8 +230,8 @@ export const testSessionsApi = {
     });
   },
 
-  async getAll(): Promise<{ sessions: TestSession[] }> {
-    return apiRequest<{ sessions: TestSession[] }>('/test-sessions');
+  async getAll(): Promise<{ sessions: TestSessionDetail[] }> {
+    return apiRequest<{ sessions: TestSessionDetail[] }>('/test-sessions');
   },
 
   async getById(id: string): Promise<{ session: TestSession; participants: Participant[] }> {
