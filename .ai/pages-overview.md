@@ -27,10 +27,10 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 ### 7. Question Pool Management Page
 **Description:** A view that shows all questions belonging to a specific pool. From here, an examiner can add a new question to the pool (`US-005`). This involves a form with fields for the question's content, 2 to 6 possible answers, a way to mark the correct one, and the number of points for the question.
 
-### 8. Test Templates Management Page
+### 8. Test Templates List Page
 **Description:** This screen displays a list of all saved test templates. It enables the examiner to create, view, edit, or delete templates (`US-006`).
 
-### 9. Test Template Creator/Editor Page
+### 9. Test Template Management Page
 **Description:** A form for creating or modifying a test template. The examiner gives the template a name and specifies rules for test generation, such as selecting various question pools and defining how many questions should be randomly drawn from each (`US-006`).
 
 ### 10. Test Session Launch Page
