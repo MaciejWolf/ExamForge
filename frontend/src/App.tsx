@@ -10,6 +10,7 @@ import { DashboardPage } from "./pages/examiner/DashboardPage"
 import QuestionPoolsPage from "./pages/examiner/QuestionPoolsPage"
 import QuestionPoolManagementPage from "./pages/examiner/QuestionPoolManagementPage"
 import TestTemplatesListPage from "./pages/examiner/TestTemplatesListPage"
+import TestSessionLaunchPage from "./pages/examiner/TestSessionLaunchPage"
 
 export const App = () => {
   return (
@@ -49,6 +50,14 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <TestTemplatesListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/launch-test"
+            element={
+              <ProtectedRoute>
+                <TestSessionLaunchPage />
               </ProtectedRoute>
             }
           />

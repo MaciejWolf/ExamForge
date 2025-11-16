@@ -67,6 +67,36 @@ export interface UpdateTemplateRequest {
   poolSelections: PoolSelection[];
 }
 
+export interface Participant {
+  id: string;
+  session_id: string;
+  identifier: string;
+  access_code: string;
+  status: 'pending' | 'completed';
+  score?: number;
+  createdAt: string;
+}
+
+export interface TestSession {
+  id: string;
+  template_id: string;
+  examiner_id: string;
+  time_limit_minutes: number;
+  status: 'active' | 'completed' | 'cancelled';
+  createdAt: string;
+}
+
+export interface CreateSessionRequest {
+  templateId: string;
+  timeLimitMinutes: number;
+  participants: string[];
+}
+
+export interface CreateSessionResponse {
+  session: TestSession;
+  participants: Participant[];
+}
+
 async function getAuthToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token || null;
@@ -178,6 +208,23 @@ export const testTemplatesApi = {
     return apiRequest<{ message: string }>(`/test-templates/${id}`, {
       method: 'DELETE',
     });
+  },
+};
+
+export const testSessionsApi = {
+  async create(data: CreateSessionRequest): Promise<CreateSessionResponse> {
+    return apiRequest<CreateSessionResponse>('/test-sessions', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  async getAll(): Promise<{ sessions: TestSession[] }> {
+    return apiRequest<{ sessions: TestSession[] }>('/test-sessions');
+  },
+
+  async getById(id: string): Promise<{ session: TestSession; participants: Participant[] }> {
+    return apiRequest<{ session: TestSession; participants: Participant[] }>(`/test-sessions/${id}`);
   },
 };
 

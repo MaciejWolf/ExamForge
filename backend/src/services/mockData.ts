@@ -29,15 +29,38 @@ export interface TestTemplate {
   createdAt: string;
 }
 
+export interface TestSession {
+  id: string;
+  template_id: string;
+  examiner_id: string;
+  time_limit_minutes: number;
+  status: 'active' | 'completed' | 'cancelled';
+  createdAt: string;
+}
+
+export interface Participant {
+  id: string;
+  session_id: string;
+  identifier: string;
+  access_code: string;
+  status: 'pending' | 'completed';
+  score?: number;
+  createdAt: string;
+}
+
 // In-memory mock data storage
 let mockPools: QuestionPool[] = [];
 let mockQuestions: Question[] = [];
 let mockTemplates: TestTemplate[] = [];
+let mockTestSessions: TestSession[] = [];
+let mockParticipants: Participant[] = [];
 const initializedUsers = new Set<string>();
 let nextId = 1;
 let nextQuestionId = 1;
 let nextAnswerId = 1;
 let nextTemplateId = 1;
+let nextSessionId = 1;
+let nextParticipantId = 1;
 
 // Initialize sample pools for a user if they don't have any
 const initializeSamplePools = (examinerId: string) => {
@@ -834,5 +857,105 @@ export const deleteTemplate = (templateId: string, examinerId: string): boolean 
 
   mockTemplates.splice(index, 1);
   return true;
+};
+
+// Access code generation - 9 characters, uppercase alphanumeric, no ambiguous chars
+const generateAccessCode = (): string => {
+  // Exclude ambiguous characters: 0, O, 1, I, l
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  let attempts = 0;
+  const maxAttempts = 100;
+
+  do {
+    code = '';
+    for (let i = 0; i < 9; i++) {
+      code += chars.charAt(Math.floor(Math.random() * chars.length));
+    }
+    attempts++;
+  } while (mockParticipants.some((p) => p.access_code === code) && attempts < maxAttempts);
+
+  // Check if we still have a duplicate after max attempts
+  if (mockParticipants.some((p) => p.access_code === code)) {
+    throw new Error('Failed to generate unique access code after multiple attempts');
+  }
+
+  return code;
+};
+
+// Test Session CRUD operations
+export const createTestSession = (
+  templateId: string,
+  timeLimitMinutes: number,
+  participantIdentifiers: string[],
+  examinerId: string
+): { session: TestSession; participants: Participant[] } => {
+  // Verify template exists and belongs to examiner
+  const template = getTemplateById(templateId, examinerId);
+  if (!template) {
+    throw new Error('Template not found or does not belong to examiner');
+  }
+
+  // Validate time limit
+  if (!Number.isInteger(timeLimitMinutes) || timeLimitMinutes < 1 || timeLimitMinutes > 480) {
+    throw new Error('Time limit must be between 1 and 480 minutes');
+  }
+
+  // Validate participants
+  const validIdentifiers = participantIdentifiers
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0);
+
+  if (validIdentifiers.length === 0) {
+    throw new Error('At least one participant identifier is required');
+  }
+
+  // Create test session
+  const session: TestSession = {
+    id: String(nextSessionId++),
+    template_id: templateId,
+    examiner_id: examinerId,
+    time_limit_minutes: timeLimitMinutes,
+    status: 'active',
+    createdAt: new Date().toISOString(),
+  };
+
+  mockTestSessions.push(session);
+
+  // Create participants with unique access codes
+  const participants: Participant[] = validIdentifiers.map((identifier) => {
+    const participant: Participant = {
+      id: String(nextParticipantId++),
+      session_id: session.id,
+      identifier,
+      access_code: generateAccessCode(),
+      status: 'pending',
+      createdAt: new Date().toISOString(),
+    };
+    mockParticipants.push(participant);
+    return participant;
+  });
+
+  return { session, participants };
+};
+
+export const getTestSessionsByExaminer = (examinerId: string): TestSession[] => {
+  return mockTestSessions.filter((session) => session.examiner_id === examinerId);
+};
+
+export const getTestSessionById = (sessionId: string, examinerId: string): TestSession | undefined => {
+  return mockTestSessions.find(
+    (session) => session.id === sessionId && session.examiner_id === examinerId
+  );
+};
+
+export const getParticipantsBySession = (sessionId: string, examinerId: string): Participant[] => {
+  // Verify session belongs to examiner
+  const session = getTestSessionById(sessionId, examinerId);
+  if (!session) {
+    return [];
+  }
+
+  return mockParticipants.filter((participant) => participant.session_id === sessionId);
 };
 
