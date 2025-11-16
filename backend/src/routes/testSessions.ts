@@ -164,6 +164,112 @@ router.get('/', verifyAuth, (req: AuthRequest, res: Response) => {
 
 /**
  * @swagger
+ * /api/test-sessions/{id}/report:
+ *   get:
+ *     summary: Get test session report with statistics and question analysis
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Test session report
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session not found
+ */
+router.get('/:id/report', verifyAuth, (req: AuthRequest, res: Response) => {
+  try {
+    const examinerId = req.user?.id;
+    if (!examinerId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { id } = req.params;
+    const session = mockDataService.getTestSessionById(id, examinerId);
+
+    if (!session) {
+      return res.status(404).json({ error: 'Session not found' });
+    }
+
+    // Generate mock data if not already generated
+    const participants = mockDataService.getParticipantsBySession(id, examinerId);
+    if (participants.length > 0 && participants[0].total_score === undefined) {
+      mockDataService.generateMockParticipantData(id, examinerId);
+    }
+
+    const template = mockDataService.getTemplateById(session.template_id, examinerId);
+    const allParticipants = mockDataService.getParticipantsBySession(id, examinerId);
+    const statistics = mockDataService.calculateSessionStatistics(id, examinerId);
+    const questionAnalysis = mockDataService.calculateQuestionAnalysis(id, examinerId);
+
+    res.status(200).json({
+      session: {
+        ...session,
+        template_name: template?.name || 'Unknown Template',
+      },
+      participants: allParticipants,
+      statistics,
+      questionAnalysis,
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * @swagger
+ * /api/test-sessions/{sessionId}/participants/{participantId}:
+ *   get:
+ *     summary: Get participant details with answers
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: sessionId
+ *         required: true
+ *         schema:
+ *           type: string
+ *       - in: path
+ *         name: participantId
+ *         required: true
+ *         schema:
+ *           type: string
+ *     responses:
+ *       200:
+ *         description: Participant details
+ *       401:
+ *         description: Unauthorized
+ *       404:
+ *         description: Session or participant not found
+ */
+router.get('/:sessionId/participants/:participantId', verifyAuth, (req: AuthRequest, res: Response) => {
+  try {
+    const examinerId = req.user?.id;
+    if (!examinerId) {
+      return res.status(401).json({ error: 'User not authenticated' });
+    }
+
+    const { sessionId, participantId } = req.params;
+    const detail = mockDataService.getParticipantDetails(sessionId, participantId, examinerId);
+
+    if (!detail) {
+      return res.status(404).json({ error: 'Session or participant not found' });
+    }
+
+    res.status(200).json(detail);
+  } catch (error) {
+    res.status(500).json({ error: 'Internal server error' });
+  }
+});
+
+/**
+ * @swagger
  * /api/test-sessions/{id}:
  *   get:
  *     summary: Get a test session by ID with participants

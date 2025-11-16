@@ -12,6 +12,7 @@ import QuestionPoolManagementPage from "./pages/examiner/QuestionPoolManagementP
 import TestTemplatesListPage from "./pages/examiner/TestTemplatesListPage"
 import TestSessionLaunchPage from "./pages/examiner/TestSessionLaunchPage"
 import TestSessionListPage from "./pages/examiner/TestSessionListPage"
+import TestSessionReportPage from "./pages/examiner/TestSessionReportPage"
 
 export const App = () => {
   return (
@@ -67,6 +68,14 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <TestSessionListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test-sessions/:sessionId/report"
+            element={
+              <ProtectedRoute>
+                <TestSessionReportPage />
               </ProtectedRoute>
             }
           />

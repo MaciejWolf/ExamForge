@@ -43,9 +43,21 @@ export interface Participant {
   session_id: string;
   identifier: string;
   access_code: string;
-  status: 'pending' | 'completed';
-  score?: number;
+  status: 'not_started' | 'in_progress' | 'completed' | 'timed_out';
+  started_at?: string;
+  completed_at?: string;
+  time_taken_minutes?: number;
+  total_score?: number;
+  max_score?: number;
   createdAt: string;
+}
+
+export interface ParticipantAnswer {
+  question_id: string;
+  selected_answer_id: string | null;
+  is_correct: boolean;
+  points_earned: number;
+  points_possible: number;
 }
 
 // In-memory mock data storage
@@ -54,6 +66,8 @@ let mockQuestions: Question[] = [];
 let mockTemplates: TestTemplate[] = [];
 let mockTestSessions: TestSession[] = [];
 let mockParticipants: Participant[] = [];
+const participantAnswers = new Map<string, ParticipantAnswer[]>(); // Map<participantId, ParticipantAnswer[]>
+const sessionQuestions = new Map<string, Question[]>(); // Map<sessionId, Question[]> - stores selected questions for each session
 const initializedUsers = new Set<string>();
 let nextId = 1;
 let nextQuestionId = 1;
@@ -646,7 +660,7 @@ const initializeSamplePools = (examinerId: string) => {
       session_id: sampleSessions[1].id,
       identifier: `Participant ${i + 1}`,
       access_code: generateAccessCode(),
-      status: (i < 10 ? 'completed' : 'pending') as 'completed' | 'pending',
+      status: (i < 10 ? 'completed' : 'not_started') as 'not_started' | 'completed',
       score: i < 10 ? Math.floor(Math.random() * 100) : undefined,
       createdAt: new Date('2025-11-14').toISOString(),
     })),
@@ -666,7 +680,7 @@ const initializeSamplePools = (examinerId: string) => {
       session_id: sampleSessions[3].id,
       identifier: `GK Participant ${i + 1}`,
       access_code: generateAccessCode(),
-      status: 'pending' as const,
+      status: 'not_started' as const,
       createdAt: new Date('2025-11-12').toISOString(),
     })),
   ];
@@ -1012,7 +1026,7 @@ export const createTestSession = (
       session_id: session.id,
       identifier,
       access_code: generateAccessCode(),
-      status: 'pending',
+      status: 'not_started',
       createdAt: new Date().toISOString(),
     };
     mockParticipants.push(participant);
@@ -1071,5 +1085,228 @@ export const getTestSessionsDetailsByExaminer = (examinerId: string): TestSessio
       participant_count: participants.length,
     };
   });
+};
+
+// Helper function to get questions for a test session based on its template
+const getSessionQuestions = (sessionId: string, examinerId: string): Question[] => {
+  // Return cached questions if available
+  if (sessionQuestions.has(sessionId)) {
+    return sessionQuestions.get(sessionId)!;
+  }
+
+  const session = getTestSessionById(sessionId, examinerId);
+  if (!session) return [];
+
+  const template = getTemplateById(session.template_id, examinerId);
+  if (!template) return [];
+
+  const selectedQuestions: Question[] = [];
+  
+  // Use session ID as seed for deterministic random selection
+  let seed = parseInt(sessionId.replace(/\D/g, '')) || 0;
+  const seededRandom = () => {
+    seed = (seed * 9301 + 49297) % 233280;
+    return seed / 233280;
+  };
+
+  for (const poolSelection of template.poolSelections) {
+    const poolQuestions = mockQuestions.filter((q) => q.pool_id === poolSelection.poolId);
+    // Deterministically shuffle questions from the pool
+    const shuffled = [...poolQuestions].sort(() => seededRandom() - 0.5);
+    const selected = shuffled.slice(0, poolSelection.questionsToDraw);
+    selectedQuestions.push(...selected);
+  }
+
+  // Cache the selected questions for this session
+  sessionQuestions.set(sessionId, selectedQuestions);
+  return selectedQuestions;
+};
+
+// Generate mock participant data for a session
+export const generateMockParticipantData = (sessionId: string, examinerId: string): void => {
+  const session = getTestSessionById(sessionId, examinerId);
+  if (!session) return;
+
+  const participants = getParticipantsBySession(sessionId, examinerId);
+  const questions = getSessionQuestions(sessionId, examinerId);
+  const maxScore = questions.reduce((sum, q) => sum + q.points, 0);
+
+  // Update participants with mock data
+  participants.forEach((participant, index) => {
+    const statusRoll = Math.random();
+    let status: Participant['status'] = 'not_started';
+    let startedAt: string | undefined;
+    let completedAt: string | undefined;
+    let timeTaken: number | undefined;
+    let totalScore: number | undefined;
+
+    if (statusRoll < 0.7) {
+      // 70% completed
+      status = 'completed';
+      startedAt = new Date(Date.now() - Math.random() * 7 * 24 * 60 * 60 * 1000).toISOString();
+      const sessionStart = new Date(startedAt);
+      timeTaken = Math.floor(Math.random() * session.time_limit_minutes * 0.8 + session.time_limit_minutes * 0.2);
+      completedAt = new Date(sessionStart.getTime() + timeTaken * 60 * 1000).toISOString();
+      totalScore = Math.floor(Math.random() * maxScore * 0.4 + maxScore * 0.6); // 60-100% range
+    } else if (statusRoll < 0.85) {
+      // 15% in progress
+      status = 'in_progress';
+      startedAt = new Date(Date.now() - Math.random() * 2 * 60 * 60 * 1000).toISOString();
+      const sessionStart = new Date(startedAt);
+      timeTaken = Math.floor((Date.now() - sessionStart.getTime()) / (60 * 1000));
+      totalScore = Math.floor(Math.random() * maxScore * 0.5); // Current score 0-50%
+    } else {
+      // 15% not started
+      status = 'not_started';
+    }
+
+    participant.status = status;
+    participant.started_at = startedAt;
+    participant.completed_at = completedAt;
+    participant.time_taken_minutes = timeTaken;
+    participant.total_score = totalScore;
+    participant.max_score = maxScore;
+
+    // Generate answers for completed and in-progress participants
+    if (status === 'completed' || status === 'in_progress') {
+      const answers: ParticipantAnswer[] = questions.map((question, qIndex) => {
+        const isCorrect = status === 'completed' 
+          ? (qIndex < questions.length * (totalScore! / maxScore) + Math.random() * 0.2 - 0.1)
+          : Math.random() < 0.5; // Random for in-progress
+        
+        const correctAnswer = question.answers.find((a) => a.isCorrect);
+        const selectedAnswer = isCorrect 
+          ? correctAnswer 
+          : question.answers[Math.floor(Math.random() * question.answers.length)];
+
+        return {
+          question_id: question.id,
+          selected_answer_id: selectedAnswer?.id || null,
+          is_correct: isCorrect,
+          points_earned: isCorrect ? question.points : 0,
+          points_possible: question.points,
+        };
+      });
+
+      participantAnswers.set(participant.id, answers);
+    }
+  });
+};
+
+// Calculate session statistics
+export interface SessionStatistics {
+  average_score: number;
+  highest_score: number;
+  lowest_score: number;
+  completion_rate: number;
+  completed_count: number;
+  in_progress_count: number;
+  not_started_count: number;
+  total_participants: number;
+}
+
+export const calculateSessionStatistics = (sessionId: string, examinerId: string): SessionStatistics => {
+  const participants = getParticipantsBySession(sessionId, examinerId);
+  const completed = participants.filter((p) => p.status === 'completed');
+  
+  const scores = completed.map((p) => p.total_score || 0);
+  const average_score = scores.length > 0 ? scores.reduce((a, b) => a + b, 0) / scores.length : 0;
+  const highest_score = scores.length > 0 ? Math.max(...scores) : 0;
+  const lowest_score = scores.length > 0 ? Math.min(...scores) : 0;
+  
+  const completed_count = completed.length;
+  const in_progress_count = participants.filter((p) => p.status === 'in_progress').length;
+  const not_started_count = participants.filter((p) => p.status === 'not_started').length;
+  const total_participants = participants.length;
+  const completion_rate = total_participants > 0 ? (completed_count / total_participants) * 100 : 0;
+
+  return {
+    average_score: Math.round(average_score * 100) / 100,
+    highest_score,
+    lowest_score,
+    completion_rate: Math.round(completion_rate * 100) / 100,
+    completed_count,
+    in_progress_count,
+    not_started_count,
+    total_participants,
+  };
+};
+
+// Question analysis for report
+export interface QuestionAnalysis {
+  question_id: string;
+  question_number: number;
+  question_content: string;
+  correct_answer: string;
+  points: number;
+  correct_responses: number;
+  total_responses: number;
+  correct_percentage: number;
+}
+
+export const calculateQuestionAnalysis = (sessionId: string, examinerId: string): QuestionAnalysis[] => {
+  const session = getTestSessionById(sessionId, examinerId);
+  if (!session) return [];
+
+  const questions = getSessionQuestions(sessionId, examinerId);
+  const participants = getParticipantsBySession(sessionId, examinerId);
+  const completedParticipants = participants.filter((p) => p.status === 'completed');
+
+  return questions.map((question, index) => {
+    const correctAnswer = question.answers.find((a) => a.isCorrect);
+    let correctCount = 0;
+
+    completedParticipants.forEach((participant) => {
+      const answers = participantAnswers.get(participant.id) || [];
+      const answer = answers.find((a) => a.question_id === question.id);
+      if (answer && answer.is_correct) {
+        correctCount++;
+      }
+    });
+
+    const totalResponses = completedParticipants.length;
+    const correctPercentage = totalResponses > 0 ? (correctCount / totalResponses) * 100 : 0;
+
+    return {
+      question_id: question.id,
+      question_number: index + 1,
+      question_content: question.content,
+      correct_answer: correctAnswer?.text || 'N/A',
+      points: question.points,
+      correct_responses: correctCount,
+      total_responses: totalResponses,
+      correct_percentage: Math.round(correctPercentage * 100) / 100,
+    };
+  });
+};
+
+// Get participant details with answers
+export interface ParticipantDetail {
+  participant: Participant;
+  answers: ParticipantAnswer[];
+  questions: Question[];
+}
+
+export const getParticipantDetails = (
+  sessionId: string,
+  participantId: string,
+  examinerId: string
+): ParticipantDetail | null => {
+  const session = getTestSessionById(sessionId, examinerId);
+  if (!session) return null;
+
+  const participant = mockParticipants.find(
+    (p) => p.id === participantId && p.session_id === sessionId
+  );
+  if (!participant) return null;
+
+  const answers = participantAnswers.get(participantId) || [];
+  const questions = getSessionQuestions(sessionId, examinerId);
+
+  return {
+    participant,
+    answers,
+    questions,
+  };
 };
 

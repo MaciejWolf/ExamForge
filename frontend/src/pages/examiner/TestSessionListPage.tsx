@@ -172,7 +172,7 @@ const TestSessionListPage = () => {
                           </span>
                         </TableCell>
                         <TableCell className="text-right">
-                          {session.status === 'completed' ? (
+                          {session.status === 'active' || session.status === 'completed' ? (
                             <Button
                               variant="outline"
                               size="sm"

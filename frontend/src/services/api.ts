@@ -72,9 +72,56 @@ export interface Participant {
   session_id: string;
   identifier: string;
   access_code: string;
-  status: 'pending' | 'completed';
-  score?: number;
+  status: 'not_started' | 'in_progress' | 'completed' | 'timed_out';
+  started_at?: string;
+  completed_at?: string;
+  time_taken_minutes?: number;
+  total_score?: number;
+  max_score?: number;
   createdAt: string;
+}
+
+export interface SessionStatistics {
+  average_score: number;
+  highest_score: number;
+  lowest_score: number;
+  completion_rate: number;
+  completed_count: number;
+  in_progress_count: number;
+  not_started_count: number;
+  total_participants: number;
+}
+
+export interface QuestionAnalysis {
+  question_id: string;
+  question_number: number;
+  question_content: string;
+  correct_answer: string;
+  points: number;
+  correct_responses: number;
+  total_responses: number;
+  correct_percentage: number;
+}
+
+export interface TestSessionReport {
+  session: TestSession & { template_name: string };
+  participants: Participant[];
+  statistics: SessionStatistics;
+  questionAnalysis: QuestionAnalysis[];
+}
+
+export interface ParticipantAnswer {
+  question_id: string;
+  selected_answer_id: string | null;
+  is_correct: boolean;
+  points_earned: number;
+  points_possible: number;
+}
+
+export interface ParticipantDetail {
+  participant: Participant;
+  answers: ParticipantAnswer[];
+  questions: Question[];
 }
 
 export interface TestSession {
@@ -236,6 +283,14 @@ export const testSessionsApi = {
 
   async getById(id: string): Promise<{ session: TestSession; participants: Participant[] }> {
     return apiRequest<{ session: TestSession; participants: Participant[] }>(`/test-sessions/${id}`);
+  },
+
+  async getReport(sessionId: string): Promise<TestSessionReport> {
+    return apiRequest<TestSessionReport>(`/test-sessions/${sessionId}/report`);
+  },
+
+  async getParticipantDetails(sessionId: string, participantId: string): Promise<ParticipantDetail> {
+    return apiRequest<ParticipantDetail>(`/test-sessions/${sessionId}/participants/${participantId}`);
   },
 };
 
