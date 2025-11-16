@@ -1,4 +1,4 @@
-# Question Management Page (within a Pool)
+# Question Pool Management Page
 
 This page displays all questions belonging to a specific question pool, allowing the examiner to add new questions with multiple-choice answers, edit existing questions, or delete them.
 

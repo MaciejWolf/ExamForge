@@ -24,7 +24,7 @@ Based on the Product Requirements Document (PRD), below is a comprehensive list 
 ### 6. Question Pools List Page
 **Description:** This screen displays a list of all question pools created by the examiner. It allows them to create new pools, edit existing ones, or delete them (`US-004`). Creating a new pool would likely open a modal or a dedicated form to enter its unique name.
 
-### 7. Question Management Page (within a Pool)
+### 7. Question Pool Management Page
 **Description:** A view that shows all questions belonging to a specific pool. From here, an examiner can add a new question to the pool (`US-005`). This involves a form with fields for the question's content, 2 to 6 possible answers, a way to mark the correct one, and the number of points for the question.
 
 ### 8. Test Templates Management Page
