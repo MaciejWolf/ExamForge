@@ -263,9 +263,6 @@ const TestTemplatesListPage = () => {
     }
   };
 
-  const getPoolName = (poolId: string): string => {
-    return pools.find((p) => p.id === poolId)?.name || 'Unknown Pool';
-  };
 
   const getTotalQuestions = (template: TestTemplate): number => {
     return template.poolSelections.reduce((sum, sel) => sum + sel.questionsToDraw, 0);
@@ -389,7 +386,7 @@ const TestTemplatesListPage = () => {
               {(() => {
                 // When creating, only show pools with questions
                 // When editing, show all pools (including those with 0 questions if already selected)
-                let poolsToShow = currentTemplate
+                const poolsToShow = currentTemplate
                   ? pools // When editing, show all pools
                   : pools.filter((pool) => pool.questionCount > 0); // When creating, only pools with questions
 
@@ -410,7 +407,9 @@ const TestTemplatesListPage = () => {
                           </p>
                             {missingPools.map((poolId) => {
                               const isSelected = poolId in poolSelections;
-                              const questionsToDraw = poolSelections[poolId] || 0;
+                              const selection = poolSelections[poolId] || { questionsToDraw: 0, points: 0 };
+                              const questionsToDraw = selection.questionsToDraw || 0;
+                              const points = selection.points || 0;
                               return (
                                 <div key={poolId} className="border border-red-400 rounded-md p-3 bg-red-100 mb-2">
                                   <div className="flex items-center space-x-2">
@@ -440,7 +439,6 @@ const TestTemplatesListPage = () => {
                               const isSelected = pool.id in poolSelections;
                               const selection = poolSelections[pool.id] || { questionsToDraw: 0, points: 0 };
                               const questionsToDraw = selection.questionsToDraw || 0;
-                              const points = selection.points || 0;
                               const hasQuestions = pool.questionCount > 0;
                               const canSelect = hasQuestions || isSelected;
                               const isValid = !isSelected || (questionsToDraw > 0 && questionsToDraw <= pool.questionCount);
@@ -528,7 +526,6 @@ const TestTemplatesListPage = () => {
                       const isSelected = pool.id in poolSelections;
                       const selection = poolSelections[pool.id] || { questionsToDraw: 0, points: 0 };
                       const questionsToDraw = selection.questionsToDraw || 0;
-                      const points = selection.points || 0;
                       const hasQuestions = pool.questionCount > 0;
                       const canSelect = hasQuestions || isSelected; // Can select if has questions OR already selected
                       const isValid = !isSelected || (questionsToDraw > 0 && questionsToDraw <= pool.questionCount);
@@ -589,7 +586,7 @@ const TestTemplatesListPage = () => {
                                   type="number"
                                   min="0.01"
                                   step="0.01"
-                                  value={points || ''}
+                                  value={selection.points || ''}
                                   onChange={(e) => handlePointsChange(pool.id, e.target.value)}
                                   className="w-24"
                                   disabled={!hasQuestions}
