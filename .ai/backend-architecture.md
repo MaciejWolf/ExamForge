@@ -127,11 +127,10 @@ Business logic on top of the repository.
 
   * Validate pool/question/template payloads
   * Enforce invariants (1 correct answer, 2–6 answers, etc.)
-  * Generate test instances from templates:
-
-    * `generateTests(templateId, numberOfTests, examinerId): GeneratedTest[]`
-    * Returns complete test data including questions, answers, and correct answer IDs
-    * Each generated test contains all necessary data for assessment processing
+  * Materialize a template into a stable, self-contained test content package:
+    * `materializeTemplate({ templateId, variantCount }) → Promise<TestContentPackage>`
+    * Returns a frozen snapshot of all questions and answers, including correct answer markers.
+    * This package is then used by the assessment module, which needs no further calls to design.
   * Map repository errors to domain errors (e.g. not found, invalid reference)
 
 All write operations to design data go through this service.
@@ -234,16 +233,26 @@ Example responsibilities:
 * Start session from template:
 
   ```ts
-  startSession(templateId, numberOfTests, examinerId, options) {
-    // Single call to design module - gets all necessary data
-    const generatedTests = designService.generateTests(templateId, numberOfTests, examinerId);
-    // Each generated test includes:
-    // - Questions with all answer options
-    // - Correct answer IDs for each question
-    // - All metadata needed for assessment
+  startSession(templateId, participantCount, examinerId, options) {
+    // Determine how many unique test forms are needed.
+    // This could be based on participantCount or other session options.
+    const variantCount = calculateVariantCount(participantCount, options);
+
+    // Single call to design module to get all necessary content.
+    const testContentPackage = await designService.materializeTemplate({
+      templateId,
+      variantCount,
+    });
     
-    // Store complete test data in TestSession and TestRuns
-    // No further calls to design module needed
+    // Store the frozen TestContentPackage in the session.
+    // This snapshot contains all questions, answers, and correct answer info.
+    // No further calls to the design module will be needed for this session.
+    const session = await assessmentRepository.createSession({
+        ...options,
+        testContentPackage,
+    });
+
+    // ... create participants and associate them with forms from the package ...
   }
   ```
 
@@ -300,33 +309,67 @@ Routes:
 
 ## 4. Cross-module Interactions
 
-### 4.1 Direction of dependency
+Design and assessment modules interact exactly once when a session starts. The only cross-module call is from assessment to design to materialize a template into concrete test content. This call uses only design-oriented parameters, so no assessment concerns leak across.
 
-* **Allowed:** `testAssessment` → `testDesign` (read-only, **only during session creation**)
-* **Disallowed:** `testDesign` → `testAssessment`
+### 4.1 Method Contract
 
-Assessment uses design **only once** when starting sessions:
+```ts
+design.materializeTemplate({
+  templateId,
+  variantCount,   // optional; design meaning: "how many distinct forms this template should generate"
+}) → Promise<TestContentPackage>
+```
 
-* Calls `design.service.generateTests(templateId, numberOfTests, examinerId)`
-* Receives complete test data including questions, answers, and correct answer IDs
-* Stores all necessary data in the session for subsequent assessment operations
-* **No further calls to design module** - all data needed for assessment is included in the initial response
+### 4.2 Returned Value
 
-### 4.2 Example: starting a session from a template
+A stable, frozen structure that represents all test content needed for later assessment:
 
-1. Client calls `POST /api/assessment/sessions` with `{ templateId, numberOfTests, ... }`.
-2. `assessment.routes.ts` calls `assessment.service.startSession`.
-3. `assessment.service.startSession`:
+```ts
+interface TestContentPackage {
+  templateId: string;
+  forms: Array<{
+    formId: string;     // ID within the package
+    questions: Array<{
+      questionId: string;
+      text: string;
+      points: number;
+      answers: Array<{
+        answerId: string;
+        text: string;
+        isCorrect: boolean;
+      }>
+    }>
+  }>;
+}
+```
 
-   * **Single call to design module:** `design.service.generateTests(templateId, numberOfTests, examinerId)`
-   * Receives complete test data including:
-     * Questions with all answer options
-     * Correct answer IDs for each question
-     * All metadata needed for assessment
-   * Creates `TestSession` and `TestRuns` with the generated test data via `assessment.repository`
-   * Stores all necessary data (questions, answers, correct answer IDs) in the session
-4. `assessment.routes.ts` returns created session data.
-5. **No further calls to design module** - all subsequent operations (recording answers, computing statistics, generating reports) use data stored during session creation.
+### 4.3 Ownership Boundary
+
+| Concern                                          | Owner      | Visible to other module                   |
+| ------------------------------------------------ | ---------- | ----------------------------------------- |
+| How test forms are composed                      | Design     | Returned in `TestContentPackage`          |
+| How many participants, access codes, exam window | Assessment | Not visible to design                     |
+| Actual time limit chosen by examiner             | Assessment | Design may provide only recommended value |
+| Reporting & scoring                              | Assessment | Uses snapshot only                        |
+
+### 4.4 Runtime Sequence
+
+1.  `Assessment` → `design.materializeTemplate({ templateId, variantCount })`
+2.  `Assessment` stores returned `TestContentPackage` as the session snapshot.
+3.  All subsequent operations use the assessment snapshot only:
+    *   Question rendering
+    *   Answer evaluation
+    *   Scoring
+    *   Reporting
+
+### 4.5 Benefits
+
+*   **Single cross-module interaction**
+*   **No assessment concerns leaking into design**
+*   **Frozen snapshot: later design edits do not affect existing sessions**
+*   **Design can evolve internally (new template types, new composition rules) without modifying assessment**
+
+This is the correct boundary for your goals: design stays volatile, assessment stays stable.
 
 ---
 
