@@ -16,9 +16,9 @@ export const DashboardLayout = ({ children }: Props) => {
   }
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10">
+    <div className="min-h-screen bg-gradient-to-br from-primary/10 via-background to-accent/10 flex flex-col">
       <header className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-        <div className="container flex h-16 items-center justify-between px-4">
+        <div className="container mx-auto flex h-16 items-center justify-between px-6">
           <h1 className="text-2xl font-bold text-primary">ExamForge</h1>
           <div className="flex items-center gap-4">
             <span className="text-sm text-muted-foreground">
@@ -30,8 +30,10 @@ export const DashboardLayout = ({ children }: Props) => {
           </div>
         </div>
       </header>
-      <main className="container px-4 py-8">
-        {children}
+      <main className="flex-1 px-6 py-8">
+        <div className="max-w-7xl mx-auto">
+          {children}
+        </div>
       </main>
     </div>
   )
