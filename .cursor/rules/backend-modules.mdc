@@ -1,0 +1,278 @@
+---
+
+---
+This document outlines the standard architectural rules for the backend modules.
+---
+
+# Vertical Slice Architecture Guidelines (Express + TypeScript)
+
+## 1. General Philosophy
+
+- **Functional over OOP**: Favor pure functions and closures over classes and `this`
+- **Type Definitions**: Use `type` aliases instead of `interface` for clarity and consistency
+- **Error Handling**: Use `Result<T, E>` discriminated unions for all expected failure states. Avoid throwing exceptions for domain errors
+  - **Pattern**: `{ ok: true, value: T } | { ok: false, error: { type: 'ErrorType', ... } }`
+- **Framework Agnostic Core**: The Domain and Application layers must never import framework-specific types like `express` or concrete database libraries
+
+---
+
+## 2. Module Structure
+
+Each feature (e.g., `products`) is a self-contained vertical slice residing in its own module folder (`src/modules/{feature}`) with the following required files:
+
+- **`domain.ts`**: Contains pure data types (Entities, Value Objects) and error unions. No external dependencies
+- **`repository.ts`**: Defines the Repository Port (abstract types) and includes the concrete database or in-memory Adapters (implementations). These adapters are internal and not exported from the module root
+- **`useCases.ts`**: Contains use cases implemented as functional factory functions that inject dependencies
+- **`http.ts`**: The Express Adapter. Handles HTTP concerns (parsing body, setting headers) and calls the core Use Cases
+- **`index.ts`**: The Composition Root. Wires the module's dependencies and exports the public API
+
+---
+
+## 3. Dependency & Import Rules
+
+- **External Access**: External code (like `server.ts` or other modules) must only import from the module root (`src/modules/{feature}/index.ts`)
+- **Internal Hiding**: Repository implementations and internal helper functions must remain private within the module
+- **HTTP Decoupling**:
+  - The `FeatureModule` type returned by the configuration function must not contain any Express types (e.g., `Router`)
+  - The `createFeatureRouter` function should explicitly accept the configured `FeatureModule` (or its `api`) as an argument
+  - Importing `express`, `Request`, or `Response` is allowed only in the `http.ts` adapter
+
+---
+
+## 4. Configuration & Wiring
+
+### The `configureModule` Function
+
+Every module must export a single wiring function (e.g., `configureFeatureModule`) that acts as its dependency injection container.
+
+### Config Object
+
+This function must accept an optional configuration object (`FeatureModuleConfig`) to allow swapping infrastructure:
+
+- **Infrastructure**: Allows passing connection strings or client objects (e.g., `postgresConnectionString`)
+- **Stubs**: Allows overriding non-deterministic services for testing (e.g., `idGenerator?: () => string`, `now?: () => Date`)
+
+### Internal Wiring
+
+- Use the configuration to select the appropriate Repository implementation (Real DB vs. In-Memory)
+- Instantiate Use Cases by injecting the chosen Repository and necessary services
+
+### Return Value
+
+The function returns the initialized `FeatureModule` (containing the Public API), ready for use by the Server or Test suite.
+
+---
+
+## 5. Unit Testing Strategy
+
+- **Test the Module, Not the Adapter**: Write tests against the Public API returned by `configureFeatureModule`. Avoid testing the HTTP layer for business logic
+- **No Mocks (for Repositories)**: Utilize the In-Memory repository adapter for all unit/integration tests to test the true flow of the application without complex mocking frameworks
+- **Determinism**: Use the configuration object to inject fixed values for IDs and Dates in tests
+
+---
+
+## 6. Detailed Code Examples
+
+### 6.1. Application Layer (Use Case Implementation)
+
+Shows dependency injection, domain constraint checks, and functional error handling using `Result`.
+
+```typescript
+// src/modules/{feature}/application.ts snippet
+import { ok, err, Result } from '../../shared/types';
+// ... other imports
+
+type UseCaseDependencies = {
+  featureRepo: FeatureRepository;
+  idGenerator: () => string;
+};
+
+export type CreateResource = (cmd: ResourceCommand) => Promise<Result<Resource, ResourceError>>;
+
+export const createResource = ({ featureRepo, idGenerator }: UseCaseDependencies): CreateResource => {
+  return async (command) => {
+    // 1. Check Constraints
+    const existing = await featureRepo.findByUniqueId(command.uniqueKey);
+    if (existing) {
+      return err({ type: 'ResourceConflict', key: command.uniqueKey });
+    }
+
+    // 2. Construct Entity & Persist
+    const newResource: Resource = { id: idGenerator(), ...command };
+    await featureRepo.save(newResource);
+
+    // 3. Success
+    return ok(newResource);
+  };
+};
+```
+
+---
+
+### 6.2. Repository Port and In-Memory Adapter
+
+Shows the internal contract (`FeatureRepository`) and a real, testable implementation.
+
+```typescript
+// src/modules/{feature}/repository.ts snippet
+import { Resource } from './domain';
+
+// --- Port (Internal Contract) ---
+export type FeatureRepository = {
+  save: (resource: Resource) => Promise<void>;
+  findByUniqueId: (key: string) => Promise<Resource | null>;
+};
+
+// --- Adapter: In-Memory Implementation ---
+export const createInMemoryRepository = (): FeatureRepository => {
+  const store = new Map<string, Resource>();
+
+  return {
+    save: async (resource) => {
+      // Stores resource entity
+      store.set(resource.id, resource);
+    },
+    findByUniqueId: async (key) => {
+      // Logic to find by key within the store
+      for (const resource of store.values()) {
+        if (resource.uniqueKey === key) return resource;
+      }
+      return null;
+    },
+  };
+};
+```
+
+---
+
+### 6.3. HTTP Adapter & Error Mapping
+
+Shows how the Express layer maps the internal `Result` type to standard HTTP status codes.
+
+```typescript
+// src/modules/{feature}/http.ts snippet
+import { Router, Request, Response } from 'express';
+import { FeatureModule } from './index';
+
+export const createFeatureRouter = (module: FeatureModule): Router => {
+  const router = Router();
+  const { api } = module;
+
+  router.post('/', async (req: Request, res: Response): Promise<void> => {
+    // Assumes body validation is done here or by middleware
+    const result = await api.createResource(req.body);
+
+    if (result.ok) {
+       res.status(201).json(result.value);
+       return;
+    }
+
+    // Map Domain Errors to HTTP Status Codes
+    switch (result.error.type) {
+      case 'ResourceConflict':
+        res.status(409).json({ error: 'Resource already exists' });
+        return;
+      case 'InvalidParameter':
+        res.status(400).json({ error: 'Input parameter is invalid' });
+        return;
+    }
+  });
+
+  return router;
+};
+```
+
+---
+
+### 6.4. Configuration Pattern (index.ts)
+
+Shows dependency resolution, feature switching (DB vs. Memory), and injection.
+
+```typescript
+// src/modules/{feature}/index.ts snippet
+// ... imports (uuid, repositories, use cases)
+
+export type FeatureModuleConfig = {
+  postgresConnectionString?: string;
+  idGenerator?: () => string;
+};
+
+export const configureFeatureModule = (config: FeatureModuleConfig = {}): FeatureModule => {
+  // 1. Choose Repo based on config
+  let repo: FeatureRepository;
+  if (config.postgresConnectionString) {
+    repo = createPostgresRepository(config.postgresConnectionString); // Stubbed implementation
+  } else {
+    repo = createInMemoryRepository();
+  }
+
+  // 2. Resolve Services
+  const idGenerator = config.idGenerator ?? uuidv4;
+
+  // 3. Inject & Return API
+  const createResource = createResource({ repo, idGenerator });
+
+  return { api: { createResource } };
+};
+```
+### 6.5 Testing the Module's Public API
+The test setup is clean, explicitly stating the use of the in-memory persistence layer.
+
+```typescript
+import { configureUsersModule } from './index';
+
+// Tests run against the Public API of the module, NOT the HTTP layer.
+// This makes them extremely fast and decoupled from Express.
+
+describe('Users Module (Vertical Slice)', () => {
+  it('should register a new user successfully', async () => {
+    // 1. Arrange (Wire up the module in isolation)
+    const users = configureUsersModule({
+      // We can stub technical details for deterministic tests
+      idGenerator: () => 'fixed-id-123',
+      now: () => new Date('2023-01-01T00:00:00Z')
+    });
+
+    // 2. Act (Call the use case directly)
+    const result = await users.api.registerUser({ email: 'test@example.com' });
+
+    // 3. Assert
+    if (!result.ok) throw new Error('Expected success');
+    
+    expect(result.value).toEqual({
+      id: 'fixed-id-123',
+      email: 'test@example.com',
+      createdAt: new Date('2023-01-01T00:00:00Z')
+    });
+  });
+
+  it('should prevent duplicate emails', async () => {
+    // 1. Arrange
+    const users = configureUsersModule(); // Uses In-Memory repo by default
+
+    // 2. Act
+    await users.api.registerUser({ email: 'alice@example.com' });
+    const result = await users.api.registerUser({ email: 'alice@example.com' });
+
+    // 3. Assert
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toEqual({ 
+        type: 'EmailAlreadyTaken', 
+        email: 'alice@example.com' 
+      });
+    }
+  });
+  
+  it('should validate email format', async () => {
+    const users = configureUsersModule();
+    
+    const result = await users.api.registerUser({ email: 'not-an-email' });
+    
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+        expect(result.error.type).toBe('InvalidEmail');
+    }
+  });
+});
+```
