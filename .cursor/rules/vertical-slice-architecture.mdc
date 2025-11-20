@@ -1,7 +1,11 @@
 ---
-
+globs: backend*/**/*.ts
+description: Vertical Slice Architecture guidelines for Express + TypeScript modules. Defines module structure, dependency injection patterns, repository ports, and testing strategies.
+alwaysApply: false
 ---
-This document outlines the standard architectural rules for the backend modules.
+
+This document defines the Vertical Slice Architecture pattern for backend modules in Express + TypeScript. It establishes functional programming principles, module structure conventions, dependency injection patterns, and testing strategies. All backend feature modules must follow these guidelines to ensure consistency, testability, and maintainability across the codebase.
+
 ---
 
 # Vertical Slice Architecture Guidelines (Express + TypeScript)
