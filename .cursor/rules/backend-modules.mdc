@@ -34,7 +34,7 @@ Each feature (e.g., `products`) is a self-contained vertical slice residing in i
 - **Internal Hiding**: Repository implementations and internal helper functions must remain private within the module
 - **HTTP Decoupling**:
   - The `FeatureModule` type returned by the configuration function must not contain any Express types (e.g., `Router`)
-  - The `createFeatureRouter` function should explicitly accept the configured `FeatureModule` (or its `api`) as an argument
+  - The `createFeatureRouter` function should explicitly accept the configured `FeatureModule` as an argument
   - Importing `express`, `Request`, or `Response` is allowed only in the `http.ts` adapter
 
 ---
@@ -59,7 +59,7 @@ This function must accept an optional configuration object (`FeatureModuleConfig
 
 ### Return Value
 
-The function returns the initialized `FeatureModule` (containing the Public API), ready for use by the Server or Test suite.
+The function returns an object containing all initialized use cases, which form the module's Public API. This is ready for use by the Server or Test suite. Each use case is already bound with its required dependencies.
 
 ---
 
@@ -75,37 +75,89 @@ The function returns the initialized `FeatureModule` (containing the Public API)
 
 ### 6.1. Application Layer (Use Case Implementation)
 
-Shows dependency injection, domain constraint checks, and functional error handling using `Result`.
+Each use case declares only the dependencies it actually needs. This minimizes coupling and makes testing easier.
 
 ```typescript
-// src/modules/{feature}/application.ts snippet
+// src/modules/{feature}/useCases.ts snippet
 import { ok, err, Result } from '../../shared/types';
-// ... other imports
+import { FeatureRepository } from './repository';
+import { Resource, ResourceError, ResourceCommand } from './domain';
 
-type UseCaseDependencies = {
-  featureRepo: FeatureRepository;
+// Each use case declares its own minimal dependencies
+type CreateResourceDeps = {
+  repo: FeatureRepository;
   idGenerator: () => string;
+  now: () => Date;
 };
 
-export type CreateResource = (cmd: ResourceCommand) => Promise<Result<Resource, ResourceError>>;
+type UpdateResourceDeps = {
+  repo: FeatureRepository;
+  now: () => Date;
+  // Note: No idGenerator needed for updates
+};
 
-export const createResource = ({ featureRepo, idGenerator }: UseCaseDependencies): CreateResource => {
-  return async (command) => {
+type DeleteResourceDeps = {
+  repo: FeatureRepository;
+  // Minimal dependencies - only needs repo
+};
+
+// Use case with dependency injection and functional error handling
+export const createResource = ({ repo, idGenerator, now }: CreateResourceDeps) => {
+  return async (command: ResourceCommand): Promise<Result<Resource, ResourceError>> => {
     // 1. Check Constraints
-    const existing = await featureRepo.findByUniqueId(command.uniqueKey);
+    const existing = await repo.findByUniqueId(command.uniqueKey);
     if (existing) {
       return err({ type: 'ResourceConflict', key: command.uniqueKey });
     }
 
     // 2. Construct Entity & Persist
-    const newResource: Resource = { id: idGenerator(), ...command };
-    await featureRepo.save(newResource);
+    const newResource: Resource = { 
+      id: idGenerator(), 
+      ...command,
+      createdAt: now()
+    };
+    await repo.save(newResource);
 
     // 3. Success
     return ok(newResource);
   };
 };
+
+export const updateResource = ({ repo, now }: UpdateResourceDeps) => {
+  return async (command: UpdateCommand): Promise<Result<Resource, ResourceError>> => {
+    const existing = await repo.findById(command.id);
+    if (!existing) {
+      return err({ type: 'NotFound', id: command.id });
+    }
+    
+    const updated = { ...existing, ...command, updatedAt: now() };
+    await repo.save(updated);
+    return ok(updated);
+  };
+};
+
+export const deleteResource = ({ repo }: DeleteResourceDeps) => {
+  return async (id: string): Promise<Result<void, ResourceError>> => {
+    const existing = await repo.findById(id);
+    if (!existing) {
+      return err({ type: 'NotFound', id });
+    }
+    
+    await repo.delete(id);
+    return ok(undefined);
+  };
+};
 ```
+
+**Design Principle: Minimal Dependencies**
+
+Each use case should declare only the dependencies it actually needs. This keeps use cases loosely coupled, easier to test, and more maintainable. For example:
+- A `createResource` use case needs: `repo`, `idGenerator`, `now`
+- An `updateResource` use case needs: `repo`, `now` (no ID generation)
+- A `deleteResource` use case needs: `repo` only
+- A `sendNotification` use case might not need the repo at all
+
+TypeScript will enforce that you provide the correct dependencies when wiring the module.
 
 ---
 
@@ -156,11 +208,10 @@ import { FeatureModule } from './index';
 
 export const createFeatureRouter = (module: FeatureModule): Router => {
   const router = Router();
-  const { api } = module;
 
   router.post('/', async (req: Request, res: Response): Promise<void> => {
     // Assumes body validation is done here or by middleware
-    const result = await api.createResource(req.body);
+    const result = await module.createResource(req.body);
 
     if (result.ok) {
        res.status(201).json(result.value);
@@ -178,6 +229,23 @@ export const createFeatureRouter = (module: FeatureModule): Router => {
     }
   });
 
+  router.put('/:id', async (req: Request, res: Response): Promise<void> => {
+    const result = await module.updateResource({ id: req.params.id, ...req.body });
+
+    if (result.ok) {
+      res.status(200).json(result.value);
+      return;
+    }
+
+    switch (result.error.type) {
+      case 'NotFound':
+        res.status(404).json({ error: 'Resource not found' });
+        return;
+      default:
+        res.status(400).json({ error: 'Bad request' });
+    }
+  });
+
   return router;
 };
 ```
@@ -186,55 +254,72 @@ export const createFeatureRouter = (module: FeatureModule): Router => {
 
 ### 6.4. Configuration Pattern (index.ts)
 
-Shows dependency resolution, feature switching (DB vs. Memory), and injection.
+Shows dependency resolution, feature switching (DB vs. Memory), and selective injection where each use case receives only the dependencies it needs.
 
 ```typescript
-// src/modules/{feature}/index.ts snippet
-// ... imports (uuid, repositories, use cases)
+// src/modules/{feature}/index.ts
+import { v4 as uuidv4 } from 'uuid';
+import * as useCases from './useCases';
+import { createInMemoryRepository, createPostgresRepository } from './repository';
 
+// Configuration accepts infrastructure settings and test stubs
 export type FeatureModuleConfig = {
+  // Infrastructure - connection string triggers real DB, otherwise in-memory
   postgresConnectionString?: string;
+  
+  // Test stubs for deterministic testing
   idGenerator?: () => string;
+  now?: () => Date;
 };
 
-export const configureFeatureModule = (config: FeatureModuleConfig = {}): FeatureModule => {
-  // 1. Choose Repo based on config
-  let repo: FeatureRepository;
-  if (config.postgresConnectionString) {
-    repo = createPostgresRepository(config.postgresConnectionString); // Stubbed implementation
-  } else {
-    repo = createInMemoryRepository();
-  }
+export const configureFeatureModule = (config: FeatureModuleConfig = {}) => {
+  // 1. Repository selection is internal - defaults to in-memory
+  const repo = config.postgresConnectionString 
+    ? createPostgresRepository(config.postgresConnectionString)
+    : createInMemoryRepository();
 
-  // 2. Resolve Services
+  // 2. Resolve services with sensible defaults
   const idGenerator = config.idGenerator ?? uuidv4;
+  const now = config.now ?? (() => new Date());
 
-  // 3. Inject & Return API
-  const createResource = createResource({ repo, idGenerator });
-
-  return { api: { createResource } };
+  // 3. Wire use cases - each gets exactly the dependencies it needs
+  //    TypeScript ensures type safety for each use case's requirements
+  return {
+    createResource: useCases.createResource({ repo, idGenerator, now }),
+    updateResource: useCases.updateResource({ repo, now }),
+    deleteResource: useCases.deleteResource({ repo }),
+    // Adding new use cases is just one line per use case
+  };
 };
+
+// Export the module type for use in http.ts and tests
+export type FeatureModule = ReturnType<typeof configureFeatureModule>;
 ```
-### 6.5 Testing the Module's Public API
-The test setup is clean, explicitly stating the use of the in-memory persistence layer.
+
+**Key Benefits:**
+- Each use case declares only its required dependencies
+- Repository selection is encapsulated within the module
+- Adding new use cases requires minimal boilerplate (1-2 lines)
+- Type inference keeps types synchronized automatically
+- In-memory by default makes testing effortless
+### 6.5. Testing the Module's Public API
+
+Tests run against the public API of the module, NOT the HTTP layer. This makes them extremely fast, deterministic, and decoupled from Express. The in-memory repository is used automatically when no connection string is provided.
 
 ```typescript
 import { configureUsersModule } from './index';
 
-// Tests run against the Public API of the module, NOT the HTTP layer.
-// This makes them extremely fast and decoupled from Express.
-
 describe('Users Module (Vertical Slice)', () => {
   it('should register a new user successfully', async () => {
-    // 1. Arrange (Wire up the module in isolation)
+    // 1. Arrange - Wire up the module with test stubs for determinism
     const users = configureUsersModule({
-      // We can stub technical details for deterministic tests
       idGenerator: () => 'fixed-id-123',
       now: () => new Date('2023-01-01T00:00:00Z')
+      // No connection string = automatic in-memory repository
     });
 
-    // 2. Act (Call the use case directly)
-    const result = await users.api.registerUser({ email: 'test@example.com' });
+    // 2. Act - Call the use case directly
+    const result = await users.registerUser({ email: 'test@example.com' });
 
     // 3. Assert
     if (!result.ok) throw new Error('Expected success');
@@ -247,14 +332,14 @@ describe('Users Module (Vertical Slice)', () => {
   });
 
   it('should prevent duplicate emails', async () => {
-    // 1. Arrange
-    const users = configureUsersModule(); // Uses In-Memory repo by default
+    // Arrange - default config uses in-memory repo
+    const users = configureUsersModule();
 
-    // 2. Act
-    await users.api.registerUser({ email: 'alice@example.com' });
-    const result = await users.api.registerUser({ email: 'alice@example.com' });
+    // Act - attempt duplicate registration
+    await users.registerUser({ email: 'alice@example.com' });
+    const result = await users.registerUser({ email: 'alice@example.com' });
 
-    // 3. Assert
+    // Assert
     expect(result.ok).toBe(false);
     if (!result.ok) {
       expect(result.error).toEqual({ 
@@ -267,12 +352,41 @@ describe('Users Module (Vertical Slice)', () => {
   it('should validate email format', async () => {
     const users = configureUsersModule();
     
-    const result = await users.api.registerUser({ email: 'not-an-email' });
+    const result = await users.registerUser({ email: 'not-an-email' });
     
     expect(result.ok).toBe(false);
     if (!result.ok) {
-        expect(result.error.type).toBe('InvalidEmail');
+      expect(result.error.type).toBe('InvalidEmail');
+    }
+  });
+  
+  it('should update user profile', async () => {
+    const users = configureUsersModule({
+      idGenerator: () => 'user-1',
+      now: () => new Date('2023-01-01T00:00:00Z')
+    });
+    
+    // Create a user first
+    const created = await users.registerUser({ email: 'bob@example.com' });
+    if (!created.ok) throw new Error('Setup failed');
+    
+    // Update the user (note: updateUser doesn't need idGenerator)
+    const result = await users.updateUser({ 
+      id: 'user-1', 
+      displayName: 'Bob Smith' 
+    });
+    
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.displayName).toBe('Bob Smith');
     }
   });
 });
 ```
+
+**Testing Benefits:**
+- No mocking frameworks needed - real in-memory repository
+- Deterministic tests via injected `idGenerator` and `now`
+- Fast execution (no database, no HTTP layer)
+- Tests document the actual API contract
+- Easy to set up and maintain
