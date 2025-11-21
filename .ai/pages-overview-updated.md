@@ -28,14 +28,19 @@ Based on the updated Product Requirements Document (PRD) with local question poo
 
 ### 6. Question Bank List Page
 **Description:** This screen displays a list of all questions in the examiner's global question bank. Questions exist independently without being assigned to any pool. The page allows examiners to:
-- View all questions with their content preview, number of answers, and points
+- View all questions with their content preview, number of answers, points, and **tags**
 - Create new questions
 - Edit existing questions
 - Delete questions (blocked if the question is used in any template)
-- Search and filter questions
+- Search and filter questions by text content
+- **Filter questions by tags** (single or multiple tags)
+- View tag statistics (how many questions have each tag)
 
 > [!NOTE]
 > Questions in the bank are not organized into pools at this level. Pool assignment happens within individual test templates.
+
+> [!TIP]
+> **Tags** provide a flexible way to organize and filter questions. Examples: `#algebra`, `#easy`, `#matura2024`, `#5min`
 
 **Related User Story:** `US-004`
 
@@ -47,9 +52,17 @@ Based on the updated Product Requirements Document (PRD) with local question poo
 - 2 to 6 answer options (dynamic list)
 - Selection of the correct answer (radio buttons)
 - Points value (number input)
+- **Tags input field** with autocomplete/suggestions
+  - Shows existing tags as user types
+  - Allows adding multiple tags
+  - Visual tag chips/badges for added tags
+  - Easy removal of tags
 - Validation to ensure at least 2 answers and exactly one correct answer
 
 When editing a question, the system shows a warning if the question is used in any templates, as changes will be reflected in all templates using this question.
+
+> [!TIP]
+> **Tag Autocomplete:** As you type, the system suggests existing tags to maintain consistency (e.g., typing "alg" suggests "#algebra", "#algorithm")
 
 **Related User Story:** `US-004`
 
@@ -95,9 +108,14 @@ Actions available:
 #### Question Assignment Section
 **Description:** Interface for assigning questions from the global bank to local pools. Features:
 - List/grid view of questions from the global question bank
-- Filter and search capabilities
+- **Tag-based filtering** to quickly find relevant questions
+  - Multi-select tag filter
+  - Shows question count per tag
+  - Can combine multiple tags (AND/OR logic) (optional)
+- Text search capabilities
 - For each question, show:
   - Question content preview
+  - **Tags** (as visual badges/chips)
   - Current pool assignment in this template (if any)
   - Dropdown/selector to assign to a pool or mark as unassigned
 - Visual indicator if a question is already assigned to a pool in this template
@@ -165,3 +183,4 @@ Actions available:
 3. **Question Assignment**: Questions are assigned from the bank to pools within specific templates
 4. **Reusability**: Same question can be used across multiple templates in different pools
 5. **Single Pool Constraint**: Within one template, a question can only belong to one pool
+6. **Tags**: Questions can have multiple tags for flexible organization and filtering

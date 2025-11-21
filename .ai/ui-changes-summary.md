@@ -1,7 +1,7 @@
 # UI Changes Summary - Question Pool Architecture Update
 
 ## Overview
-This document summarizes the UI changes required to support the new question pool architecture where pools are local to test templates and questions live in a global bank.
+This document summarizes the UI changes required to support the new question pool architecture where pools are local to test templates and questions live in a global bank. Additionally, it covers the tagging system for organizing and filtering questions.
 
 ## Architecture Change
 
@@ -33,6 +33,7 @@ graph TB
 | **Pool Management** | Separate pool management screens | Pool management integrated into template editor |
 | **Question Reusability** | Limited by pool structure | Same question can be in multiple templates, different pools |
 | **Within Template** | N/A | Question can only be in one pool per template |
+| **Question Organization** | Organized by pools | Organized by tags (flexible, multi-dimensional) |
 
 ## Screen-by-Screen Changes
 
@@ -53,9 +54,11 @@ graph TB
 
 **Key Features:**
 - Display all questions in the examiner's global bank
-- Questions shown with preview, points, number of answers
+- Questions shown with preview, points, number of answers, **and tags**
 - Create, edit, delete operations
 - Search and filter capabilities
+- **Tag-based filtering** (single or multiple tags)
+- **Tag statistics** showing question count per tag
 - Delete protection if question is used in any template
 - No pool organization at this level
 
@@ -69,6 +72,11 @@ graph TB
 - 2-6 answer options (dynamic)
 - Correct answer selection
 - Points assignment
+- **Tags input with autocomplete**
+  - Suggests existing tags as user types
+  - Multiple tag selection
+  - Visual tag chips/badges
+  - Easy tag removal
 - Validation (min 2 answers, exactly 1 correct)
 - Warning when editing questions used in templates
 
@@ -111,11 +119,16 @@ This becomes a comprehensive editor with three main sections:
 ##### 3. Question Assignment
 **Features:**
 - Browse questions from global bank
+- **Tag-based filtering** for quick question discovery
+  - Multi-select tag filter UI
+  - Question count per tag
+  - AND/OR filter logic
+- Text search
 - Assign questions to local pools
 - Visual indicators for current assignments
+- **Display tags** on each question card/row
 - Move questions between pools (removes from first, adds to second)
 - Constraint enforcement: one pool per question per template
-- Search and filter questions
 
 **Key Validations:**
 - Template must have ≥1 pool
@@ -219,6 +232,9 @@ Template "Math Exam"
 - ✅ Easier to manage large question banks
 - ✅ Pool organization specific to each template's needs
 - ✅ Prevents accidental question duplication within a template
+- ✅ **Tag-based filtering** enables quick question discovery
+- ✅ **Multi-dimensional organization** (one question can have multiple tags)
+- ✅ **Autocomplete** maintains tag consistency across the bank
 
 ### Potential Challenges
 - ⚠️ Template editor becomes more complex (3 sections vs. 1)
@@ -236,7 +252,13 @@ Template "Math Exam"
 ## Testing Checklist
 
 - [ ] Can create questions in global bank
+- [ ] **Can add tags to questions** (multiple tags per question)
+- [ ] **Tag autocomplete suggests existing tags**
+- [ ] **Can filter questions by tags** in Question Bank
+- [ ] **Can filter questions by tags** when assigning to pools
+- [ ] **Tag statistics display correctly** (question count per tag)
 - [ ] Can edit questions in bank (changes reflect in templates)
+- [ ] **Editing question tags updates across all templates**
 - [ ] Cannot delete questions used in templates
 - [ ] Can create template with local pools
 - [ ] Can assign questions from bank to pools

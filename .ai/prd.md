@@ -8,6 +8,7 @@ Egzaminatorzy (nauczyciele, trenerzy) stają przed wyzwaniem czasochłonnego i p
 ## 3. Wymagania funkcjonalne
 - FR-01: System Kont Egzaminatorów: Rejestracja, logowanie i odzyskiwanie hasła dla egzaminatorów.
 - FR-02: Zarządzanie Bankiem Pytań: Egzaminatorzy mogą tworzyć, edytować i usuwać pytania jednokrotnego wyboru w globalnym banku pytań. Pytania mogą istnieć niezależnie, bez przypisania do żadnej puli. Pytania składają się z treści, od 2 do 6 odpowiedzi tekstowych, wskazania prawidłowej odpowiedzi i liczby punktów. System blokuje usunięcie pytania, jeśli jest ono używane w jakimkolwiek szablonie. Edycja pytania w banku jest widoczna we wszystkich szablonach, które używają tego pytania.
+- FR-02A: Tagowanie Pytań: Każde pytanie w banku może mieć przypisane dowolną liczbę tagów (w tym zero). Tagi są tworzone dynamicznie przez egzaminatorów podczas tworzenia lub edycji pytań. Egzaminatorzy mogą filtrować pytania w banku według tagów. Przy dodawaniu pytań do puli w szablonie dostępne są filtry tagów ułatwiające wyszukiwanie odpowiednich pytań. System sugeruje istniejące tagi podczas wpisywania, aby zachować spójność nazewnictwa.
 - FR-03: Zarządzanie Pulami Pytań w Szablonie: Pule pytań są lokalne dla każdego szablonu testu. Egzaminator tworzy pule w kontekście szablonu i przypisuje do nich pytania z globalnego banku pytań. W ramach jednego szablonu dane pytanie może należeć maksymalnie do jednej puli. Pytanie może być używane w wielu szablonach, ale w każdym szablonie może być przypisane tylko do jednej puli. Przeniesienie pytania z jednej puli do drugiej w tym samym szablonie usuwa je z pierwszej puli i dodaje do drugiej. Usunięcie puli ze szablonu powoduje, że pytania stają się nieprzypisane w kontekście tego szablonu.
 - FR-04: Zarządzanie Szablonami Testów: Egzaminatorzy mogą tworzyć szablony testów, które muszą zawierać co najmniej jedną pulę pytań. W szablonie egzaminator definiuje lokalne pule, przypisuje do nich pytania z banku pytań oraz określa, ile pytań ma zostać losowo wybranych z każdej puli. System blokuje zapisanie szablonu, jeśli liczba pytań do wylosowania z danej puli jest większa niż liczba pytań dostępnych w tej puli.
 - FR-05: Uruchamianie Testu i Zarządzanie Uczestnikami: Egzaminator może uruchomić test na podstawie szablonu, wkleić listę identyfikatorów uczestników i otrzymać dla każdego unikalny kod dostępu. Możliwe jest również ustawienie limitu czasu dla testu.
@@ -71,9 +72,12 @@ Egzaminatorzy (nauczyciele, trenerzy) stają przed wyzwaniem czasochłonnego i p
   1. Mogę tworzyć nowe pytania w banku pytań, podając treść pytania, od 2 do 6 odpowiedzi, wskazując poprawną odpowiedź i liczbę punktów.
   2. System waliduje, że co najmniej dwie odpowiedzi zostały podane i dokładnie jedna jest oznaczona jako poprawna.
   3. Pytania mogą istnieć w banku bez przypisania do żadnej puli.
-  4. Mogę edytować pytanie w banku, a zmiany są widoczne we wszystkich szablonach, które używają tego pytania.
-  5. System blokuje usunięcie pytania, jeśli jest ono używane w jakimkolwiek szablonie (w jakiejkolwiek puli).
-  6. Po zapisaniu, pytanie jest widoczne w banku pytań.
+  4. Mogę przypisać do pytania dowolną liczbę tagów (lub pozostawić pytanie bez tagów).
+  5. Podczas wpisywania tagów system sugeruje istniejące tagi, aby zachować spójność nazewnictwa.
+  6. W widoku banku pytań mogę filtrować pytania według jednego lub wielu tagów.
+  7. Mogę edytować pytanie w banku (w tym jego tagi), a zmiany są widoczne we wszystkich szablonach, które używają tego pytania.
+  8. System blokuje usunięcie pytania, jeśli jest ono używane w jakimkolwiek szablonie (w jakiejkolwiek puli).
+  9. Po zapisaniu, pytanie jest widoczne w banku pytań.
 
 - ID: US-005
 - Tytuł: Tworzenie Puli Pytań w Szablonie
@@ -83,9 +87,10 @@ Egzaminatorzy (nauczyciele, trenerzy) stają przed wyzwaniem czasochłonnego i p
   2. Nazwa puli musi być unikalna w obrębie danego szablonu.
   3. Mogę stworzyć pulę bez pytań (pustą pulę).
   4. Mogę przypisać pytania z banku pytań do puli w szablonie.
-  5. W ramach jednego szablonu dane pytanie może należeć tylko do jednej puli.
-  6. Mogę przenieść pytanie z jednej puli do drugiej w tym samym szablonie (usuwa z pierwszej, dodaje do drugiej).
-  7. Po usunięciu puli ze szablonu, pytania przypisane do tej puli stają się nieprzypisane w kontekście tego szablonu.
+  5. Przy dodawaniu pytań do puli mogę filtrować bank pytań według tagów, aby łatwiej znaleźć odpowiednie pytania.
+  6. W ramach jednego szablonu dane pytanie może należeć tylko do jednej puli.
+  7. Mogę przenieść pytanie z jednej puli do drugiej w tym samym szablonie (usuwa z pierwszej, dodaje do drugiej).
+  8. Po usunięciu puli ze szablonu, pytania przypisane do tej puli stają się nieprzypisane w kontekście tego szablonu.
 
 - ID: US-006
 - Tytuł: Tworzenie Szablonu Testu
