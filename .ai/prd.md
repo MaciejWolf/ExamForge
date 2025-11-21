@@ -1,15 +1,15 @@
 # Dokument wymagań produktu (PRD) - ExamForge
 ## 1. Przegląd produktu
-ExamForge to aplikacja webowa przeznaczona do tworzenia, zarządzania i przeprowadzania testów z dynamicznym doborem pytań. Celem produktu jest usprawnienie procesu egzaminowania dla nauczycieli, szkoleniowców i innych edukatorów. Wersja MVP (Minimum Viable Product) skupi się na dostarczeniu kluczowej funkcjonalności: tworzenia pul pytań jednokrotnego wyboru, definiowania szablonów testów, przeprowadzania sesji testowych dla uczestników za pomocą unikalnych kodów oraz generowania podstawowych raportów z wynikami. Aplikacja w pierwszej wersji będzie skierowana na rynek ogólny, bez integracji z zewnętrznymi systemami.
+ExamForge to aplikacja webowa przeznaczona do tworzenia, zarządzania i przeprowadzania testów z dynamicznym doborem pytań. Celem produktu jest usprawnienie procesu egzaminowania dla nauczycieli, szkoleniowców i innych edukatorów. Wersja MVP (Minimum Viable Product) skupi się na dostarczeniu kluczowej funkcjonalności: zarządzania globalnym bankiem pytań jednokrotnego wyboru, tworzenia szablonów testów z lokalnymi pulami pytań, przeprowadzania sesji testowych dla uczestników za pomocą unikalnych kodów oraz generowania podstawowych raportów z wynikami. Aplikacja w pierwszej wersji będzie skierowana na rynek ogólny, bez integracji z zewnętrznymi systemami.
 
 ## 2. Problem użytkownika
 Egzaminatorzy (nauczyciele, trenerzy) stają przed wyzwaniem czasochłonnego i pracochłonnego procesu tworzenia, dystrybucji i oceniania testów. Ręczne przygotowywanie wielu wariantów egzaminu w celu zapewnienia uczciwości jest nieefektywne, a proces oceniania podatny na błędy i opóźnienia. Z drugiej strony, Uczestnicy (studenci, kursanci) potrzebują prostego, intuicyjnego i niezawodnego narzędzia do rozwiązywania testów, które zapewni im natychmiastową informację zwrotną o uzyskanych wynikach. Brak zautomatyzowanych narzędzi prowadzi do frustracji po obu stronach, obniża efektywność nauczania i utrudnia analizę postępów.
 
 ## 3. Wymagania funkcjonalne
 - FR-01: System Kont Egzaminatorów: Rejestracja, logowanie i odzyskiwanie hasła dla egzaminatorów.
-- FR-02: Zarządzanie Pulami Pytań: Egzaminatorzy mogą tworzyć, edytować i usuwać zbiory pytań pogrupowane tematycznie.
-- FR-03: Zarządzanie Pytaniami: Egzaminatorzy mogą dodawać do puli pytania jednokrotnego wyboru, składające się z treści, od 2 do 6 odpowiedzi tekstowych, wskazania prawidłowej odpowiedzi i liczby punktów.
-- FR-04: Zarządzanie Szablonami Testów: Egzaminatorzy mogą tworzyć szablony testów, definiując, ile pytań ma zostać losowo wybranych z poszczególnych pul.
+- FR-02: Zarządzanie Bankiem Pytań: Egzaminatorzy mogą tworzyć, edytować i usuwać pytania jednokrotnego wyboru w globalnym banku pytań. Pytania mogą istnieć niezależnie, bez przypisania do żadnej puli. Pytania składają się z treści, od 2 do 6 odpowiedzi tekstowych, wskazania prawidłowej odpowiedzi i liczby punktów. System blokuje usunięcie pytania, jeśli jest ono używane w jakimkolwiek szablonie. Edycja pytania w banku jest widoczna we wszystkich szablonach, które używają tego pytania.
+- FR-03: Zarządzanie Pulami Pytań w Szablonie: Pule pytań są lokalne dla każdego szablonu testu. Egzaminator tworzy pule w kontekście szablonu i przypisuje do nich pytania z globalnego banku pytań. W ramach jednego szablonu dane pytanie może należeć maksymalnie do jednej puli. Pytanie może być używane w wielu szablonach, ale w każdym szablonie może być przypisane tylko do jednej puli. Przeniesienie pytania z jednej puli do drugiej w tym samym szablonie usuwa je z pierwszej puli i dodaje do drugiej. Usunięcie puli ze szablonu powoduje, że pytania stają się nieprzypisane w kontekście tego szablonu.
+- FR-04: Zarządzanie Szablonami Testów: Egzaminatorzy mogą tworzyć szablony testów, które muszą zawierać co najmniej jedną pulę pytań. W szablonie egzaminator definiuje lokalne pule, przypisuje do nich pytania z banku pytań oraz określa, ile pytań ma zostać losowo wybranych z każdej puli. System blokuje zapisanie szablonu, jeśli liczba pytań do wylosowania z danej puli jest większa niż liczba pytań dostępnych w tej puli.
 - FR-05: Uruchamianie Testu i Zarządzanie Uczestnikami: Egzaminator może uruchomić test na podstawie szablonu, wkleić listę identyfikatorów uczestników i otrzymać dla każdego unikalny kod dostępu. Możliwe jest również ustawienie limitu czasu dla testu.
 - FR-06: Interfejs Uczestnika do Rozwiązywania Testu: Uczestnicy uzyskują dostęp do testu za pomocą kodu. Test wyświetla jedno pytanie na raz, nawigację (następne/poprzednie) oraz widoczny licznik czasu. Postęp jest zapisywany automatycznie.
 - FR-07: Automatyczne Ocenianie: System automatycznie kończy test po upływie czasu i oblicza wynik na podstawie udzielonych odpowiedzi.
@@ -65,31 +65,38 @@ Egzaminatorzy (nauczyciele, trenerzy) stają przed wyzwaniem czasochłonnego i p
 
 ### Zarządzanie Treścią przez Egzaminatora
 - ID: US-004
-- Tytuł: Tworzenie Puli Pytań
-- Opis: Jako Egzaminator, chcę stworzyć nową pulę pytań, nadając jej unikalną nazwę, aby móc w niej grupować pytania z określonego tematu.
+- Tytuł: Zarządzanie Bankiem Pytań
+- Opis: Jako Egzaminator, chcę zarządzać globalnym bankiem pytań, tworząc, edytując i usuwając pytania jednokrotnego wyboru, aby mieć centralne repozytorium pytań dostępne dla wszystkich moich szablonów.
 - Kryteria akceptacji:
-  1. W panelu mogę wybrać opcję stworzenia nowej puli pytań.
-  2. Muszę podać nazwę dla nowej puli.
-  3. Nazwa puli pytań musi być unikalna w obrębie mojego konta.
-  4. Po stworzeniu, nowa pula pojawia się na liście moich pul pytań.
+  1. Mogę tworzyć nowe pytania w banku pytań, podając treść pytania, od 2 do 6 odpowiedzi, wskazując poprawną odpowiedź i liczbę punktów.
+  2. System waliduje, że co najmniej dwie odpowiedzi zostały podane i dokładnie jedna jest oznaczona jako poprawna.
+  3. Pytania mogą istnieć w banku bez przypisania do żadnej puli.
+  4. Mogę edytować pytanie w banku, a zmiany są widoczne we wszystkich szablonach, które używają tego pytania.
+  5. System blokuje usunięcie pytania, jeśli jest ono używane w jakimkolwiek szablonie (w jakiejkolwiek puli).
+  6. Po zapisaniu, pytanie jest widoczne w banku pytań.
 
 - ID: US-005
-- Tytuł: Dodawanie pytania do puli
-- Opis: Jako Egzaminator, chcę dodać nowe pytanie jednokrotnego wyboru do istniejącej puli, aby rozbudować bazę pytań.
+- Tytuł: Tworzenie Puli Pytań w Szablonie
+- Opis: Jako Egzaminator, chcę tworzyć pule pytań w kontekście szablonu testu, nadając im nazwy i przypisując do nich pytania z banku, aby organizować pytania tematycznie w ramach szablonu.
 - Kryteria akceptacji:
-  1. Mogę wybrać pulę pytań i dodać do niej nowe pytanie.
-  2. Formularz dodawania pytania zawiera pole na treść pytania, od 2 do 6 pól na odpowiedzi, przełącznik do zaznaczenia poprawnej odpowiedzi oraz pole na liczbę punktów.
-  3. System waliduje, że co najmniej dwie odpowiedzi zostały podane i dokładnie jedna jest oznaczona jako poprawna.
-  4. Po zapisaniu, pytanie jest widoczne na liście pytań w danej puli.
+  1. W edycji szablonu mogę stworzyć nową pulę pytań, podając jej nazwę.
+  2. Nazwa puli musi być unikalna w obrębie danego szablonu.
+  3. Mogę stworzyć pulę bez pytań (pustą pulę).
+  4. Mogę przypisać pytania z banku pytań do puli w szablonie.
+  5. W ramach jednego szablonu dane pytanie może należeć tylko do jednej puli.
+  6. Mogę przenieść pytanie z jednej puli do drugiej w tym samym szablonie (usuwa z pierwszej, dodaje do drugiej).
+  7. Po usunięciu puli ze szablonu, pytania przypisane do tej puli stają się nieprzypisane w kontekście tego szablonu.
 
 - ID: US-006
 - Tytuł: Tworzenie Szablonu Testu
-- Opis: Jako Egzaminator, chcę stworzyć szablon testu, w którym zdefiniuję, ile pytań z każdej puli ma być losowanych, aby móc wielokrotnie generować na jego podstawie testy.
+- Opis: Jako Egzaminator, chcę stworzyć szablon testu z lokalnymi pulami pytań, przypisać do nich pytania z banku i zdefiniować, ile pytań z każdej puli ma być losowanych, aby móc wielokrotnie generować na jego podstawie testy.
 - Kryteria akceptacji:
   1. Mogę stworzyć nowy szablon testu, nadając mu nazwę.
-  2. W szablonie mogę wybrać istniejące pule pytań i określić liczbę pytań do wylosowania z każdej z nich.
-  3. System uniemożliwia zdefiniowanie większej liczby pytań do wylosowania, niż jest dostępnych w danej puli.
-  4. Szablon zostaje zapisany i jest dostępny na liście szablonów.
+  2. W szablonie tworzę lokalne pule pytań (szablon musi mieć co najmniej jedną pulę).
+  3. Przypisuję pytania z banku pytań do pul w szablonie.
+  4. Dla każdej puli określam liczbę pytań do wylosowania.
+  5. System blokuje zapisanie szablonu, jeśli liczba pytań do wylosowania z danej puli jest większa niż liczba pytań dostępnych w tej puli.
+  6. Szablon zostaje zapisany i jest dostępny na liście szablonów.
 
 ### Przeprowadzanie Testu
 - ID: US-007
