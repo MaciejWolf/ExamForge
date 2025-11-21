@@ -83,9 +83,9 @@ Each use case declares only the dependencies it actually needs. This minimizes c
 
 ```typescript
 // src/modules/{feature}/useCases.ts snippet
-import { ok, err, Result } from '../../shared/types';
+import { err, ok, Result } from '../shared/result';
 import { FeatureRepository } from './repository';
-import { Resource, ResourceError, ResourceCommand } from './domain';
+import { Resource, ResourceError } from './domain';
 
 // Each use case declares its own minimal dependencies
 type CreateResourceDeps = {
@@ -105,25 +105,42 @@ type DeleteResourceDeps = {
   // Minimal dependencies - only needs repo
 };
 
+// Command types are exported for use in tests and HTTP adapters
+export type CreateResourceCommand = {
+  text: string;
+  // ... other fields
+};
+
+type ValidationResult = {
+  valid: boolean;
+  message: string;
+};
+
 // Use case with dependency injection and functional error handling
 export const createResource = ({ repo, idGenerator, now }: CreateResourceDeps) => {
-  return async (command: ResourceCommand): Promise<Result<Resource, ResourceError>> => {
-    // 1. Check Constraints
-    const existing = await repo.findByUniqueId(command.uniqueKey);
-    if (existing) {
-      return err({ type: 'ResourceConflict', key: command.uniqueKey });
+  return async (cmd: CreateResourceCommand): Promise<Result<Resource, ResourceError>> => {
+    // 1. Validate Input
+    const validation = validateResourceInput(cmd);
+    if (!validation.valid) {
+      return err({
+        type: 'InvalidResourceData',
+        message: validation.message,
+      });
     }
 
     // 2. Construct Entity & Persist
-    const newResource: Resource = { 
-      id: idGenerator(), 
-      ...command,
-      createdAt: now()
+    const timestamp = now();
+    const newResource: Resource = {
+      id: idGenerator(),
+      text: cmd.text,
+      createdAt: timestamp,
+      updatedAt: timestamp,
     };
-    await repo.save(newResource);
+
+    const savedResource = await repo.save(newResource);
 
     // 3. Success
-    return ok(newResource);
+    return ok(savedResource);
   };
 };
 
@@ -131,12 +148,12 @@ export const updateResource = ({ repo, now }: UpdateResourceDeps) => {
   return async (command: UpdateCommand): Promise<Result<Resource, ResourceError>> => {
     const existing = await repo.findById(command.id);
     if (!existing) {
-      return err({ type: 'NotFound', id: command.id });
+      return err({ type: 'ResourceNotFound', resourceId: command.id });
     }
     
     const updated = { ...existing, ...command, updatedAt: now() };
-    await repo.save(updated);
-    return ok(updated);
+    const saved = await repo.save(updated);
+    return ok(saved);
   };
 };
 
@@ -144,12 +161,24 @@ export const deleteResource = ({ repo }: DeleteResourceDeps) => {
   return async (id: string): Promise<Result<void, ResourceError>> => {
     const existing = await repo.findById(id);
     if (!existing) {
-      return err({ type: 'NotFound', id });
+      return err({ type: 'ResourceNotFound', resourceId: id });
     }
     
     await repo.delete(id);
     return ok(undefined);
   };
+};
+
+// Validation helper functions are kept private within the module
+const validateResourceInput = (input: CreateResourceCommand): ValidationResult => {
+  if (!input.text || input.text.trim().length === 0) {
+    return {
+      valid: false,
+      message: 'Resource text cannot be empty',
+    };
+  }
+  // ... more validation rules
+  return { valid: true, message: '' };
 };
 ```
 
@@ -173,30 +202,34 @@ Shows the internal contract (`FeatureRepository`) and a real, testable implement
 // src/modules/{feature}/repository.ts snippet
 import { Resource } from './domain';
 
-// --- Port (Internal Contract) ---
-export type FeatureRepository = {
-  save: (resource: Resource) => Promise<void>;
-  findByUniqueId: (key: string) => Promise<Resource | null>;
-};
-
 // --- Adapter: In-Memory Implementation ---
-export const createInMemoryRepository = (): FeatureRepository => {
+export const createInMemoryRepository = () => {
   const store = new Map<string, Resource>();
 
   return {
-    save: async (resource) => {
-      // Stores resource entity
+    save: async (resource: Resource) => {
+      // Stores resource entity and returns it
       store.set(resource.id, resource);
+      return resource;
     },
-    findByUniqueId: async (key) => {
-      // Logic to find by key within the store
-      for (const resource of store.values()) {
-        if (resource.uniqueKey === key) return resource;
-      }
-      return null;
+
+    findById: async (id: string) => {
+      return store.get(id) || null;
+    },
+
+    findAll: async () => {
+      return Array.from(store.values());
+    },
+
+    delete: async (id: string) => {
+      return store.delete(id);
     },
   };
 };
+
+// --- Port (Internal Contract) ---
+// Repository type is inferred from the implementation
+export type FeatureRepository = ReturnType<typeof createInMemoryRepository>;
 ```
 
 ---
@@ -224,12 +257,14 @@ export const createFeatureRouter = (module: FeatureModule): Router => {
 
     // Map Domain Errors to HTTP Status Codes
     switch (result.error.type) {
-      case 'ResourceConflict':
-        res.status(409).json({ error: 'Resource already exists' });
+      case 'InvalidResourceData':
+        res.status(400).json({ error: result.error.message });
         return;
-      case 'InvalidParameter':
-        res.status(400).json({ error: 'Input parameter is invalid' });
+      case 'ResourceNotFound':
+        res.status(404).json({ error: 'Resource not found' });
         return;
+      default:
+        res.status(400).json({ error: 'Bad request' });
     }
   });
 
@@ -242,8 +277,11 @@ export const createFeatureRouter = (module: FeatureModule): Router => {
     }
 
     switch (result.error.type) {
-      case 'NotFound':
+      case 'ResourceNotFound':
         res.status(404).json({ error: 'Resource not found' });
+        return;
+      case 'InvalidResourceData':
+        res.status(400).json({ error: result.error.message });
         return;
       default:
         res.status(400).json({ error: 'Bad request' });
@@ -264,7 +302,7 @@ Shows dependency resolution, feature switching (DB vs. Memory), and selective in
 // src/modules/{feature}/index.ts
 import { v4 as uuidv4 } from 'uuid';
 import * as useCases from './useCases';
-import { createInMemoryRepository, createPostgresRepository } from './repository';
+import { createInMemoryRepository } from './repository';
 
 // Configuration accepts infrastructure settings and test stubs
 export type FeatureModuleConfig = {
@@ -278,8 +316,8 @@ export type FeatureModuleConfig = {
 
 export const configureFeatureModule = (config: FeatureModuleConfig = {}) => {
   // 1. Repository selection is internal - defaults to in-memory
-  const repo = config.postgresConnectionString 
-    ? createPostgresRepository(config.postgresConnectionString)
+  const repo = config.postgresConnectionString
+    ? (() => { throw new Error('Postgres repository not implemented yet'); })()
     : createInMemoryRepository();
 
   // 2. Resolve services with sensible defaults
@@ -298,6 +336,9 @@ export const configureFeatureModule = (config: FeatureModuleConfig = {}) => {
 
 // Export the module type for use in http.ts and tests
 export type FeatureModule = ReturnType<typeof configureFeatureModule>;
+
+// Re-export domain types for convenience
+export * from './domain';
 ```
 
 **Key Benefits:**
@@ -311,78 +352,78 @@ export type FeatureModule = ReturnType<typeof configureFeatureModule>;
 Tests run against the public API of the module, NOT the HTTP layer. This makes them extremely fast, deterministic, and decoupled from Express. The in-memory repository is used automatically when no connection string is provided.
 
 ```typescript
-import { configureUsersModule } from './index';
+import { describe, it, expect } from 'vitest';
+import { configureFeatureModule } from '../index';
+import { CreateResourceCommand } from '../useCases';
 
-describe('Users Module (Vertical Slice)', () => {
-  it('should register a new user successfully', async () => {
+describe('Feature Module (Vertical Slice)', () => {
+  it('should create a new resource successfully', async () => {
     // 1. Arrange - Wire up the module with test stubs for determinism
-    const users = configureUsersModule({
+    const feature = configureFeatureModule({
       idGenerator: () => 'fixed-id-123',
       now: () => new Date('2023-01-01T00:00:00Z')
       // No connection string = automatic in-memory repository
     });
 
     // 2. Act - Call the use case directly
-    const result = await users.registerUser({ email: 'test@example.com' });
+    const input: CreateResourceCommand = {
+      text: 'Test resource',
+      // ... other required fields
+    };
+    const result = await feature.createResource(input);
 
     // 3. Assert
-    if (!result.ok) throw new Error('Expected success');
-    
-    expect(result.value).toEqual({
-      id: 'fixed-id-123',
-      email: 'test@example.com',
-      createdAt: new Date('2023-01-01T00:00:00Z')
-    });
+    expect(result.ok).toBe(true);
+
+    if (!result.ok) {
+      throw new Error('Expected success result');
+    }
+
+    const resource = result.value;
+    expect(resource.id).toBe('fixed-id-123');
+    expect(resource.text).toBe('Test resource');
+    expect(resource.createdAt).toEqual(new Date('2023-01-01T00:00:00Z'));
+    expect(resource.updatedAt).toEqual(new Date('2023-01-01T00:00:00Z'));
   });
 
-  it('should prevent duplicate emails', async () => {
+  it('should validate input data', async () => {
     // Arrange - default config uses in-memory repo
-    const users = configureUsersModule();
+    const feature = configureFeatureModule();
 
-    // Act - attempt duplicate registration
-    await users.registerUser({ email: 'alice@example.com' });
-    const result = await users.registerUser({ email: 'alice@example.com' });
+    // Act - attempt invalid input
+    const input: CreateResourceCommand = {
+      text: '', // Invalid: empty text
+      // ... other fields
+    };
+    const result = await feature.createResource(input);
 
     // Assert
     expect(result.ok).toBe(false);
     if (!result.ok) {
-      expect(result.error).toEqual({ 
-        type: 'EmailAlreadyTaken', 
-        email: 'alice@example.com' 
-      });
+      expect(result.error.type).toBe('InvalidResourceData');
+      expect(result.error.message).toContain('cannot be empty');
     }
   });
   
-  it('should validate email format', async () => {
-    const users = configureUsersModule();
-    
-    const result = await users.registerUser({ email: 'not-an-email' });
-    
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.type).toBe('InvalidEmail');
-    }
-  });
-  
-  it('should update user profile', async () => {
-    const users = configureUsersModule({
-      idGenerator: () => 'user-1',
+  it('should update resource successfully', async () => {
+    const feature = configureFeatureModule({
+      idGenerator: () => 'resource-1',
       now: () => new Date('2023-01-01T00:00:00Z')
     });
     
-    // Create a user first
-    const created = await users.registerUser({ email: 'bob@example.com' });
+    // Create a resource first
+    const created = await feature.createResource({ text: 'Original' });
     if (!created.ok) throw new Error('Setup failed');
     
-    // Update the user (note: updateUser doesn't need idGenerator)
-    const result = await users.updateUser({ 
-      id: 'user-1', 
-      displayName: 'Bob Smith' 
+    // Update the resource (note: updateResource doesn't need idGenerator)
+    const result = await feature.updateResource({ 
+      id: 'resource-1', 
+      text: 'Updated text' 
     });
     
     expect(result.ok).toBe(true);
     if (result.ok) {
-      expect(result.value.displayName).toBe('Bob Smith');
+      expect(result.value.text).toBe('Updated text');
     }
   });
 });

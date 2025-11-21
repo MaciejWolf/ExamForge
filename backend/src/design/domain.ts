@@ -1,12 +1,18 @@
-export type Tag = string;
+export type Tag = {
+  id: string;
+  name: string;
+};
 
-export type Answer = string;
+export type Answer = {
+  id: string;
+  text: string;
+};
 
 export type Question = {
     id: string;
     text: string;
     answers: Answer[];
-    correctAnswerIndex: number;
+    correctAnswerId: string;
     points: number;
     tags: Tag[];
     createdAt: Date;
@@ -17,31 +23,24 @@ export type TestTemplate = {
     id: string;
     name: string;
     description?: string;
-    pools: LocalPool[];
+    pools: Pool[];
     createdAt: Date;
     updatedAt: Date;
 };
 
-export type LocalPool = {
+export type Pool = {
     id: string;
     name: string;
     questionCount: number;
-    questionIds: string[];
-};
-
-export type CreateQuestionInput = {
-    text: string;
-    answers: Answer[];
-    correctAnswerIndex: number;
     points: number;
-    tags?: Tag[];
+    questionIds: string[];
 };
 
 export type UpdateQuestionInput = {
     text?: string;
     answers?: Answer[];
-    correctAnswerIndex?: number;
-    points?: number;
+    correctAnswerId?: string;
+    tags?: Tag[];
 };
 
 export type DesignError =
@@ -57,17 +56,3 @@ export type DesignError =
     | { type: 'QuestionNotInPool'; questionId: string; poolId: string }
     | { type: 'InvalidPoolReferences'; message: string }
     | { type: 'InsufficientQuestions'; poolId: string; required: number; available: number };
-
-export type Result<T, E> =
-    | { ok: true; value: T }
-    | { ok: false; error: E };
-
-export const ok = <T>(value: T): Result<T, never> => ({
-    ok: true,
-    value,
-});
-
-export const err = <E>(error: E): Result<never, E> => ({
-    ok: false,
-    error,
-});
