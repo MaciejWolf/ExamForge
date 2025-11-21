@@ -5,11 +5,11 @@ This page displays a list of all saved test templates created by the examiner, a
 ## Navigation
 
 - **Action:** An examiner clicks the "Create New Template" button.
-- **Destination:** The Test Template Management Page opens in a modal/form on the same page (or navigates to a dedicated creation form).
+- **Destination:** The Test Template Editor Page opens to create a new template.
 - **Action:** An examiner clicks on a test template name or "View/Edit" button.
-- **Destination:** The Test Template Management Page opens in a modal/form to view or edit the template configuration.
+- **Destination:** The Test Template Editor Page opens to view or edit the template configuration.
 - **Action:** An examiner clicks the "Edit" button on a template row.
-- **Destination:** The Test Template Management Page opens in a modal/form to edit the template name and question pool selection rules.
+- **Destination:** The Test Template Editor Page opens to edit the template.
 - **Action:** An examiner clicks the "Delete" button on a template row.
 - **Destination:** A confirmation dialog appears; upon confirmation, the template is deleted and the page refreshes.
 - **Action:** An examiner clicks the "Back to Dashboard" button or the "ExamForge" logo in the header.
@@ -40,55 +40,20 @@ The page features a persistent header with the application title and user contro
 |  +--------------------------------------------+  |
 |  | Math Final       |   3   |    25     | [View]|  |
 |  | Exam             |       |           | [Edit]|  |
-|  |                  |       |           |[Delete]|
+|  |                  |       |           |[Delete]|  |
 |  +--------------------------------------------+  |
 |  | Physics Quiz     |   2   |    15     | [View]|  |
 |  |                  |       |           | [Edit]|  |
-|  |                  |       |           |[Delete]|
+|  |                  |       |           |[Delete]|  |
 |  +--------------------------------------------+  |
 |  | Chemistry        |   4   |    30     | [View]|  |
 |  | Comprehensive    |       |           | [Edit]|  |
-|  |                  |       |           |[Delete]|
+|  |                  |       |           |[Delete]|  |
 |  +--------------------------------------------+  |
 |  | History          |   1   |    10     | [View]|  |
 |  | Midterm          |       |           | [Edit]|  |
-|  |                  |       |           |[Delete]|
+|  |                  |       |           |[Delete]|  |
 |  +--------------------------------------------+  |
-|                                                  |
-+--------------------------------------------------+
-```
-
-#### Create/Edit Template Modal
-
-```
-+--------------------------------------------------+
-|                                                  |
-|     +--------------------------------------+     |
-|     | Create New Test Template        [X] |     |
-|     +--------------------------------------+     |
-|     |                                      |     |
-|     | Template Name:                       |     |
-|     | [_______________________________]    |     |
-|     |                                      |     |
-|     | Question Pool Selection:             |     |
-|     |                                      |     |
-|     | [✓] Mathematics Basic                |     |
-|     |     Questions to draw: [10]          |     |
-|     |     (Available: 15 questions)        |     |
-|     |                                      |     |
-|     | [✓] Physics Advanced                 |     |
-|     |     Questions to draw: [5]           |     |
-|     |     (Available: 8 questions)        |     |
-|     |                                      |     |
-|     | [ ] Chemistry Foundations            |     |
-|     |     Questions to draw: [__]          |     |
-|     |     (Available: 12 questions)       |     |
-|     |                                      |     |
-|     | Total Questions: 15                  |     |
-|     |                                      |     |
-|     |           [Cancel]  [Create Template]|     |
-|     |                                      |     |
-|     +--------------------------------------+     |
 |                                                  |
 +--------------------------------------------------+
 ```
@@ -123,58 +88,161 @@ The page features a persistent header with the application title and user contro
 - **Logout Button:** A button in the header that signs the examiner out and returns them to the login page.
 - **Back to Dashboard Link:** A navigation link that returns the examiner to the main dashboard.
 - **Page Title:** A heading that clearly identifies this page as "Test Templates List."
-- **Create New Template Button:** A prominent button that triggers the creation flow for a new test template. When clicked, it opens a modal or navigates to the Test Template Management Page.
+- **Create New Template Button:** A prominent button that triggers the creation flow for a new test template. When clicked, it opens the Test Template Editor Page.
 - **Test Templates Table/List:** A data table or card-based list displaying all test templates created by the examiner. Each row/card includes:
-  - **Template Name:** The unique name of the test template, which may be clickable to navigate to the template details.
-  - **Question Pools Count:** The number of question pools included in the template configuration.
-  - **Total Questions:** The total number of questions that will be randomly drawn from all selected pools when a test is generated from this template.
+  - **Template Name:** The unique name of the test template, which may be clickable to navigate to the template editor.
+  - **Local Pools Count:** The number of local pools defined within this template (not global pools).
+  - **Total Questions:** The total number of questions that will be randomly drawn from all local pools when a test is generated from this template.
   - **Action Buttons:**
-    - **View Button:** Opens the Test Template Management Page in view mode to see the template configuration details.
-    - **Edit Button:** Opens the Test Template Management Page in edit mode to modify the template name and question pool selection rules.
+    - **View Button:** Opens the Test Template Editor Page in view mode to see the template configuration details.
+    - **Edit Button:** Opens the Test Template Editor Page in edit mode to modify the template.
     - **Delete Button:** Triggers a confirmation dialog to delete the template.
-- **Create/Edit Template Modal:** A modal dialog or overlay form containing:
-  - **Template Name Input Field:** A text input for entering or editing the unique template name (required field).
-  - **Question Pool Selection Section:** A list of available question pools with checkboxes and number inputs:
-    - **Pool Checkbox:** Allows selecting which question pools to include in the template.
-    - **Questions to Draw Input:** A numeric input field specifying how many questions should be randomly drawn from each selected pool (required when pool is selected, must be positive).
-    - **Available Questions Display:** Shows the total number of questions available in each pool to help the examiner make informed decisions.
-    - **Total Questions Display:** A calculated sum showing the total number of questions that will be drawn across all selected pools.
-  - **Cancel Button:** Closes the modal without saving changes.
-  - **Submit Button:** Saves the new or edited template (labeled "Create Template" or "Update Template" depending on context).
-  - **Close Icon:** An "X" button in the top-right corner to dismiss the modal.
 - **Delete Confirmation Dialog:** A modal dialog that appears when deleting a template, containing:
   - **Warning Message:** Explains that deletion is permanent and the template will no longer be available for launching new tests.
   - **Template Name Display:** Shows which template is being deleted for clarity.
   - **Cancel Button:** Closes the dialog without deleting.
   - **Confirm Delete Button:** Executes the deletion and returns to the updated list.
 
+## Test Template Editor Page
+
+The Test Template Editor is a comprehensive page with three main sections for creating and editing templates. This replaces the old modal-based approach.
+
+### Editor Layout
+
+```
++--------------------------------------------------+
+|  ExamForge                          User: [Email] |
+|                                        [Logout]   |
++--------------------------------------------------+
+|                                                  |
+|  < Back to Templates List                        |
+|                                                  |
+|  Create New Test Template                        |
+|                                                  |
+|  +--------------------------------------------+  |
+|  | 1. TEMPLATE BASIC INFO                     |  |
+|  +--------------------------------------------+  |
+|  |                                            |  |
+|  | Template Name:                             |  |
+|  | [_______________________________________]  |  |
+|  |                                            |  |
+|  | Description (optional):                    |  |
+|  | [_______________________________________]  |  |
+|  | [_______________________________________]  |  |
+|  |                                            |  |
+|  +--------------------------------------------+  |
+|                                                  |
+|  +--------------------------------------------+  |
+|  | 2. LOCAL POOLS MANAGEMENT                  |  |
+|  +--------------------------------------------+  |
+|  |                                            |  |
+|  | [+ Create New Pool]                        |  |
+|  |                                            |  |
+|  | Pool: "Easy Questions"                     |  |
+|  | Questions to draw: [10]                    |  |
+|  | Assigned questions: 15                     |  |
+|  | [Edit Pool] [Delete Pool]                  |  |
+|  |                                            |  |
+|  | Pool: "Hard Questions"                     |  |
+|  | Questions to draw: [5]                     |  |
+|  | Assigned questions: 8                      |  |
+|  | [Edit Pool] [Delete Pool]                  |  |
+|  |                                            |  |
+|  +--------------------------------------------+  |
+|                                                  |
+|  +--------------------------------------------+  |
+|  | 3. QUESTION ASSIGNMENT                     |  |
+|  +--------------------------------------------+  |
+|  |                                            |  |
+|  | Filter by Tags: [Select tags...      v]    |  |
+|  | Search: [_____________________________]    |  |
+|  |                                            |  |
+|  | Available Questions from Global Bank:      |  |
+|  |                                            |  |
+|  | [ ] What is 2+2?                           |  |
+|  |     Tags: [Math] [Basic]                   |  |
+|  |     Points: 2 | Answers: 4                 |  |
+|  |     Assign to: [Select Pool...       v]    |  |
+|  |                                            |  |
+|  | [✓] Solve: 3x = 15                         |  |
+|  |     Tags: [Math] [Advanced]                |  |
+|  |     Points: 3 | Answers: 5                 |  |
+|  |     Assigned to: Easy Questions            |  |
+|  |     [Move to...] [Unassign]                |  |
+|  |                                            |  |
+|  +--------------------------------------------+  |
+|                                                  |
+|  Total Questions in Template: 15                 |
+|                                                  |
+|  [Cancel]                    [Save Template]     |
+|                                                  |
++--------------------------------------------------+
+```
+
+### Editor Component Descriptions
+
+#### Section 1: Template Basic Info
+- **Template Name Input:** A text input for entering the unique template name (required field).
+- **Description Input:** An optional multi-line text area for describing the template's purpose.
+
+#### Section 2: Local Pools Management
+- **Create New Pool Button:** Opens a modal/inline form to create a new pool within this template.
+- **Pool Cards/Rows:** Each local pool displays:
+  - **Pool Name:** The name of the pool (unique within this template).
+  - **Questions to Draw:** A numeric input specifying how many questions to randomly draw from this pool.
+  - **Assigned Questions Count:** Shows how many questions from the global bank are currently assigned to this pool.
+  - **Edit Pool Button:** Allows renaming the pool or changing the draw count.
+  - **Delete Pool Button:** Removes the pool from the template (questions become unassigned).
+- **Validation:** Draw count must be ≤ assigned questions count.
+
+#### Section 3: Question Assignment
+- **Tag Filter Control:** A multi-select dropdown for filtering questions from the global bank by tags.
+- **Search Field:** A text input for searching questions by content.
+- **Question List:** Displays questions from the global bank with:
+  - **Checkbox:** For selecting questions (optional, for bulk operations).
+  - **Question Preview:** Shows the question text.
+  - **Tags:** Visual tag chips showing the question's tags.
+  - **Points and Answer Count:** Quick metadata display.
+  - **Assignment Status:**
+    - **Unassigned:** Shows "Assign to: [Pool Dropdown]" to assign the question to a pool.
+    - **Assigned:** Shows "Assigned to: [Pool Name]" with options to move to another pool or unassign.
+- **Move To Button:** (For assigned questions) Opens a dropdown to move the question to a different pool within this template.
+- **Unassign Button:** (For assigned questions) Removes the question from its current pool.
+- **Constraint Enforcement:** A question can only be in one pool per template. If already assigned, the assign dropdown is replaced with move/unassign options.
+
+#### Footer
+- **Total Questions Display:** Shows the sum of "questions to draw" across all pools.
+- **Cancel Button:** Returns to the Templates List without saving changes.
+- **Save Template Button:** Validates and saves the template configuration.
+
 ## Other Information
 
 - **Authentication:** This page is accessible only to authenticated examiners.
-- **User Story Reference:** This page primarily implements `US-006` (Creating Test Templates) and supports template viewing, editing, and deletion.
+- **User Story Reference:** This page implements `US-005` (Creating Local Pools within Templates) and `US-006` (Assigning Questions from Global Bank to Local Pools).
 - **Functional Requirement Reference:** Implements `FR-04` (Managing Test Templates).
-- **Template Name Uniqueness:** The system must validate that template names are unique within the examiner's account. If a duplicate name is entered, an error message should be displayed.
-- **Question Pool Validation:** The system enforces the following rules when creating or editing templates:
-  - At least one question pool must be selected.
-  - The number of questions to draw from a pool cannot exceed the total number of questions available in that pool.
-  - The number of questions to draw must be a positive integer.
-  - If a pool is selected, the "questions to draw" field is required.
-- **Empty State:** If the examiner has not created any test templates yet, the page should display an empty state message encouraging them to create their first template (e.g., "No test templates yet. Create your first template to get started!").
-- **Template Usage:** Templates are used when launching new test sessions (`US-007`). Deleting a template does not affect already completed or active test sessions, but the template will no longer be available for creating new sessions.
-- **Question Count Calculation:** The total questions count displayed in the list view is calculated by summing the "questions to draw" values from all selected pools in the template configuration.
-- **Pool Availability:** Only question pools that belong to the examiner and contain at least one question should be available for selection in templates. Pools with zero questions should either be hidden or disabled with an explanatory message.
-- **Real-time Validation:** When editing a template, the system should validate in real-time that the number of questions to draw does not exceed available questions in each pool. Visual feedback (e.g., red border, error message) should be provided for invalid inputs.
-- **Template Dependencies:** Before allowing deletion, the system may want to check if the template is currently being used in any active test sessions and either prevent deletion or warn the examiner about the impact.
-- **Responsive Design:** The table should be responsive and adapt to smaller screens, potentially converting to a card-based layout on mobile devices.
-- **Sorting and Filtering:** For examiners with many templates, consider implementing sorting (by name, total questions, creation date) and search/filter functionality.
-- **Loading States:** Display appropriate loading indicators when fetching the list of templates or performing create/edit/delete operations.
-- **Error Handling:** Provide clear error messages if operations fail (e.g., network errors, validation errors, pool availability issues).
-- **Success Feedback:** After successful creation, editing, or deletion, display a brief success message (e.g., toast notification).
+- **Architecture Change:** Pools are now local to each template, not global entities. Questions exist in a global bank and are assigned to local pools within templates.
+- **Template Name Uniqueness:** The system must validate that template names are unique within the examiner's account.
+- **Pool Name Uniqueness:** Pool names must be unique within a template (but can be reused across different templates).
+- **Template Validation Rules:**
+  - Template must have at least one local pool.
+  - Each pool must have at least one assigned question.
+  - Draw count for each pool cannot exceed the number of assigned questions.
+  - Draw count must be a positive integer.
+  - A question can only be in one pool per template (but can be in different pools in different templates).
+- **Tag-Based Filtering:** The question assignment section includes tag-based filtering to help examiners quickly find relevant questions from the global bank.
+- **Question Reusability:** The same question from the global bank can be used in multiple templates, and can be assigned to different pools in different templates.
+- **Within-Template Constraint:** Within a single template, a question can only be assigned to one pool. Attempting to assign it to a second pool should either prevent the action or automatically move it from the first pool.
+- **Empty State:** If the examiner has not created any test templates yet, the list page should display an empty state message.
+- **Template Usage:** Templates are used when launching new test sessions (`US-007`). Deleting a template does not affect already completed or active test sessions.
+- **Question Count Calculation:** The total questions count is the sum of "questions to draw" from all local pools.
+- **Real-time Validation:** The editor should validate in real-time that draw counts don't exceed assigned questions, with visual feedback for invalid inputs.
+- **Responsive Design:** The table and editor should be responsive and adapt to smaller screens.
+- **Loading States:** Display appropriate loading indicators when fetching data or performing operations.
+- **Error Handling:** Provide clear error messages if operations fail.
+- **Success Feedback:** After successful creation, editing, or deletion, display a brief success message.
 - **Accessibility:** Ensure all interactive elements are keyboard accessible and properly labeled for screen readers.
-- **Hover States:** Action buttons should have clear hover states to indicate interactivity.
-- **Template Viewing:** Clicking the "View" button or the template name itself should open the Test Template Management Page in view mode, showing all configuration details including which pools are selected and how many questions will be drawn from each.
-- **Template Editing:** The edit functionality allows examiners to modify both the template name and the question pool selection rules, providing flexibility to adjust templates as question pools evolve.
-- **Question Pool Updates:** If a question pool used in a template is deleted or its question count changes, the template should handle this gracefully. Consider showing warnings if a template references pools with insufficient questions or deleted pools.
-- **Template Duplication:** Consider adding a "Duplicate" action button to allow examiners to quickly create variations of existing templates.
-- **Template Preview:** For future enhancement, consider adding a preview feature that shows examiners what a generated test would look like based on the template configuration (though this is out of scope for MVP).
+- **Drag and Drop:** Consider implementing drag-and-drop for assigning questions to pools for improved UX.
+- **Bulk Assignment:** Consider adding bulk assignment features to assign multiple questions to a pool at once.
+- **Template Wizard:** Consider providing a guided wizard for first-time template creation.
+- **Pool Color Coding:** Consider using color coding for pools to make visual distinction easier in the question assignment section.
 
