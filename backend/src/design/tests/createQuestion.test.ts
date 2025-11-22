@@ -45,6 +45,26 @@ describe('createQuestion Use Case', () => {
 
     thenCreationShouldFailBecause(result, 'correctAnswerId must be a valid answer ID');
   });
+
+  it('Fail to create question with tags containing hashtag', async () => {
+    const command = aValidQuestion({
+      tags: ['math', '#advanced'],
+    });
+
+    const result = await module.createQuestion(command);
+
+    thenCreationShouldFailBecause(result, 'Tags cannot contain the "#" character');
+  });
+
+  it('Fail to create question with tags containing hashtag in the middle', async () => {
+    const command = aValidQuestion({
+      tags: ['math', 'advanced#tag'],
+    });
+
+    const result = await module.createQuestion(command);
+
+    thenCreationShouldFailBecause(result, 'Tags cannot contain the "#" character');
+  });
 });
 
 const givenDesignModule = () => {

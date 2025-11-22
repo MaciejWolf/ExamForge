@@ -48,6 +48,32 @@ describe('updateQuestion Use Case', () => {
 
     thenUpdateShouldFailBecause(result, 'QuestionNotFound');
   });
+
+  it('Fail to update question with tags containing hashtag', async () => {
+    await givenExistingQuestion(module, {
+      tags: ['math'],
+    });
+
+    const result = await module.updateQuestion({
+      id: 'q-1',
+      tags: ['math', '#advanced'],
+    });
+
+    thenUpdateShouldFailWithMessage(result, 'Tags cannot contain the "#" character');
+  });
+
+  it('Fail to update question with tags containing hashtag in the middle', async () => {
+    await givenExistingQuestion(module, {
+      tags: ['math'],
+    });
+
+    const result = await module.updateQuestion({
+      id: 'q-1',
+      tags: ['math', 'advanced#tag'],
+    });
+
+    thenUpdateShouldFailWithMessage(result, 'Tags cannot contain the "#" character');
+  });
 });
 
 // --- Test Helpers ---
@@ -124,6 +150,16 @@ const thenUpdateShouldFailBecause = (
   expect(result.ok).toBe(false);
   if (!result.ok) {
     expect(result.error.type).toBe(errorType);
+  }
+};
+
+const thenUpdateShouldFailWithMessage = (
+  result: Result<Question, DesignError>,
+  reasonSnippet: string
+) => {
+  expect(result.ok).toBe(false);
+  if (!result.ok && result.error.type === 'InvalidQuestionData') {
+    expect(result.error.message).toContain(reasonSnippet);
   }
 };
 

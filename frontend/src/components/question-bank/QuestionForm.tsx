@@ -2,9 +2,10 @@ import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Minus, X } from 'lucide-react';
+import { Plus, Minus } from 'lucide-react';
 import type { BankQuestion } from '@/services/api';
 import { toast } from 'sonner';
+import { TagChip } from '@/components/ui/TagChip';
 
 type QuestionFormData = {
   text: string;
@@ -79,17 +80,24 @@ export const QuestionForm = ({ question, onSubmit, onCancel }: QuestionFormProps
     setTagSuggestions([]);
   };
 
+  const stripHashtag = (tag: string): string => {
+    return tag.replace(/^#+/, '').trim();
+  };
+
   const handleAddTag = (tag: string) => {
-    const tagNameLower = tag.toLowerCase();
+    const cleanTag = stripHashtag(tag);
+    if (!cleanTag) return;
+    
+    const tagNameLower = cleanTag.toLowerCase();
     if (!tags.some(t => t.toLowerCase() === tagNameLower)) {
-      setTags([...tags, tag.trim()]);
+      setTags([...tags, cleanTag]);
       setTagInput('');
       setTagSuggestions([]);
     }
   };
 
   const handleCreateTag = () => {
-    const tagName = tagInput.trim();
+    const tagName = stripHashtag(tagInput);
     if (tagName) {
       const tagNameLower = tagName.toLowerCase();
       if (!tags.some(t => t.toLowerCase() === tagNameLower)) {
@@ -188,19 +196,11 @@ export const QuestionForm = ({ question, onSubmit, onCancel }: QuestionFormProps
           {tags.length > 0 && (
             <div className="flex flex-wrap gap-2">
               {tags.map(tag => (
-                <div
+                <TagChip
                   key={tag}
-                  className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
-                >
-                  <span>{tag}</span>
-                  <button
-                    type="button"
-                    onClick={() => handleRemoveTag(tag)}
-                    className="hover:bg-primary/20 rounded p-0.5"
-                  >
-                    <X className="h-3 w-3" />
-                  </button>
-                </div>
+                  tag={tag}
+                  onRemove={() => handleRemoveTag(tag)}
+                />
               ))}
             </div>
           )}

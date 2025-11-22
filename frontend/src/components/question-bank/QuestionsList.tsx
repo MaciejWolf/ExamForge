@@ -10,6 +10,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Edit, Trash2 } from 'lucide-react';
 import type { BankQuestion } from '@/services/api';
+import { TagChip } from '@/components/ui/TagChip';
 
 type QuestionsListProps = {
   questions: BankQuestion[];
@@ -66,12 +67,7 @@ export const QuestionsList = ({
                   <TableCell>
                     <div className="flex flex-wrap gap-1">
                       {question.tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"
-                        >
-                          {tag}
-                        </span>
+                        <TagChip key={tag} tag={tag} />
                       ))}
                       {question.tags.length === 0 && (
                         <span className="text-xs text-muted-foreground">No tags</span>

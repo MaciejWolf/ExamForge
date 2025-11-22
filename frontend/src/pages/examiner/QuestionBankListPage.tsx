@@ -43,18 +43,15 @@ const QuestionBankListPage = () => {
   };
 
   const filterQuestions = (allQuestions: BankQuestion[], searchQuery: string, selectedTags: string[]) => {
-    console.log('Filtering questions with searchQuery:', searchQuery, 'and selectedTags:', selectedTags);
     const queryFilter = searchQuery.trim() === ''
       ? () => true
       : (q: BankQuestion) => q.text.toLowerCase().includes(searchQuery.toLowerCase());
 
     const tagFilter = selectedTags.length === 0
       ? () => true
-      : (q: BankQuestion) => selectedTags.every(tag => q.tags.map(t => t.replace('#', '')).includes(tag));
+      : (q: BankQuestion) => selectedTags.every(tag => q.tags.includes(tag));
 
-    const filtered = allQuestions.filter(queryFilter).filter(tagFilter);
-    console.log('Filtered questions:', filtered);
-    return filtered;
+    return allQuestions.filter(queryFilter).filter(tagFilter);
   }
 
   const handleCreate = async (formData: {

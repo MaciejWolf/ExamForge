@@ -79,6 +79,24 @@ const validateQuestionInput = (input: CreateQuestionCommand): ValidationResult =
     };
   }
 
+  if (input.tags && input.tags.length > 0) {
+    const tagValidation = validateTags(input.tags);
+    if (!tagValidation.valid) {
+      return tagValidation;
+    }
+  }
+
+  return { valid: true, message: '' };
+};
+
+const validateTags = (tags: string[]): ValidationResult => {
+  const invalidTag = tags.find(tag => tag.includes('#'));
+  if (invalidTag) {
+    return {
+      valid: false,
+      message: 'Tags cannot contain the "#" character',
+    };
+  }
   return { valid: true, message: '' };
 };
 
@@ -104,6 +122,17 @@ export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {
         type: 'QuestionNotFound',
         questionId: cmd.id,
       });
+    }
+
+    // Validate tags if provided
+    if (cmd.tags !== undefined) {
+      const tagValidation = validateTags(cmd.tags);
+      if (!tagValidation.valid) {
+        return err({
+          type: 'InvalidQuestionData',
+          message: tagValidation.message,
+        });
+      }
     }
 
     // Build updated question with partial updates
