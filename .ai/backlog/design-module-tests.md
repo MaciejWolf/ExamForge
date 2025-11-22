@@ -157,28 +157,6 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** listTags is called
 - **Then** returns success with empty array
 
-### suggestTags Use Case
-
-- [ ] **Test Case: Successfully suggest tags matching partial input**
-- **Given** existing tags ["mathematics", "math-basic", "history", "algebra"]
-- **When** suggestTags is called with query "math"
-- **Then** returns success with array ["mathematics", "math-basic"]
-
-- [ ] **Test Case: Successfully suggest tags with case-insensitive matching**
-- **Given** existing tags ["Mathematics", "MATH-BASIC", "History"]
-- **When** suggestTags is called with query "math"
-- **Then** returns success with array ["Mathematics", "MATH-BASIC"]
-
-- [ ] **Test Case: Successfully suggest tags with no matches**
-- **Given** existing tags ["mathematics", "history"]
-- **When** suggestTags is called with query "science"
-- **Then** returns success with empty array
-
-- [ ] **Test Case: Successfully suggest tags with empty query**
-- **Given** existing tags ["math", "history", "science"]
-- **When** suggestTags is called with empty query ""
-- **Then** returns success with all tags ["math", "history", "science"]
-
 ## Template Management Tests
 
 ### createTemplate Use Case
@@ -188,10 +166,10 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** createTemplate is called with valid template data (name: "Midterm Exam") and no pools
 - **Then** returns success with template containing generated ID, provided name, and empty pools array
 
-- [ ] **Test Case: Successfully create template with local pools**
+- [ ] **Test Case: Successfully create template with pools**
 - **Given** no existing templates
 - **When** createTemplate is called with name "Final Exam" and pools: [{name: "Math", questionCount: 5}, {name: "History", questionCount: 3}]
-- **Then** returns success with template containing two local pools with generated pool IDs
+- **Then** returns success with template containing two pools with generated pool IDs
 
 - [ ] **Test Case: Fail to create template with duplicate name**
 - **Given** existing template named "Midterm Exam"
@@ -227,10 +205,10 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** deleteTemplate is called with id "t-1"
 - **Then** returns success, template is no longer retrievable, and local pools are deleted
 
-- [ ] **Test Case: Verify deleting template does not delete questions from global bank**
+- [ ] **Test Case: Verify deleting template does not delete questions from questions bank**
 - **Given** template "t-1" containing pool with question "q-1"
 - **When** deleteTemplate is called with id "t-1"
-- **Then** returns success and question "q-1" still exists in global bank
+- **Then** returns success and question "q-1" still exists in questions bank
 
 - [ ] **Test Case: Fail to delete non-existent template**
 - **Given** no existing templates
@@ -240,9 +218,9 @@ This document contains unit test cases for the Design Module, written in Given/W
 ### getTemplate Use Case
 
 - [ ] **Test Case: Successfully retrieve existing template with pools**
-- **Given** existing template (id: "t-1") containing 2 local pools
+- **Given** existing template (id: "t-1") containing 2 pools
 - **When** getTemplate is called with id "t-1"
-- **Then** returns success with complete template data including all local pools and their questions
+- **Then** returns success with complete template data including all pools and their questions
 
 - [ ] **Test Case: Fail to retrieve non-existent template**
 - **Given** no existing templates
@@ -261,7 +239,7 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** listTemplates is called
 - **Then** returns success with empty array
 
-## Local Pool Management Tests (within Templates)
+## Pool Management Tests (within Templates)
 
 ### createPoolInTemplate Use Case
 
