@@ -44,9 +44,28 @@ The testing strategy focuses on ensuring the reliability of the two main domains
 Integration tests will spin up the Express app and hit the API endpoints.
 
 ### 3.1 Design API (`/api/design`)
+
+*   **Question Management Integration Tests**
+    *   **Create Question (`POST /api/design/questions`)**:
+        *   - [ ] Create a question with valid data (content, answers, points) and verify it returns the created question with an ID.
+        *   - [ ] Verify validation errors for missing required fields (content, answers, points).
+        *   - [ ] Verify validation errors for invalid data (empty content, negative points, invalid answer structure).
+        *   - [ ] Verify the question is persisted and can be retrieved after creation.
+    *   **Update Question (`PUT /api/design/questions/:id`)**:
+        *   - [ ] Update question content and verify changes are persisted.
+        *   - [ ] Update question answers and verify changes are persisted.
+        *   - [ ] Update question points and verify changes are persisted.
+        *   - [ ] Update question tags and verify changes are persisted.
+        *   - [ ] Verify validation errors when updating with invalid data.
+        *   - [ ] Verify error response when updating a non-existent question ID.
+    *   **Retrieve Question (`GET /api/design/questions/:id`)**:
+        *   - [ ] Retrieve an existing question by ID and verify all fields are returned correctly.
+        *   - [ ] Verify error response when retrieving a non-existent question ID.
+        *   - [ ] Verify the retrieved question matches the data that was created/updated.
+
 *   **Flow: Create Test Content**
     *   - [ ] 1. `POST /api/design/questions`: Create questions in the global bank.
-    *   - [ ] 2. `POST /api/design/questions/:id/tags`: Add tags to questions.
+    *   - [ ] 2. `PUT /api/design/questions/:id`: Add tags to questions.
     *   - [ ] 3. `POST /api/design/templates`: Create a test template with local pools referencing the global questions.
     *   - [ ] 4. `GET /api/design/templates/:id`: Verify the template and its pools are retrievable.
     *   - [ ] 5. `PUT /api/design/templates/:id`: Update the template structure.
