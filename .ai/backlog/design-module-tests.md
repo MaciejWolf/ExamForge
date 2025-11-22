@@ -74,22 +74,22 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### listQuestions Use Case
 
-- [ ] **Test Case: Successfully list all questions in global bank**
+- [X] **Test Case: Successfully list all questions in global bank**
 - **Given** 5 questions in the global bank
 - **When** listQuestions is called without filters
 - **Then** returns success with array of all 5 questions
 
-- [ ] **Test Case: Successfully list questions filtered by single tag**
+- [X] **Test Case: Successfully list questions filtered by single tag**
 - **Given** questions tagged: q-1["math"], q-2["math", "algebra"], q-3["history"]
 - **When** listQuestions is called with tag filter ["math"]
 - **Then** returns success with array containing q-1 and q-2
 
-- [ ] **Test Case: Successfully list questions filtered by multiple tags (AND logic)**
+- [X] **Test Case: Successfully list questions filtered by multiple tags (AND logic)**
 - **Given** questions tagged: q-1["math"], q-2["math", "algebra"], q-3["history"]
 - **When** listQuestions is called with tag filter ["math", "algebra"]
 - **Then** returns success with array containing only q-2
 
-- [ ] **Test Case: Successfully list questions with no matching tags**
+- [X] **Test Case: Successfully list questions with no matching tags**
 - **Given** questions tagged: q-1["math"], q-2["history"]
 - **When** listQuestions is called with tag filter ["science"]
 - **Then** returns success with empty array
