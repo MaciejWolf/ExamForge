@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Tag } from '@/services/api';
@@ -8,7 +8,7 @@ type FilterBarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   selectedTags: Tag[];
-  onTagInputChange: (tagInput: string) => void;
+  onTagsAdd: (tagInput: string) => void;
   onTagRemove: (tag: Tag) => void;
 };
 
@@ -16,19 +16,20 @@ export const FilterBar = ({
   searchQuery,
   onSearchChange,
   selectedTags,
-  onTagInputChange,
+  onTagsAdd,
   onTagRemove,
 }: FilterBarProps) => {
   const [tagInput, setTagInput] = useState('');
-  const onTagInputChangeRef = useRef(onTagInputChange);
 
-  useEffect(() => {
-    onTagInputChangeRef.current = onTagInputChange;
-  }, [onTagInputChange]);
-
-  useEffect(() => {
-    onTagInputChangeRef.current(tagInput);
-  }, [tagInput]);
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (tagInput.trim()) {
+        onTagsAdd(tagInput);
+        setTagInput('');
+      }
+    }
+  };
 
   return (
     <div className="space-y-4">
@@ -52,42 +53,25 @@ export const FilterBar = ({
           <Input
             id="tag-filter"
             type="text"
-            placeholder="Type tags like #math #advanced..."
+            placeholder="Type tags like #math #advanced and press Enter..."
             value={tagInput}
             onChange={(e) => setTagInput(e.target.value)}
+            onKeyDown={handleKeyDown}
           />
 
           {/* Selected Tags as Chips */}
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {selectedTags.map(tag => {
-                const handleChipRemove = () => {
-                  // Remove tag from input string
-                  const tagName = tag.name.toLowerCase();
-                  const updatedInput = tagInput
-                    .split(/\s+/)
-                    .filter(part => {
-                      const normalized = part.trim().toLowerCase();
-                      return !normalized.startsWith('#') || normalized.slice(1) !== tagName;
-                    })
-                    .join(' ')
-                    .trim();
-                  
-                  setTagInput(updatedInput);
-                  onTagRemove(tag);
-                };
-
-                return (
-                  <div
-                    key={tag.id}
-                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm cursor-pointer hover:bg-primary/90"
-                    onClick={handleChipRemove}
-                  >
-                    <span>#{tag.name}</span>
-                    <X className="h-3 w-3" />
-                  </div>
-                );
-              })}
+              {selectedTags.map(tag => (
+                <div
+                  key={tag.id}
+                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm cursor-pointer hover:bg-primary/90"
+                  onClick={() => onTagRemove(tag)}
+                >
+                  <span>#{tag.name}</span>
+                  <X className="h-3 w-3" />
+                </div>
+              ))}
             </div>
           )}
         </div>

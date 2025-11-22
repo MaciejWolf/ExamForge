@@ -163,7 +163,7 @@ const QuestionBankListPage = () => {
     setIsDeleteOpen(true);
   };
 
-  const handleTagInputChange = (tagInput: string) => {
+  const handleTagsAdd = (tagInput: string) => {
     // Parse tags from input: #math #advanced -> ['math', 'advanced']
     const tagNames = tagInput
       .split(/\s+/)
@@ -172,18 +172,20 @@ const QuestionBankListPage = () => {
       .map(part => part.slice(1).trim())
       .filter(part => part.length > 0);
 
-    // Match tag names to existing tags (case-insensitive)
-    const matchedTags: Tag[] = [];
+    // Match tag names to existing tags (case-insensitive) and add to selected tags
+    const newTags: Tag[] = [];
     tagNames.forEach(tagName => {
       const matchedTag = availableTags.find(
         tag => tag.name.toLowerCase() === tagName.toLowerCase()
       );
-      if (matchedTag && !matchedTags.some(t => t.id === matchedTag.id)) {
-        matchedTags.push(matchedTag);
+      if (matchedTag && !selectedTags.some(t => t.id === matchedTag.id)) {
+        newTags.push(matchedTag);
       }
     });
 
-    setSelectedTags(matchedTags);
+    if (newTags.length > 0) {
+      setSelectedTags([...selectedTags, ...newTags]);
+    }
   };
 
   const handleTagRemove = (tag: Tag) => {
@@ -223,7 +225,7 @@ const QuestionBankListPage = () => {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               selectedTags={selectedTags}
-              onTagInputChange={handleTagInputChange}
+              onTagsAdd={handleTagsAdd}
               onTagRemove={handleTagRemove}
             />
           </CardContent>
