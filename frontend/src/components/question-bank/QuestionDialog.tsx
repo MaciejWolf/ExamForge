@@ -15,35 +15,37 @@ type QuestionFormData = {
   tags: string[];
 };
 
-type EditQuestionDialogProps = {
+type QuestionDialogProps = {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  question: BankQuestion | null;
+  title: string;
+  description: string;
+  question?: BankQuestion | null;
   onSubmit: (formData: QuestionFormData) => Promise<void>;
-  onCancel: () => void;
+  onCancel?: () => void;
 };
 
-export const EditQuestionDialog = ({
+export const QuestionDialog = ({
   open,
   onOpenChange,
-  question,
+  title,
+  description,
+  question = null,
   onSubmit,
   onCancel,
-}: EditQuestionDialogProps) => {
+}: QuestionDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>Edit Question</DialogTitle>
-          <DialogDescription>Update the question details below</DialogDescription>
+          <DialogTitle>{title}</DialogTitle>
+          <DialogDescription>{description}</DialogDescription>
         </DialogHeader>
-        {question && (
-          <QuestionForm
-            question={question}
-            onSubmit={onSubmit}
-            onCancel={onCancel}
-          />
-        )}
+        <QuestionForm
+          question={question}
+          onSubmit={onSubmit}
+          onCancel={onCancel || (() => onOpenChange(false))}
+        />
       </DialogContent>
     </Dialog>
   );

@@ -9,8 +9,7 @@ import { toast } from 'sonner';
 import { QuestionBankHeader } from '@/components/question-bank/QuestionBankHeader';
 import { QuestionBankFilters } from '@/components/question-bank/QuestionBankFilters';
 import { QuestionsList } from '@/components/question-bank/QuestionsList';
-import { CreateQuestionDialog } from '@/components/question-bank/CreateQuestionDialog';
-import { EditQuestionDialog } from '@/components/question-bank/EditQuestionDialog';
+import { QuestionDialog } from '@/components/question-bank/QuestionDialog';
 import { DeleteQuestionDialog } from '@/components/question-bank/DeleteQuestionDialog';
 
 const QuestionBankListPage = () => {
@@ -164,15 +163,20 @@ const QuestionBankListPage = () => {
           onDeleteClick={openDeleteDialog}
         />
 
-        <CreateQuestionDialog
+        <QuestionDialog
           open={isCreateOpen}
           onOpenChange={setIsCreateOpen}
+          title="Create New Question"
+          description="Enter the question content, points, tags, and answer options"
+          question={null}
           onSubmit={handleCreate}
         />
 
-        <EditQuestionDialog
+        <QuestionDialog
           open={isEditOpen}
           onOpenChange={setIsEditOpen}
+          title="Edit Question"
+          description="Update the question details below"
           question={currentQuestion}
           onSubmit={handleEdit}
           onCancel={() => {
