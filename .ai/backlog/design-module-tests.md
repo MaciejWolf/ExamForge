@@ -94,68 +94,34 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** listQuestions is called with tag filter ["science"]
 - **Then** returns success with empty array
 
-- [ ] **Test Case: Successfully list questions from empty bank**
-- **Given** no existing questions
-- **When** listQuestions is called
-- **Then** returns success with empty array
-
 ## Tag Management Tests
 
 ### addTagsToQuestion Use Case
 
 - [ ] **Test Case: Successfully add tags to question**
 - **Given** question "q-1" having tags ["math"]
-- **When** addTagsToQuestion is called with id "q-1" and tags ["algebra", "basic"]
+- **When** updateQuestion is called with id "q-1" and tags ["algebra", "basic"]
 - **Then** returns success with question having tags ["math", "algebra", "basic"]
 
 - [ ] **Test Case: Successfully add tags to question with no existing tags**
 - **Given** question "q-1" having no tags
-- **When** addTagsToQuestion is called with id "q-1" and tags ["math"]
+- **When** updateQuestion is called with id "q-1" and tags ["math"]
 - **Then** returns success with question having tags ["math"]
 
 - [ ] **Test Case: Ignore duplicate tags when adding**
 - **Given** question "q-1" having tags ["math"]
-- **When** addTagsToQuestion is called with id "q-1" and tags ["math", "algebra"]
+- **When** updateQuestion is called with id "q-1" and tags ["math", "algebra"]
 - **Then** returns success with question having tags ["math", "algebra"] (no duplicate "math")
+
+- [ ] **Test Case: Successfully replace tags with new set**
+- **Given** question "q-1" having tags ["math", "advanced", "draft"]
+- **When** updateQuestion is called with id "q-1" and tags ["math", "intermediate"]
+- **Then** returns success with question having tags ["math", "intermediate"]
 
 - [ ] **Test Case: Fail to add tags to non-existent question**
 - **Given** no existing questions
-- **When** addTagsToQuestion is called with id "non-existent-question"
+- **When** updateQuestion is called with id "non-existent-question"
 - **Then** returns error with type "QuestionNotFound"
-
-### removeTagsFromQuestion Use Case
-
-- [ ] **Test Case: Successfully remove tags from question**
-- **Given** question "q-1" having tags ["math", "algebra", "basic"]
-- **When** removeTagsFromQuestion is called with id "q-1" and tags ["basic"]
-- **Then** returns success with question having tags ["math", "algebra"]
-
-- [ ] **Test Case: Successfully remove all tags from question**
-- **Given** question "q-1" having tags ["math"]
-- **When** removeTagsFromQuestion is called with id "q-1" and tags ["math"]
-- **Then** returns success with question having empty tags array
-
-- [ ] **Test Case: Ignore non-existent tags when removing**
-- **Given** question "q-1" having tags ["math"]
-- **When** removeTagsFromQuestion is called with id "q-1" and tags ["history", "science"]
-- **Then** returns success with question still having tags ["math"]
-
-- [ ] **Test Case: Fail to remove tags from non-existent question**
-- **Given** no existing questions
-- **When** removeTagsFromQuestion is called with id "non-existent-question"
-- **Then** returns error with type "QuestionNotFound"
-
-### listTags Use Case
-
-- [ ] **Test Case: Successfully list all unique tags**
-- **Given** questions having tags: q-1["math", "basic"], q-2["math", "algebra"], q-3["history"]
-- **When** listTags is called
-- **Then** returns success with array ["math", "basic", "algebra", "history"]
-
-- [ ] **Test Case: Successfully list tags when no questions exist**
-- **Given** no existing questions
-- **When** listTags is called
-- **Then** returns success with empty array
 
 ## Template Management Tests
 
