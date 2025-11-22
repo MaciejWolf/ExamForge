@@ -349,89 +349,81 @@ export * from './domain';
 - In-memory by default makes testing effortless
 ### 6.5. Testing the Module's Public API
 
-Tests run against the public API of the module, NOT the HTTP layer. This makes them extremely fast, deterministic, and decoupled from Express. The in-memory repository is used automatically when no connection string is provided.
+Tests run against the public API of the module, NOT the HTTP layer. We use a descriptive helper-based style (Given-When-Then) to keep tests readable and focused on business rules. The in-memory repository is used automatically when no connection string is provided.
 
 ```typescript
 import { describe, it, expect } from 'vitest';
 import { configureFeatureModule } from '../index';
 import { CreateResourceCommand } from '../useCases';
+import { Result } from '../shared/result';
+import { Resource, ResourceError } from '../domain';
 
-describe('Feature Module (Vertical Slice)', () => {
-  it('should create a new resource successfully', async () => {
-    // 1. Arrange - Wire up the module with test stubs for determinism
-    const feature = configureFeatureModule({
-      idGenerator: () => 'fixed-id-123',
-      now: () => new Date('2023-01-01T00:00:00Z')
-      // No connection string = automatic in-memory repository
-    });
+describe('Create Resource Use Case', () => {
+  const module = givenFeatureModule();
 
-    // 2. Act - Call the use case directly
-    const input: CreateResourceCommand = {
-      text: 'Test resource',
-      // ... other required fields
-    };
-    const result = await feature.createResource(input);
+  it('Successfully create a new resource', async () => {
+    const command = aValidResource();
 
-    // 3. Assert
-    expect(result.ok).toBe(true);
+    const result = await module.createResource(command);
 
-    if (!result.ok) {
-      throw new Error('Expected success result');
-    }
-
-    const resource = result.value;
-    expect(resource.id).toBe('fixed-id-123');
-    expect(resource.text).toBe('Test resource');
-    expect(resource.createdAt).toEqual(new Date('2023-01-01T00:00:00Z'));
-    expect(resource.updatedAt).toEqual(new Date('2023-01-01T00:00:00Z'));
+    thenResourceShouldBeCreated(result, command);
   });
 
-  it('should validate input data', async () => {
-    // Arrange - default config uses in-memory repo
-    const feature = configureFeatureModule();
-
-    // Act - attempt invalid input
-    const input: CreateResourceCommand = {
-      text: '', // Invalid: empty text
-      // ... other fields
-    };
-    const result = await feature.createResource(input);
-
-    // Assert
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.type).toBe('InvalidResourceData');
-      expect(result.error.message).toContain('cannot be empty');
-    }
-  });
-  
-  it('should update resource successfully', async () => {
-    const feature = configureFeatureModule({
-      idGenerator: () => 'resource-1',
-      now: () => new Date('2023-01-01T00:00:00Z')
+  it('Fail to create resource with invalid data - empty text', async () => {
+    const command = aValidResource({
+      text: '', // Override with invalid data
     });
-    
-    // Create a resource first
-    const created = await feature.createResource({ text: 'Original' });
-    if (!created.ok) throw new Error('Setup failed');
-    
-    // Update the resource (note: updateResource doesn't need idGenerator)
-    const result = await feature.updateResource({ 
-      id: 'resource-1', 
-      text: 'Updated text' 
-    });
-    
-    expect(result.ok).toBe(true);
-    if (result.ok) {
-      expect(result.value.text).toBe('Updated text');
-    }
+
+    const result = await module.createResource(command);
+
+    thenCreationShouldFailBecause(result, 'cannot be empty');
   });
 });
+
+// --- Test Helpers ---
+
+const givenFeatureModule = () => {
+  return configureFeatureModule({
+    idGenerator: () => 'test-resource-id',
+    now: () => new Date('2023-01-01T00:00:00Z'),
+  });
+};
+
+const aValidResource = (overrides: Partial<CreateResourceCommand> = {}): CreateResourceCommand => ({
+  text: 'Test resource',
+  // ... default valid values for other fields
+  ...overrides,
+});
+
+const thenResourceShouldBeCreated = (
+  result: Result<Resource, ResourceError>,
+  originalCommand: CreateResourceCommand
+) => {
+  expect(result.ok).toBe(true);
+  if (result.ok) {
+    expect(result.value).toMatchObject({
+      text: originalCommand.text,
+      // Verify stubs were used
+      id: 'test-resource-id',
+      createdAt: new Date('2023-01-01T00:00:00Z'),
+      updatedAt: new Date('2023-01-01T00:00:00Z'),
+    });
+  }
+};
+
+const thenCreationShouldFailBecause = (
+  result: Result<Resource, ResourceError>,
+  reasonSnippet: string
+) => {
+  expect(result.ok).toBe(false);
+  if (!result.ok && result.error.type === 'InvalidResourceData') {
+    expect(result.error.message).toContain(reasonSnippet);
+  }
+};
 ```
 
 **Testing Benefits:**
-- No mocking frameworks needed - real in-memory repository
-- Deterministic tests via injected `idGenerator` and `now`
-- Fast execution (no database, no HTTP layer)
-- Tests document the actual API contract
-- Easy to set up and maintain
+- **Readable**: Tests read like requirements specifications.
+- **Focused**: Boilerplate setup and assertions are moved to helpers.
+- **No Mocking Frameworks**: Real in-memory repository logic is tested.
+- **Deterministic**: Tests control time and IDs via stubs.
