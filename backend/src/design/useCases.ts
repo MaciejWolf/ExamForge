@@ -88,3 +88,60 @@ const validateQuestionInput = (input: CreateQuestionCommand): ValidationResult =
 
   return { valid: true, message: '' };
 };
+
+type UpdateQuestionDeps = {
+  repo: QuestionRepository;
+  now: () => Date;
+};
+
+export type UpdateQuestionCommand = {
+  id: string;
+  text?: string;
+  answers?: Answer[];
+  correctAnswerId?: string;
+  points?: number;
+  tags?: Tag[];
+};
+
+export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {
+  return async (cmd: UpdateQuestionCommand): Promise<Result<Question, DesignError>> => {
+    // Check if question exists
+    const existing = await repo.findById(cmd.id);
+    if (!existing) {
+      return err({
+        type: 'QuestionNotFound',
+        questionId: cmd.id,
+      });
+    }
+
+    // Build updated question with partial updates
+    const updatedQuestion: Question = {
+      ...existing,
+      text: cmd.text !== undefined ? cmd.text : existing.text,
+      answers: cmd.answers !== undefined ? cmd.answers : existing.answers,
+      correctAnswerId: cmd.correctAnswerId !== undefined ? cmd.correctAnswerId : existing.correctAnswerId,
+      points: cmd.points !== undefined ? cmd.points : existing.points,
+      tags: cmd.tags !== undefined ? cmd.tags : existing.tags,
+      updatedAt: now(),
+    };
+
+    // Validate the updated question
+    const validation = validateQuestionInput({
+      text: updatedQuestion.text,
+      answers: updatedQuestion.answers,
+      correctAnswerId: updatedQuestion.correctAnswerId,
+      points: updatedQuestion.points,
+      tags: updatedQuestion.tags,
+    });
+    if (!validation.valid) {
+      return err({
+        type: 'InvalidQuestionData',
+        message: validation.message,
+      });
+    }
+
+    const savedQuestion = await repo.save(updatedQuestion);
+
+    return ok(savedQuestion);
+  };
+};
