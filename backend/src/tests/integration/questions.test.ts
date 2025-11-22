@@ -8,12 +8,7 @@ describe('Design Module Integration Tests - Questions API', () => {
   let app: Express;
 
   beforeEach(() => {
-    app = createApp({
-      designModule: {
-        idGenerator: () => `question-${Date.now()}-${Math.random()}`,
-        now: () => new Date('2025-01-01T00:00:00Z'),
-      },
-    });
+    app = createApp();
   });
 
   describe('POST /api/design/questions', () => {

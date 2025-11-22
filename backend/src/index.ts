@@ -1,18 +1,13 @@
 import express, { Express } from 'express';
-import { configureDesignModule, DesignModuleConfig } from './design/index';
+import { configureDesignModule } from './design/index';
 import { createDesignRouter } from './design/http';
 
-export type AppConfig = {
-  designModule?: DesignModuleConfig;
-};
-
-export const createApp = (config: AppConfig = {}): Express => {
+export const createApp = (): Express => {
   const app = express();
 
   app.use(express.json());
 
-  const designModule = configureDesignModule(config.designModule);
-  app.use('/api/design', createDesignRouter(designModule));
+  app.use('/api/design', createDesignRouter(configureDesignModule()));
 
   return app;
 };
@@ -27,4 +22,3 @@ if (require.main === module) {
 }
 
 export default app;
-
