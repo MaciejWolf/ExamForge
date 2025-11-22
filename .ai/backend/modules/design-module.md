@@ -79,3 +79,52 @@ None
 
 See `backend-architecture.md` for details on cross-module interactions.
 
+## Database Architecture
+
+### Strategy: Hybrid Relational + JSONB
+
+We utilize PostgreSQL's `JSONB` capabilities to balance schema flexibility with query power. This allows for easy evolution of complex nested structures (like Question content or Template hierarchy) while maintaining top-level relational access for primary entities.
+
+### Schema Design
+
+#### `questions` Table
+- `id`: UUID (PK)
+- `created_at`: Timestamp
+- `updated_at`: Timestamp
+- `tags`: JSONB Array (e.g., `["math", "easy"]`). *Decision: Simplicity over relational normalization for V1.*
+- `content`: JSONB. Stores the variable structure of a question.
+  ```json
+  {
+    "type": "multiple_choice",
+    "prompt": "What is 2+2?",
+    "points": 5,
+    "answers": [
+      { "id": "1", "text": "4", "correct": true },
+      { "id": "2", "text": "5", "correct": false }
+    ]
+  }
+  ```
+
+#### `templates` Table
+- `id`: UUID (PK)
+- `created_at`: Timestamp
+- `updated_at`: Timestamp
+- `name`: String
+- `structure`: JSONB. Stores the hierarchy of pools and question references.
+  ```json
+  {
+    "pools": [
+      {
+        "id": "pool-1",
+        "name": "Math Basics",
+        "questions": ["uuid-q1", "uuid-q2"]
+      }
+    ]
+  }
+  ```
+
+### Integrity & Constraints
+- **Question Deletion**: Since `templates` reference questions inside a JSONB blob, standard Foreign Key cascades cannot be used.
+- **Enforcement**: The application layer (Service) must perform a check before deleting a question:
+  `SELECT 1 FROM templates WHERE structure->'pools' @> '[{"questions": ["QUESTION_ID"]}]'` (or equivalent JSON path query).
+  If a match is found, deletion is blocked.
