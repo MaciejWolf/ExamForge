@@ -94,35 +94,6 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** listQuestions is called with tag filter ["science"]
 - **Then** returns success with empty array
 
-## Tag Management Tests
-
-### addTagsToQuestion Use Case
-
-- [ ] **Test Case: Successfully add tags to question**
-- **Given** question "q-1" having tags ["math"]
-- **When** updateQuestion is called with id "q-1" and tags ["algebra", "basic"]
-- **Then** returns success with question having tags ["math", "algebra", "basic"]
-
-- [ ] **Test Case: Successfully add tags to question with no existing tags**
-- **Given** question "q-1" having no tags
-- **When** updateQuestion is called with id "q-1" and tags ["math"]
-- **Then** returns success with question having tags ["math"]
-
-- [ ] **Test Case: Ignore duplicate tags when adding**
-- **Given** question "q-1" having tags ["math"]
-- **When** updateQuestion is called with id "q-1" and tags ["math", "algebra"]
-- **Then** returns success with question having tags ["math", "algebra"] (no duplicate "math")
-
-- [ ] **Test Case: Successfully replace tags with new set**
-- **Given** question "q-1" having tags ["math", "advanced", "draft"]
-- **When** updateQuestion is called with id "q-1" and tags ["math", "intermediate"]
-- **Then** returns success with question having tags ["math", "intermediate"]
-
-- [ ] **Test Case: Fail to add tags to non-existent question**
-- **Given** no existing questions
-- **When** updateQuestion is called with id "non-existent-question"
-- **Then** returns error with type "QuestionNotFound"
-
 ## Template Management Tests
 
 ### createTemplate Use Case
