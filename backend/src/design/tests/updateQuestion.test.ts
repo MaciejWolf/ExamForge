@@ -63,7 +63,6 @@ const givenExistingQuestion = async (
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    points: number;
     tags: Array<{ id: string; name: string }>;
   }> = {}
 ): Promise<Question> => {
@@ -76,7 +75,6 @@ const givenExistingQuestion = async (
     text: overrides.text || 'Default question',
     answers: overrides.answers || defaultAnswers,
     correctAnswerId: overrides.correctAnswerId || 'answer-1',
-    points: overrides.points || 1,
     tags: overrides.tags || [],
   };
 
@@ -93,7 +91,6 @@ const thenQuestionShouldBeUpdated = (
   expected: {
     id: string;
     text?: string;
-    points?: number;
     originalCreatedAt: Date;
   }
 ) => {
@@ -104,9 +101,6 @@ const thenQuestionShouldBeUpdated = (
   expect(result.value.id).toBe(expected.id);
   if (expected.text !== undefined) {
     expect(result.value.text).toBe(expected.text);
-  }
-  if (expected.points !== undefined) {
-    expect(result.value.points).toBe(expected.points);
   }
 
   expect(result.value.createdAt).toEqual(expected.originalCreatedAt);

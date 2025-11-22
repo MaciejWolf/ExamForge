@@ -21,7 +21,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-3', text: '5' },
         ],
         correctAnswerId: 'answer-2',
-        points: 2,
         tags: [
           { id: 'tag-1', name: 'math' },
           { id: 'tag-2', name: 'arithmetic' },
@@ -35,7 +34,6 @@ describe('Design Module Integration Tests - Questions API', () => {
 
       expect(response.body).toMatchObject({
         text: questionData.text,
-        points: questionData.points,
         correctAnswerId: questionData.correctAnswerId,
       });
       expect(response.body.id).toBeDefined();
@@ -52,7 +50,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-2', text: '4' },
         ],
         correctAnswerId: 'answer-2',
-        points: 2,
       };
 
       const response = await request(app)
@@ -69,7 +66,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       const questionData = {
         text: 'What is 2+2?',
         correctAnswerId: 'answer-2',
-        points: 2,
       };
 
       const response = await request(app)
@@ -81,24 +77,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       expect(response.body.error.type).toBe('InvalidQuestionData');
     });
 
-    it('should return validation error for missing required field - points', async () => {
-      const questionData = {
-        text: 'What is 2+2?',
-        answers: [
-          { id: 'answer-1', text: '3' },
-          { id: 'answer-2', text: '4' },
-        ],
-        correctAnswerId: 'answer-2',
-      };
-
-      const response = await request(app)
-        .post('/api/design/questions')
-        .send(questionData)
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-      expect(response.body.error.type).toBe('InvalidQuestionData');
-    });
 
     it('should return validation error for empty content', async () => {
       const questionData = {
@@ -108,7 +86,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-2', text: '4' },
         ],
         correctAnswerId: 'answer-2',
-        points: 2,
       };
 
       const response = await request(app)
@@ -121,33 +98,11 @@ describe('Design Module Integration Tests - Questions API', () => {
       expect(response.body.error.message).toContain('empty');
     });
 
-    it('should return validation error for negative points', async () => {
-      const questionData = {
-        text: 'What is 2+2?',
-        answers: [
-          { id: 'answer-1', text: '3' },
-          { id: 'answer-2', text: '4' },
-        ],
-        correctAnswerId: 'answer-2',
-        points: -1,
-      };
-
-      const response = await request(app)
-        .post('/api/design/questions')
-        .send(questionData)
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-      expect(response.body.error.type).toBe('InvalidQuestionData');
-      expect(response.body.error.message).toContain('points');
-    });
-
     it('should return validation error for invalid answer structure - too few answers', async () => {
       const questionData = {
         text: 'What is 2+2?',
         answers: [{ id: 'answer-1', text: '3' }],
         correctAnswerId: 'answer-1',
-        points: 2,
       };
 
       const response = await request(app)
@@ -168,7 +123,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           text: `${i + 1}`,
         })),
         correctAnswerId: 'answer-1',
-        points: 2,
       };
 
       const response = await request(app)
@@ -189,7 +143,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-2', text: '4' },
         ],
         correctAnswerId: 'answer-2',
-        points: 2,
         tags: [{ id: 'tag-1', name: 'math' }],
       };
 
@@ -207,7 +160,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       expect(getResponse.body).toMatchObject({
         id: questionId,
         text: questionData.text,
-        points: questionData.points,
         correctAnswerId: questionData.correctAnswerId,
       });
       expect(getResponse.body.answers).toEqual(questionData.answers);
@@ -226,7 +178,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-2', text: 'Option 2' },
         ],
         correctAnswerId: 'answer-1',
-        points: 1,
         tags: [{ id: 'tag-1', name: 'original' }],
       };
 
@@ -283,24 +234,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       expect(getResponse.body.correctAnswerId).toBe('answer-3');
     });
 
-    it('should update question points and verify changes are persisted', async () => {
-      const updateData = {
-        points: 5,
-      };
-
-      const updateResponse = await request(app)
-        .put(`/api/design/questions/${createdQuestionId}`)
-        .send(updateData)
-        .expect(200);
-
-      expect(updateResponse.body.points).toBe(5);
-
-      const getResponse = await request(app)
-        .get(`/api/design/questions/${createdQuestionId}`)
-        .expect(200);
-
-      expect(getResponse.body.points).toBe(5);
-    });
 
     it('should update question tags and verify changes are persisted', async () => {
       const updateData = {
@@ -340,20 +273,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       expect(response.body.error.message).toContain('empty');
     });
 
-    it('should return validation error when updating with invalid data - negative points', async () => {
-      const updateData = {
-        points: -5,
-      };
-
-      const response = await request(app)
-        .put(`/api/design/questions/${createdQuestionId}`)
-        .send(updateData)
-        .expect(400);
-
-      expect(response.body.error).toBeDefined();
-      expect(response.body.error.type).toBe('InvalidQuestionData');
-      expect(response.body.error.message).toContain('points');
-    });
 
     it('should return validation error when updating with invalid data - too few answers', async () => {
       const updateData = {
@@ -399,7 +318,6 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-3', text: 'Answer 3' },
         ],
         correctAnswerId: 'answer-2',
-        points: 3,
         tags: [
           { id: 'tag-1', name: 'test' },
           { id: 'tag-2', name: 'integration' },
@@ -422,7 +340,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       expect(response.body).toMatchObject({
         id: createdQuestion.id,
         text: createdQuestion.text,
-        points: createdQuestion.points,
         correctAnswerId: createdQuestion.correctAnswerId,
       });
       expect(response.body.answers).toEqual(createdQuestion.answers);
@@ -445,7 +362,6 @@ describe('Design Module Integration Tests - Questions API', () => {
       // First, update the question
       const updateData = {
         text: 'Updated question text',
-        points: 5,
         tags: [{ id: 'tag-3', name: 'updated' }],
       };
 
@@ -460,7 +376,6 @@ describe('Design Module Integration Tests - Questions API', () => {
         .expect(200);
 
       expect(response.body.text).toBe('Updated question text');
-      expect(response.body.points).toBe(5);
       expect(response.body.tags).toEqual(updateData.tags);
       expect(response.body.id).toBe(createdQuestion.id);
     });

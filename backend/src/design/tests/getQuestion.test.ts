@@ -16,7 +16,6 @@ describe('getQuestion Use Case', () => {
         { id: 'answer-3', text: '5' },
       ],
       correctAnswerId: 'answer-2',
-      points: 2,
       tags: [
         { id: 'tag-1', name: 'math' },
         { id: 'tag-2', name: 'basic' },
@@ -48,7 +47,6 @@ const givenExistingQuestion = async (
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    points: number;
     tags: Array<{ id: string; name: string }>;
   }> = {}
 ): Promise<Question> => {
@@ -61,7 +59,6 @@ const givenExistingQuestion = async (
     text: overrides.text || 'Default question',
     answers: overrides.answers || defaultAnswers,
     correctAnswerId: overrides.correctAnswerId || 'answer-1',
-    points: overrides.points || 1,
     tags: overrides.tags || [],
   };
 
@@ -82,7 +79,6 @@ const thenQuestionShouldBeRetrieved = (
     expect(result.value).toMatchObject({
       id: expectedQuestion.id,
       text: expectedQuestion.text,
-      points: expectedQuestion.points,
       correctAnswerId: expectedQuestion.correctAnswerId,
     });
     // Deep equality for arrays

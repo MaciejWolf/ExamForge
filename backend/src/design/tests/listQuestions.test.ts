@@ -85,7 +85,6 @@ const givenQuestions = async (
         { id: 'answer-2', text: 'Option 2' },
       ],
       correctAnswerId: 'answer-1',
-      points: 1,
       tags: questionSpec.tags || [],
     };
 
@@ -118,7 +117,6 @@ const thenQuestionsShouldBeListed = (
       expect(actualQuestion).toMatchObject({
         id: expectedQuestion.id,
         text: expectedQuestion.text,
-        points: expectedQuestion.points,
         correctAnswerId: expectedQuestion.correctAnswerId,
       });
 
@@ -131,7 +129,6 @@ const thenQuestionsShouldBeListed = (
       expect(actualQuestion.text).toBeTruthy();
       expect(actualQuestion.answers.length).toBeGreaterThanOrEqual(2);
       expect(actualQuestion.answers.length).toBeLessThanOrEqual(6);
-      expect(actualQuestion.points).toBeGreaterThan(0);
       expect(actualQuestion.createdAt).toBeInstanceOf(Date);
       expect(actualQuestion.updatedAt).toBeInstanceOf(Date);
     }

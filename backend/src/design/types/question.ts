@@ -13,7 +13,6 @@ export type Question = {
     text: string;
     answers: Answer[];
     correctAnswerId: string;
-    points: number;
     tags: Tag[];
     createdAt: Date;
     updatedAt: Date;

@@ -35,7 +35,6 @@ const givenExistingQuestion = async (
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    points: number;
     tags: Array<{ id: string; name: string }>;
   }> = {}
 ): Promise<{ id: string }> => {
@@ -48,7 +47,6 @@ const givenExistingQuestion = async (
     text: overrides.text || 'Default question',
     answers: overrides.answers || defaultAnswers,
     correctAnswerId: overrides.correctAnswerId || 'answer-1',
-    points: overrides.points || 1,
     tags: overrides.tags || [],
   };
 

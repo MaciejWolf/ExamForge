@@ -63,7 +63,6 @@ const aValidQuestion = (overrides: Partial<CreateQuestionCommand> = {}): CreateQ
     { id: 'answer-4', text: '6' },
   ],
   correctAnswerId: 'answer-2',
-  points: 2,
   tags: [
     { id: 'tag-1', name: 'math' },
     { id: 'tag-2', name: 'algebra' },
@@ -79,7 +78,6 @@ const thenQuestionShouldBeCreated = (
   if (result.ok) {
     expect(result.value).toMatchObject({
       text: originalCommand.text,
-      points: originalCommand.points,
       correctAnswerId: originalCommand.correctAnswerId,
       // Verify stubs were used
       id: 'test-question-id',

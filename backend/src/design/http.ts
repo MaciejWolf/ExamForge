@@ -37,20 +37,10 @@ export const createDesignRouter = (module: DesignModule): Router => {
         });
       }
 
-      if (req.body.points === undefined || req.body.points === null) {
-        return res.status(400).json({
-          error: {
-            type: 'InvalidQuestionData',
-            message: 'Question points are required',
-          },
-        });
-      }
-
       const command: CreateQuestionCommand = {
         text: req.body.text,
         answers: req.body.answers,
         correctAnswerId: req.body.correctAnswerId,
-        points: req.body.points,
         tags: req.body.tags,
       };
 
@@ -78,7 +68,6 @@ export const createDesignRouter = (module: DesignModule): Router => {
       text: req.body.text,
       answers: req.body.answers,
       correctAnswerId: req.body.correctAnswerId,
-      points: req.body.points,
       tags: req.body.tags,
     };
 
@@ -91,12 +80,48 @@ export const createDesignRouter = (module: DesignModule): Router => {
     return handleError(result.error, res);
   });
 
+  // GET /questions
+  router.get('/questions', async (req: Request, res: Response) => {
+    try {
+      const tags = req.query.tags;
+      const tagArray = tags
+        ? (Array.isArray(tags) ? tags : [tags]).map(t => String(t))
+        : undefined;
+
+      const result = await module.listQuestions({ tags: tagArray });
+
+      if (result.ok) {
+        return res.status(200).json(result.value);
+      }
+
+      return handleError(result.error, res);
+    } catch (error) {
+      return res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        },
+      });
+    }
+  });
+
   // GET /questions/:id
   router.get('/questions/:id', async (req: Request, res: Response) => {
     const result = await module.getQuestion(req.params.id);
 
     if (result.ok) {
       return res.status(200).json(result.value);
+    }
+
+    return handleError(result.error, res);
+  });
+
+  // DELETE /questions/:id
+  router.delete('/questions/:id', async (req: Request, res: Response) => {
+    const result = await module.deleteQuestion(req.params.id);
+
+    if (result.ok) {
+      return res.status(200).json({ message: 'Question deleted successfully' });
     }
 
     return handleError(result.error, res);

@@ -14,7 +14,6 @@ export type CreateQuestionCommand = {
   text: string;
   answers: Answer[];
   correctAnswerId: string;
-  points: number;
   tags?: Tag[];
 };
 
@@ -39,7 +38,6 @@ export const createQuestion = ({ repo, idGenerator, now }: CreateQuestionDeps) =
       text: cmd.text,
       answers: cmd.answers,
       correctAnswerId: cmd.correctAnswerId,
-      points: cmd.points,
       tags: cmd.tags || [],
       createdAt: timestamp,
       updatedAt: timestamp,
@@ -81,13 +79,6 @@ const validateQuestionInput = (input: CreateQuestionCommand): ValidationResult =
     };
   }
 
-  if (input.points <= 0) {
-    return {
-      valid: false,
-      message: 'Question points must be greater than 0',
-    };
-  }
-
   return { valid: true, message: '' };
 };
 
@@ -101,7 +92,6 @@ export type UpdateQuestionCommand = {
   text?: string;
   answers?: Answer[];
   correctAnswerId?: string;
-  points?: number;
   tags?: Tag[];
 };
 
@@ -122,7 +112,6 @@ export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {
       text: cmd.text !== undefined ? cmd.text : existing.text,
       answers: cmd.answers !== undefined ? cmd.answers : existing.answers,
       correctAnswerId: cmd.correctAnswerId !== undefined ? cmd.correctAnswerId : existing.correctAnswerId,
-      points: cmd.points !== undefined ? cmd.points : existing.points,
       tags: cmd.tags !== undefined ? cmd.tags : existing.tags,
       updatedAt: now(),
     };
@@ -132,7 +121,6 @@ export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {
       text: updatedQuestion.text,
       answers: updatedQuestion.answers,
       correctAnswerId: updatedQuestion.correctAnswerId,
-      points: updatedQuestion.points,
       tags: updatedQuestion.tags,
     });
     if (!validation.valid) {
