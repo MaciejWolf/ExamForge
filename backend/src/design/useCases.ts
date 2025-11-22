@@ -185,3 +185,19 @@ export const getQuestion = ({ repo }: GetQuestionDeps) => {
     return ok(question);
   };
 };
+
+type ListQuestionsDeps = {
+  repo: QuestionRepository;
+};
+
+export type ListQuestionsCommand = {
+  tags?: string[];
+};
+
+export const listQuestions = ({ repo }: ListQuestionsDeps) => {
+  return async (cmd: ListQuestionsCommand = {}): Promise<Result<Question[], DesignError>> => {
+    const tags = cmd.tags || [];
+    const questions = await repo.findByTags(tags);
+    return ok(questions);
+  };
+};
