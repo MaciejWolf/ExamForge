@@ -1,8 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { Express } from 'express';
 import request from 'supertest';
-import { createApp } from '../../index';
-import { Question } from '../../design/types/question';
+import { createApp } from '../../../index';
+import { Question } from '../../../design/types/question';
 
 describe('Design Module Integration Tests - Questions API', () => {
   let app: Express;

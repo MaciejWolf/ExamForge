@@ -9,6 +9,7 @@ import { PasswordRecoveryPage } from "./pages/auth/PasswordRecoveryPage"
 import { DashboardPage } from "./pages/examiner/DashboardPage"
 import QuestionPoolsPage from "./pages/examiner/QuestionPoolsPage"
 import QuestionPoolManagementPage from "./pages/examiner/QuestionPoolManagementPage"
+import QuestionBankListPage from "./pages/examiner/QuestionBankListPage"
 import TestTemplatesListPage from "./pages/examiner/TestTemplatesListPage"
 import TestSessionLaunchPage from "./pages/examiner/TestSessionLaunchPage"
 import TestSessionListPage from "./pages/examiner/TestSessionListPage"
@@ -45,6 +46,14 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <QuestionPoolManagementPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/question-bank"
+            element={
+              <ProtectedRoute>
+                <QuestionBankListPage />
               </ProtectedRoute>
             }
           />

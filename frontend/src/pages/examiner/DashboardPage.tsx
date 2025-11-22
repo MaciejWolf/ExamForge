@@ -8,10 +8,10 @@ export const DashboardPage = () => {
 
   const cards = [
     {
-      title: "Question Pools",
-      description: "Manage your question pools",
+      title: "Question Bank",
+      description: "Manage your global question bank",
       icon: FileQuestion,
-      onClick: () => navigate("/question-pools"),
+      onClick: () => navigate("/question-bank"),
       iconColor: "text-primary"
     },
     {

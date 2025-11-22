@@ -23,6 +23,47 @@ export interface Answer {
   isCorrect: boolean;
 }
 
+export type Tag = {
+  id: string;
+  name: string;
+};
+
+export interface BankQuestion {
+  id: string;
+  text: string;
+  answers: Array<{
+    id: string;
+    text: string;
+  }>;
+  correctAnswerId: string;
+  points: number;
+  tags: Tag[];
+  createdAt: string;
+  updatedAt: string;
+}
+
+export interface CreateBankQuestionRequest {
+  text: string;
+  answers: Array<{
+    id: string;
+    text: string;
+  }>;
+  correctAnswerId: string;
+  points: number;
+  tags?: Tag[];
+}
+
+export interface UpdateBankQuestionRequest {
+  text?: string;
+  answers?: Array<{
+    id: string;
+    text: string;
+  }>;
+  correctAnswerId?: string;
+  points?: number;
+  tags?: Tag[];
+}
+
 export interface Question {
   id: string;
   pool_id: string;
@@ -290,6 +331,169 @@ export const testSessionsApi = {
 
   async getParticipantDetails(sessionId: string, participantId: string): Promise<ParticipantDetail> {
     return apiRequest<ParticipantDetail>(`/test-sessions/${sessionId}/participants/${participantId}`);
+  },
+};
+
+// Mock data for Question Bank (to be replaced with real API calls)
+const MOCK_QUESTION_BANK_DATA: BankQuestion[] = [
+  {
+    id: '1',
+    text: 'What is 2+2?',
+    answers: [
+      { id: 'a1', text: '3' },
+      { id: 'a2', text: '4' },
+      { id: 'a3', text: '5' },
+      { id: 'a4', text: '6' },
+    ],
+    correctAnswerId: 'a2',
+    points: 2,
+    tags: [
+      { id: 'tag1', name: 'Mathematics' },
+      { id: 'tag2', name: 'Basic' },
+    ],
+    createdAt: '2024-01-01T00:00:00Z',
+    updatedAt: '2024-01-01T00:00:00Z',
+  },
+  {
+    id: '2',
+    text: 'Solve: 3x = 15',
+    answers: [
+      { id: 'b1', text: 'x = 3' },
+      { id: 'b2', text: 'x = 5' },
+      { id: 'b3', text: 'x = 10' },
+      { id: 'b4', text: 'x = 15' },
+    ],
+    correctAnswerId: 'b2',
+    points: 3,
+    tags: [
+      { id: 'tag1', name: 'Mathematics' },
+      { id: 'tag3', name: 'Advanced' },
+    ],
+    createdAt: '2024-01-02T00:00:00Z',
+    updatedAt: '2024-01-02T00:00:00Z',
+  },
+  {
+    id: '3',
+    text: "Newton's First Law states that an object at rest will remain at rest unless acted upon by an external force.",
+    answers: [
+      { id: 'c1', text: 'True' },
+      { id: 'c2', text: 'False' },
+    ],
+    correctAnswerId: 'c1',
+    points: 3,
+    tags: [
+      { id: 'tag4', name: 'Physics' },
+      { id: 'tag3', name: 'Advanced' },
+    ],
+    createdAt: '2024-01-03T00:00:00Z',
+    updatedAt: '2024-01-03T00:00:00Z',
+  },
+  {
+    id: '4',
+    text: 'What is the chemical symbol for water?',
+    answers: [
+      { id: 'd1', text: 'H2O' },
+      { id: 'd2', text: 'CO2' },
+      { id: 'd3', text: 'NaCl' },
+      { id: 'd4', text: 'O2' },
+    ],
+    correctAnswerId: 'd1',
+    points: 2,
+    tags: [
+      { id: 'tag5', name: 'Chemistry' },
+      { id: 'tag2', name: 'Basic' },
+    ],
+    createdAt: '2024-01-04T00:00:00Z',
+    updatedAt: '2024-01-04T00:00:00Z',
+  },
+  {
+    id: '5',
+    text: 'Who wrote "Romeo and Juliet"?',
+    answers: [
+      { id: 'e1', text: 'Charles Dickens' },
+      { id: 'e2', text: 'William Shakespeare' },
+      { id: 'e3', text: 'Jane Austen' },
+      { id: 'e4', text: 'Mark Twain' },
+    ],
+    correctAnswerId: 'e2',
+    points: 2,
+    tags: [
+      { id: 'tag6', name: 'History' },
+      { id: 'tag2', name: 'Basic' },
+    ],
+    createdAt: '2024-01-05T00:00:00Z',
+    updatedAt: '2024-01-05T00:00:00Z',
+  },
+];
+
+// Simulate network delay
+const delay = (ms: number) => new Promise(resolve => setTimeout(resolve, ms));
+
+export const questionBankApi = {
+  async getAll(): Promise<BankQuestion[]> {
+    // Simulate network delay
+    await delay(300);
+    // TODO: Replace with real API call when backend is ready
+    // return apiRequest<BankQuestion[]>('/design/questions');
+    return Promise.resolve([...MOCK_QUESTION_BANK_DATA]);
+  },
+
+  async create(data: CreateBankQuestionRequest): Promise<BankQuestion> {
+    // Simulate network delay
+    await delay(300);
+    // TODO: Replace with real API call when backend is ready
+    // return apiRequest<BankQuestion>('/design/questions', {
+    //   method: 'POST',
+    //   body: JSON.stringify(data),
+    // });
+    const newQuestion: BankQuestion = {
+      id: `mock-${Date.now()}`,
+      text: data.text,
+      answers: data.answers,
+      correctAnswerId: data.correctAnswerId,
+      points: data.points,
+      tags: data.tags || [],
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_QUESTION_BANK_DATA.push(newQuestion);
+    return Promise.resolve(newQuestion);
+  },
+
+  async update(id: string, data: UpdateBankQuestionRequest): Promise<BankQuestion> {
+    // Simulate network delay
+    await delay(300);
+    // TODO: Replace with real API call when backend is ready
+    // return apiRequest<BankQuestion>(`/design/questions/${id}`, {
+    //   method: 'PUT',
+    //   body: JSON.stringify(data),
+    // });
+    const index = MOCK_QUESTION_BANK_DATA.findIndex(q => q.id === id);
+    if (index === -1) {
+      throw new Error('Question not found');
+    }
+    const updatedQuestion: BankQuestion = {
+      ...MOCK_QUESTION_BANK_DATA[index],
+      ...data,
+      updatedAt: new Date().toISOString(),
+    };
+    MOCK_QUESTION_BANK_DATA[index] = updatedQuestion;
+    return Promise.resolve(updatedQuestion);
+  },
+
+  async delete(id: string): Promise<void> {
+    // Simulate network delay
+    await delay(300);
+    // TODO: Replace with real API call when backend is ready
+    // return apiRequest<void>(`/design/questions/${id}`, {
+    //   method: 'DELETE',
+    // });
+    const index = MOCK_QUESTION_BANK_DATA.findIndex(q => q.id === id);
+    if (index === -1) {
+      throw new Error('Question not found');
+    }
+    MOCK_QUESTION_BANK_DATA.splice(index, 1);
+    return Promise.resolve();
   },
 };
 

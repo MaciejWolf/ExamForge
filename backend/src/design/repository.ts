@@ -1,4 +1,4 @@
-import { Question } from './types/testTemplate';
+import { Question } from "./types/question";
 
 export type TemplateRepository = {
   // To be implemented later
