@@ -26,4 +26,4 @@ export const configureDesignModule = (config: DesignModuleConfig = {}) => {
 
 export type DesignModule = ReturnType<typeof configureDesignModule>;
 
-export * from './domain';
+export * from './types/testTemplate';

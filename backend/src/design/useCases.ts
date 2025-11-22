@@ -1,5 +1,7 @@
 import { err, ok, Result } from '../shared/result';
-import { Question, DesignError, Answer, Tag } from './domain';
+import { Question } from './types/question';
+import { DesignError } from './types/designError';
+import { Answer, Tag } from './types/question';
 import { QuestionRepository } from './repository';
 
 type CreateQuestionDeps = {

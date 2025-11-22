@@ -1,7 +1,8 @@
 import { describe, it, expect } from 'vitest';
 import { configureDesignModule, DesignModule } from '../index';
 import { Result } from '../../shared/result';
-import { Question, DesignError } from '../domain';
+import { Question } from '../types/question';
+import { DesignError } from '../types/designError';
 
 describe('getQuestion Use Case', () => {
   const module = givenDesignModule();

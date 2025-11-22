@@ -1,4 +1,4 @@
-import { Question } from './domain';
+import { Question } from './types/testTemplate';
 
 export type TemplateRepository = {
   // To be implemented later
