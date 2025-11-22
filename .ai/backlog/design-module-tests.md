@@ -193,6 +193,24 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** updateTemplate is called with id "t-1" and new description
 - **Then** returns success with updated template
 
+- [ ] **Test Case: Successfully update template, including adding a new pool and modifying an existing pool**
+- **Given** existing template (id: "t-1", name: "Template 1") with a pool "p-1" (name: "Math", questionCount: 5)
+- **When** updateTemplate is called with id "t-1" and an updated template object that:
+    - Renames "Template 1" to "Updated Template 1"
+    - Changes "Math" pool's name to "Algebra" and questionCount to 10
+    - Adds a new pool "p-2" (name: "History", questionCount: 3)
+- **Then** returns success with the updated template, and `getTemplate("t-1")` reflects all changes (new name, updated pool, new pool).
+
+- [ ] **Test Case: Successfully update template, including removing a pool and a question from a pool**
+- **Given** existing template (id: "t-1") with:
+    - Pool "p-1" containing question "q-1"
+    - Pool "p-2"
+- **When** updateTemplate is called with id "t-1" and an updated template object that:
+    - Removes pool "p-2"
+    - Removes question "q-1" from pool "p-1"
+- **Then** returns success with the updated template, and `getTemplate("t-1")` reflects all changes (pool "p-2" is gone, question "q-1" is gone from "p-1").
+
+
 - [ ] **Test Case: Fail to update non-existent template**
 - **Given** no existing templates
 - **When** updateTemplate is called with id "non-existent-template"
@@ -238,152 +256,6 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **Given** no existing templates
 - **When** listTemplates is called
 - **Then** returns success with empty array
-
-## Pool Management Tests (within Templates)
-
-### createPoolInTemplate Use Case
-
-- [ ] **Test Case: Successfully create pool in template**
-- **Given** existing template "t-1"
-- **When** createPoolInTemplate is called with templateId "t-1", name "Math Pool", questionCount 5
-- **Then** returns success with new pool containing generated ID and empty questions array
-
-- [ ] **Test Case: Fail to create pool with duplicate name in same template**
-- **Given** template "t-1" containing pool named "Math Pool"
-- **When** createPoolInTemplate is called with templateId "t-1" and name "Math Pool"
-- **Then** returns error with type "PoolNameConflict"
-
-- [ ] **Test Case: Successfully create pools with same name in different templates**
-- **Given** templates "t-1" and "t-2"
-- **When** createPoolInTemplate is called for both templates with name "Math Pool"
-- **Then** returns success for both (pool names are scoped to templates)
-
-- [ ] **Test Case: Fail to create pool in non-existent template**
-- **Given** no existing templates
-- **When** createPoolInTemplate is called with templateId "non-existent-template"
-- **Then** returns error with type "TemplateNotFound"
-
-### updatePoolInTemplate Use Case
-
-- [ ] **Test Case: Successfully update pool name**
-- **Given** template "t-1" containing pool "p-1" named "Old Name"
-- **When** updatePoolInTemplate is called with templateId "t-1", poolId "p-1", new name "New Name"
-- **Then** returns success with updated pool
-
-- [ ] **Test Case: Successfully update pool question count**
-- **Given** template "t-1" containing pool "p-1" with questionCount 5
-- **When** updatePoolInTemplate is called with templateId "t-1", poolId "p-1", questionCount 10
-- **Then** returns success with updated questionCount
-
-- [ ] **Test Case: Fail to update pool in non-existent template**
-- **Given** no existing templates
-- **When** updatePoolInTemplate is called with templateId "non-existent-template"
-- **Then** returns error with type "TemplateNotFound"
-
-- [ ] **Test Case: Fail to update non-existent pool**
-- **Given** template "t-1" with no pools
-- **When** updatePoolInTemplate is called with templateId "t-1", poolId "non-existent-pool"
-- **Then** returns error with type "PoolNotFound"
-
-### deletePoolFromTemplate Use Case
-
-- [ ] **Test Case: Successfully delete pool from template**
-- **Given** template "t-1" containing pool "p-1" with questions
-- **When** deletePoolFromTemplate is called with templateId "t-1", poolId "p-1"
-- **Then** returns success, pool is removed from template, questions remain in global bank
-
-- [ ] **Test Case: Fail to delete pool from non-existent template**
-- **Given** no existing templates
-- **When** deletePoolFromTemplate is called with templateId "non-existent-template"
-- **Then** returns error with type "TemplateNotFound"
-
-- [ ] **Test Case: Fail to delete non-existent pool**
-- **Given** template "t-1" with no pools
-- **When** deletePoolFromTemplate is called with templateId "t-1", poolId "non-existent-pool"
-- **Then** returns error with type "PoolNotFound"
-
-### addQuestionToPool Use Case
-
-- [ ] **Test Case: Successfully add question from global bank to pool**
-- **Given** template "t-1", pool "p-1", and question "q-1" in global bank
-- **When** addQuestionToPool is called with templateId "t-1", poolId "p-1", questionId "q-1"
-- **Then** returns success and question "q-1" is now in pool "p-1"
-
-- [ ] **Test Case: Fail to add question already in another pool in same template**
-- **Given** template "t-1", pools "p-1" and "p-2", question "q-1" already in "p-1"
-- **When** addQuestionToPool is called with templateId "t-1", poolId "p-2", questionId "q-1"
-- **Then** returns error with type "QuestionAlreadyInPool"
-
-- [ ] **Test Case: Successfully add same question to pools in different templates**
-- **Given** templates "t-1" and "t-2", each with pool "p-1", and question "q-1"
-- **When** addQuestionToPool is called for both templates with questionId "q-1"
-- **Then** returns success for both (question can be in multiple templates)
-
-- [ ] **Test Case: Fail to add non-existent question**
-- **Given** template "t-1" and pool "p-1"
-- **When** addQuestionToPool is called with questionId "non-existent-question"
-- **Then** returns error with type "QuestionNotFound"
-
-- [ ] **Test Case: Fail to add question to non-existent pool**
-- **Given** template "t-1" and question "q-1"
-- **When** addQuestionToPool is called with poolId "non-existent-pool"
-- **Then** returns error with type "PoolNotFound"
-
-### removeQuestionFromPool Use Case
-
-- [ ] **Test Case: Successfully remove question from pool**
-- **Given** template "t-1", pool "p-1" containing question "q-1"
-- **When** removeQuestionFromPool is called with templateId "t-1", poolId "p-1", questionId "q-1"
-- **Then** returns success and question "q-1" is removed from pool (but remains in global bank)
-
-- [ ] **Test Case: Fail to remove question not in pool**
-- **Given** template "t-1", pool "p-1" without question "q-1"
-- **When** removeQuestionFromPool is called with templateId "t-1", poolId "p-1", questionId "q-1"
-- **Then** returns error with type "QuestionNotInPool"
-
-- [ ] **Test Case: Fail to remove question from non-existent pool**
-- **Given** template "t-1"
-- **When** removeQuestionFromPool is called with poolId "non-existent-pool"
-- **Then** returns error with type "PoolNotFound"
-
-### moveQuestionBetweenPools Use Case
-
-- [ ] **Test Case: Successfully move question from one pool to another in same template**
-- **Given** template "t-1", pools "p-1" and "p-2", question "q-1" in "p-1"
-- **When** moveQuestionBetweenPools is called with templateId "t-1", questionId "q-1", fromPoolId "p-1", toPoolId "p-2"
-- **Then** returns success, question "q-1" is removed from "p-1" and added to "p-2"
-
-- [ ] **Test Case: Fail to move question to pool in different template**
-- **Given** templates "t-1" and "t-2", each with pools
-- **When** moveQuestionBetweenPools is called with mismatched template IDs
-- **Then** returns error with type "InvalidPoolReferences"
-
-- [ ] **Test Case: Fail to move question not in source pool**
-- **Given** template "t-1", pools "p-1" and "p-2", question "q-1" not in "p-1"
-- **When** moveQuestionBetweenPools is called with fromPoolId "p-1"
-- **Then** returns error with type "QuestionNotInPool"
-
-- [ ] **Test Case: Fail to move question to non-existent pool**
-- **Given** template "t-1", pool "p-1" containing question "q-1"
-- **When** moveQuestionBetweenPools is called with toPoolId "non-existent-pool"
-- **Then** returns error with type "PoolNotFound"
-
-### listPoolsInTemplate Use Case
-
-- [ ] **Test Case: Successfully list all pools in template**
-- **Given** template "t-1" containing 3 pools
-- **When** listPoolsInTemplate is called with templateId "t-1"
-- **Then** returns success with array containing all 3 pools with their questions
-
-- [ ] **Test Case: Successfully list pools in template with no pools**
-- **Given** template "t-1" containing no pools
-- **When** listPoolsInTemplate is called with templateId "t-1"
-- **Then** returns success with empty array
-
-- [ ] **Test Case: Fail to list pools in non-existent template**
-- **Given** no existing templates
-- **When** listPoolsInTemplate is called with templateId "non-existent-template"
-- **Then** returns error with type "TemplateNotFound"
 
 ## Template Materialization Tests
 

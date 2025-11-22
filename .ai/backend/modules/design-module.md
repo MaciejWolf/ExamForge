@@ -10,28 +10,20 @@ Define what tests are and how they are built.
 
 ### Global Question Bank Management
 - `createQuestion` - Creates a new question in the global question bank
-- `updateQuestion` - Updates an existing question in the bank
 - `deleteQuestion` - Deletes a question from the bank (blocked if used in any template)
 - `getQuestion` - Retrieves a question by ID
+- `updateQuestion` - Updates an existing question in the bank
 - `listQuestions` - Lists all questions in the global bank with optional tag filtering
 - `addTagsToQuestion` - Adds one or more tags to a question
 - `removeTagsFromQuestion` - Removes tags from a question
 - `listTags` - Lists all existing tags in the system
-- `suggestTags` - Suggests existing tags based on partial input
 
 ### Template and Local Pool Management
 - `createTemplate` - Creates a new test template
-- `updateTemplate` - Updates an existing test template
+- `updateTemplate` - Updates an existing test template by replacing its entire state (metadata, pools, and their assigned questions). This is a monolithic update for V1.
 - `deleteTemplate` - Deletes a test template
-- `getTemplate` - Retrieves a test template by ID
-- `listTemplates` - Lists all test templates
-- `createPoolInTemplate` - Creates a new local pool within a specific template
-- `updatePoolInTemplate` - Updates a local pool (name, question selection count)
-- `deletePoolFromTemplate` - Deletes a local pool from a template
-- `addQuestionToPool` - Assigns a question from the global bank to a local pool in a template
-- `removeQuestionFromPool` - Removes a question from a local pool in a template
-- `moveQuestionBetweenPools` - Moves a question from one pool to another within the same template
-- `listPoolsInTemplate` - Lists all local pools within a template
+- `getTemplate` - Retrieves a test template by ID, including its associated pools and their assigned questions.
+- `listTemplates` - Lists all test templates (metadata only, or with summarized pool info depending on frontend need for list view)
 - `materializeTemplate` - Converts template into frozen `TestContentPackage` for assessment module
 
 ## Contracts
@@ -79,14 +71,6 @@ GET    /api/design/templates/:templateId        # Get a specific template
 PUT    /api/design/templates/:templateId        # Update a template
 DELETE /api/design/templates/:templateId        # Delete a template
 
-# Local Pools (within Templates)
-GET    /api/design/templates/:templateId/pools                           # List pools in template
-POST   /api/design/templates/:templateId/pools                           # Create pool in template
-PUT    /api/design/templates/:templateId/pools/:poolId                   # Update pool
-DELETE /api/design/templates/:templateId/pools/:poolId                   # Delete pool from template
-POST   /api/design/templates/:templateId/pools/:poolId/questions         # Add question to pool
-DELETE /api/design/templates/:templateId/pools/:poolId/questions/:qId   # Remove question from pool
-PUT    /api/design/templates/:templateId/pools/:poolId/questions/:qId/move  # Move question to another pool
 ```
 
 ## Dependencies
