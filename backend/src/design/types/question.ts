@@ -1,7 +1,4 @@
-export type Tag = {
-  id: string;
-  name: string;
-};
+export type Tag = string;
 
 export type Answer = {
   id: string;
@@ -9,11 +6,11 @@ export type Answer = {
 };
 
 export type Question = {
-    id: string;
-    text: string;
-    answers: Answer[];
-    correctAnswerId: string;
-    tags: Tag[];
-    createdAt: Date;
-    updatedAt: Date;
+  id: string;
+  text: string;
+  answers: Answer[];
+  correctAnswerId: string;
+  tags: string[];
+  createdAt: Date;
+  updatedAt: Date;
 };

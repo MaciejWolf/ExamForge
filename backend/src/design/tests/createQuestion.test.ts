@@ -63,10 +63,7 @@ const aValidQuestion = (overrides: Partial<CreateQuestionCommand> = {}): CreateQ
     { id: 'answer-4', text: '6' },
   ],
   correctAnswerId: 'answer-2',
-  tags: [
-    { id: 'tag-1', name: 'math' },
-    { id: 'tag-2', name: 'algebra' },
-  ],
+  tags: ['math', 'algebra'],
   ...overrides,
 });
 

@@ -29,21 +29,15 @@ describe('updateQuestion Use Case', () => {
 
   it('Successfully update question tags', async () => {
     await givenExistingQuestion(module, {
-      tags: [{ id: 'tag-1', name: 'math' }],
+      tags: ['math'],
     });
 
     const result = await module.updateQuestion({
       id: 'q-1',
-      tags: [
-        { id: 'tag-1', name: 'math' },
-        { id: 'tag-2', name: 'algebra' },
-      ],
+      tags: ['math', 'algebra'],
     });
 
-    thenTagsShouldBeUpdated(result, [
-      { id: 'tag-1', name: 'math' },
-      { id: 'tag-2', name: 'algebra' },
-    ]);
+    thenTagsShouldBeUpdated(result, ['math', 'algebra']);
   });
 
   it('Fail to update non-existent question', async () => {
@@ -63,7 +57,7 @@ const givenExistingQuestion = async (
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    tags: Array<{ id: string; name: string }>;
+    tags: string[];
   }> = {}
 ): Promise<Question> => {
   const defaultAnswers = [
@@ -115,7 +109,7 @@ const thenQuestionShouldBeUpdated = (
 
 const thenTagsShouldBeUpdated = (
   result: Result<Question, DesignError>,
-  expectedTags: Array<{ id: string; name: string }>
+  expectedTags: string[]
 ) => {
   expect(result.ok).toBe(true);
   if (result.ok) {

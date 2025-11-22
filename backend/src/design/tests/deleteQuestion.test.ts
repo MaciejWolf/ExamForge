@@ -35,7 +35,7 @@ const givenExistingQuestion = async (
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    tags: Array<{ id: string; name: string }>;
+    tags: string[];
   }> = {}
 ): Promise<{ id: string }> => {
   const defaultAnswers = [

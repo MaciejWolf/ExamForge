@@ -1,7 +1,7 @@
 import { err, ok, Result } from '../shared/result';
 import { Question } from './types/question';
 import { DesignError } from './types/designError';
-import { Answer, Tag } from './types/question';
+import { Answer } from './types/question';
 import { QuestionRepository } from './repository';
 
 type CreateQuestionDeps = {
@@ -14,7 +14,7 @@ export type CreateQuestionCommand = {
   text: string;
   answers: Answer[];
   correctAnswerId: string;
-  tags?: Tag[];
+  tags?: string[];
 };
 
 type ValidationResult = {
@@ -92,7 +92,7 @@ export type UpdateQuestionCommand = {
   text?: string;
   answers?: Answer[];
   correctAnswerId?: string;
-  tags?: Tag[];
+  tags?: string[];
 };
 
 export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {

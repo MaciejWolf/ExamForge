@@ -1,30 +1,17 @@
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from '@/components/ui/table';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import { Plus, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus } from 'lucide-react';
 import { questionBankApi } from '@/services/api';
-import type { BankQuestion, Tag } from '@/services/api';
+import type { BankQuestion } from '@/services/api';
 import { toast } from 'sonner';
-import { QuestionForm } from '@/components/question-bank/QuestionForm';
-import { FilterBar } from '@/components/question-bank/FilterBar';
+import { QuestionBankHeader } from '@/components/question-bank/QuestionBankHeader';
+import { QuestionBankFilters } from '@/components/question-bank/QuestionBankFilters';
+import { QuestionsList } from '@/components/question-bank/QuestionsList';
+import { CreateQuestionDialog } from '@/components/question-bank/CreateQuestionDialog';
+import { EditQuestionDialog } from '@/components/question-bank/EditQuestionDialog';
+import { DeleteQuestionDialog } from '@/components/question-bank/DeleteQuestionDialog';
 
 const QuestionBankListPage = () => {
   const navigate = useNavigate();
@@ -35,7 +22,7 @@ const QuestionBankListPage = () => {
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentQuestion, setCurrentQuestion] = useState<BankQuestion | null>(null);
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTags, setSelectedTags] = useState<Tag[]>([]);
+  const [selectedTags, setSelectedTags] = useState<string[]>([]);
 
   useEffect(() => {
     fetchQuestions();
@@ -55,53 +42,26 @@ const QuestionBankListPage = () => {
     }
   };
 
+  const filterQuestions = (allQuestions: BankQuestion[], searchQuery: string, selectedTags: string[]) => {
+    console.log('Filtering questions with searchQuery:', searchQuery, 'and selectedTags:', selectedTags);
+    const queryFilter = searchQuery.trim() === ''
+      ? () => true
+      : (q: BankQuestion) => q.text.toLowerCase().includes(searchQuery.toLowerCase());
 
-  // Get all unique tags (by name, not ID)
-  const availableTags = useMemo(() => {
-    const tagMap = new Map<string, Tag>();
-    questions.forEach(question => {
-      question.tags.forEach(tag => {
-        const normalizedName = tag.name.trim().toLowerCase();
-        if (!tagMap.has(normalizedName)) {
-          // Store tag with trimmed name for consistency
-          tagMap.set(normalizedName, {
-            ...tag,
-            name: tag.name.trim(),
-          });
-        }
-      });
-    });
-    return Array.from(tagMap.values()).sort((a, b) => a.name.localeCompare(b.name));
-  }, [questions]);
+    const tagFilter = selectedTags.length === 0
+      ? () => true
+      : (q: BankQuestion) => selectedTags.every(tag => q.tags.map(t => t.replace('#', '')).includes(tag));
 
-  // Filter questions based on search and tags
-  const filteredQuestions = useMemo(() => {
-    let filtered = questions;
-
-    // Filter by search query
-    if (searchQuery.trim()) {
-      const query = searchQuery.toLowerCase();
-      filtered = filtered.filter(q => q.text.toLowerCase().includes(query));
-    }
-
-    // Filter by selected tags (AND logic - question must have all selected tags)
-    if (selectedTags.length > 0) {
-      filtered = filtered.filter(q =>
-        selectedTags.every(selectedTag => {
-          const selectedTagName = selectedTag.name.trim().toLowerCase();
-          return q.tags.some(tag => tag.name.trim().toLowerCase() === selectedTagName);
-        })
-      );
-    }
-
+    const filtered = allQuestions.filter(queryFilter).filter(tagFilter);
+    console.log('Filtered questions:', filtered);
     return filtered;
-  }, [questions, searchQuery, selectedTags]);
+  }
 
   const handleCreate = async (formData: {
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    tags: Tag[];
+    tags: string[];
   }) => {
     try {
       await questionBankApi.create(formData);
@@ -119,7 +79,7 @@ const QuestionBankListPage = () => {
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    tags: Tag[];
+    tags: string[];
   }) => {
     if (!currentQuestion) return;
 
@@ -157,99 +117,41 @@ const QuestionBankListPage = () => {
     setIsCreateOpen(true);
   };
 
-  const openEditDialog = (question: BankQuestion) => {
-    setCurrentQuestion(question);
-    setIsEditOpen(true);
-  };
-
-  const openDeleteDialog = (question: BankQuestion) => {
-    setCurrentQuestion(question);
-    setIsDeleteOpen(true);
-  };
-
-  const handleTagsAdd = (tagInput: string) => {
-    // Parse tags from input: #math #advanced -> ['math', 'advanced']
-    const tagNames = tagInput
-      .split(/\s+/)
-      .map(part => part.trim())
-      .filter(part => part.startsWith('#'))
-      .map(part => part.slice(1).trim())
-      .filter(part => part.length > 0);
-
-    // Add tags for filtering (use existing tag if found, otherwise create temporary one)
-    const newTags: Tag[] = [];
-    tagNames.forEach(tagName => {
-      const normalizedTagName = tagName.trim().toLowerCase();
-      // Check if already selected
-      if (selectedTags.some(t => t.name.trim().toLowerCase() === normalizedTagName)) {
-        return;
-      }
-      
-      // Try to find existing tag from availableTags
-      const matchedTag = availableTags.find(
-        tag => tag.name.trim().toLowerCase() === normalizedTagName
-      );
-      
-      if (matchedTag) {
-        newTags.push(matchedTag);
-      } else {
-        // Create temporary tag for filtering (even if it doesn't exist in availableTags yet)
-        newTags.push({
-          id: `filter-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: tagName.trim(),
-        });
-      }
-    });
-
-    if (newTags.length > 0) {
-      setSelectedTags([...selectedTags, ...newTags]);
+  const openEditDialog = (questionId: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (question) {
+      setCurrentQuestion(question);
+      setIsEditOpen(true);
     }
   };
 
-  const handleTagRemove = (tag: Tag) => {
-    setSelectedTags(selectedTags.filter(t => t.name.toLowerCase() !== tag.name.toLowerCase()));
+  const openDeleteDialog = (questionId: string) => {
+    const question = questions.find(q => q.id === questionId);
+    if (question) {
+      setCurrentQuestion(question);
+      setIsDeleteOpen(true);
+    }
   };
 
-  const truncateText = (text: string, maxLength: number = 100) => {
-    if (text.length <= maxLength) return text;
-    return text.substring(0, maxLength) + '...';
+  const handleTagsChange = (tags: string[]) => {
+    setSelectedTags(tags);
   };
 
   return (
     <DashboardLayout>
       <div className="space-y-6">
-        {/* Breadcrumb and Back Button */}
-        <div className="flex items-center justify-between">
-          <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
-            <ArrowLeft className="mr-2 h-4 w-4" />
-            Back to Dashboard
-          </Button>
-        </div>
+        <QuestionBankHeader
+          totalQuestions={questions.length}
+          onBackClick={() => navigate('/dashboard')}
+        />
 
-        {/* Page Title */}
-        <div>
-          <h1 className="text-3xl font-bold">
-            Question Bank {questions.length > 0 && `(${questions.length} questions)`}
-          </h1>
-        </div>
+        <QuestionBankFilters
+          searchQuery={searchQuery}
+          onSearchChange={setSearchQuery}
+          selectedTags={selectedTags}
+          onTagsChange={handleTagsChange}
+        />
 
-        {/* Filter Controls */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Filters</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <FilterBar
-              searchQuery={searchQuery}
-              onSearchChange={setSearchQuery}
-              selectedTags={selectedTags}
-              onTagsAdd={handleTagsAdd}
-              onTagRemove={handleTagRemove}
-            />
-          </CardContent>
-        </Card>
-
-        {/* Create New Question Button */}
         <div className="flex justify-end">
           <Button onClick={openCreateDialog}>
             <Plus className="mr-2 h-4 w-4" />
@@ -257,148 +159,37 @@ const QuestionBankListPage = () => {
           </Button>
         </div>
 
-        {/* Questions Table */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Questions</CardTitle>
-          </CardHeader>
-          <CardContent>
-            {loading ? (
-              <p className="text-center text-muted-foreground py-8">Loading...</p>
-            ) : filteredQuestions.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                {questions.length === 0
-                  ? 'No questions in your bank yet. Create your first question to get started!'
-                  : 'No questions match your filters.'}
-              </p>
-            ) : (
-              <Table>
-                <TableHeader>
-                  <TableRow>
-                    <TableHead>Question</TableHead>
-                    <TableHead>Tags</TableHead>
-                    <TableHead>Answers</TableHead>
-                    <TableHead>Correct Answer</TableHead>
-                    <TableHead className="text-right">Actions</TableHead>
-                  </TableRow>
-                </TableHeader>
-                <TableBody>
-                  {filteredQuestions.map((question) => (
-                    <TableRow key={question.id}>
-                      <TableCell>
-                        <div className="max-w-md">{truncateText(question.text)}</div>
-                      </TableCell>
-                      <TableCell>
-                        <div className="flex flex-wrap gap-1">
-                          {question.tags.map((tag) => (
-                            <span
-                              key={tag.id}
-                              className="px-2 py-0.5 bg-primary/10 text-primary rounded text-xs"
-                            >
-                              {tag.name}
-                            </span>
-                          ))}
-                          {question.tags.length === 0 && (
-                            <span className="text-xs text-muted-foreground">No tags</span>
-                          )}
-                        </div>
-                      </TableCell>
-                      <TableCell>{question.answers.length}</TableCell>
-                      <TableCell>
-                        {question.answers.find(a => a.id === question.correctAnswerId)?.text || 'N/A'}
-                      </TableCell>
-                      <TableCell className="text-right">
-                        <div className="flex justify-end gap-2">
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openEditDialog(question)}
-                            title="Edit question"
-                          >
-                            <Edit className="h-4 w-4" />
-                          </Button>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            onClick={() => openDeleteDialog(question)}
-                            title="Delete question"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        </div>
-                      </TableCell>
-                    </TableRow>
-                  ))}
-                </TableBody>
-              </Table>
-            )}
-          </CardContent>
-        </Card>
+        <QuestionsList
+          questions={filterQuestions(questions, searchQuery, selectedTags)}
+          totalQuestions={questions.length}
+          loading={loading}
+          onEditClick={openEditDialog}
+          onDeleteClick={openDeleteDialog}
+        />
 
-        {/* Create Question Dialog */}
-        <Dialog open={isCreateOpen} onOpenChange={setIsCreateOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Create New Question</DialogTitle>
-              <DialogDescription>
-                Enter the question content, points, tags, and answer options
-              </DialogDescription>
-            </DialogHeader>
-            <QuestionForm
-              question={null}
-              onSubmit={handleCreate}
-              onCancel={() => setIsCreateOpen(false)}
-              existingTags={availableTags}
-            />
-          </DialogContent>
-        </Dialog>
+        <CreateQuestionDialog
+          open={isCreateOpen}
+          onOpenChange={setIsCreateOpen}
+          onSubmit={handleCreate}
+        />
 
-        {/* Edit Question Dialog */}
-        <Dialog open={isEditOpen} onOpenChange={setIsEditOpen}>
-          <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
-            <DialogHeader>
-              <DialogTitle>Edit Question</DialogTitle>
-              <DialogDescription>Update the question details below</DialogDescription>
-            </DialogHeader>
-            {currentQuestion && (
-              <QuestionForm
-                question={currentQuestion}
-                onSubmit={handleEdit}
-                onCancel={() => {
-                  setIsEditOpen(false);
-                  setCurrentQuestion(null);
-                }}
-                existingTags={availableTags}
-              />
-            )}
-          </DialogContent>
-        </Dialog>
+        <EditQuestionDialog
+          open={isEditOpen}
+          onOpenChange={setIsEditOpen}
+          question={currentQuestion}
+          onSubmit={handleEdit}
+          onCancel={() => {
+            setIsEditOpen(false);
+            setCurrentQuestion(null);
+          }}
+        />
 
-        {/* Delete Confirmation Dialog */}
-        <Dialog open={isDeleteOpen} onOpenChange={setIsDeleteOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Confirm Deletion</DialogTitle>
-              <DialogDescription>
-                Are you sure you want to delete this question?
-                <br />
-                <br />
-                <strong>Question:</strong> &quot;{currentQuestion?.text}&quot;
-                <br />
-                <br />
-                This action cannot be undone.
-              </DialogDescription>
-            </DialogHeader>
-            <DialogFooter>
-              <Button variant="outline" onClick={() => setIsDeleteOpen(false)}>
-                Cancel
-              </Button>
-              <Button variant="destructive" onClick={handleDelete}>
-                Delete
-              </Button>
-            </DialogFooter>
-          </DialogContent>
-        </Dialog>
+        <DeleteQuestionDialog
+          open={isDeleteOpen}
+          onOpenChange={setIsDeleteOpen}
+          question={currentQuestion}
+          onConfirm={handleDelete}
+        />
       </div>
     </DashboardLayout>
   );

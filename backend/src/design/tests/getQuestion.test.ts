@@ -16,10 +16,7 @@ describe('getQuestion Use Case', () => {
         { id: 'answer-3', text: '5' },
       ],
       correctAnswerId: 'answer-2',
-      tags: [
-        { id: 'tag-1', name: 'math' },
-        { id: 'tag-2', name: 'basic' },
-      ],
+      tags: ['math', 'basic'],
     });
 
     const result = await module.getQuestion('q-1');
@@ -47,7 +44,7 @@ const givenExistingQuestion = async (
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    tags: Array<{ id: string; name: string }>;
+    tags: string[];
   }> = {}
 ): Promise<Question> => {
   const defaultAnswers = [

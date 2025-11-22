@@ -3,33 +3,32 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Plus, Minus, X } from 'lucide-react';
-import type { BankQuestion, Tag } from '@/services/api';
+import type { BankQuestion } from '@/services/api';
 import { toast } from 'sonner';
 
 type QuestionFormData = {
   text: string;
   answers: Array<{ id: string; text: string }>;
   correctAnswerId: string;
-  tags: Tag[];
+  tags: string[];
 };
 
 type QuestionFormProps = {
   question?: BankQuestion | null;
   onSubmit: (data: QuestionFormData) => void | Promise<void>;
   onCancel: () => void;
-  existingTags?: Tag[];
 };
 
-export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }: QuestionFormProps) => {
+export const QuestionForm = ({ question, onSubmit, onCancel }: QuestionFormProps) => {
   const [text, setText] = useState('');
   const [answers, setAnswers] = useState<Array<{ id: string; text: string }>>([
     { id: 'temp-1', text: '' },
     { id: 'temp-2', text: '' },
   ]);
   const [correctAnswerId, setCorrectAnswerId] = useState<string>('');
-  const [tags, setTags] = useState<Tag[]>([]);
+  const [tags, setTags] = useState<string[]>([]);
   const [tagInput, setTagInput] = useState('');
-  const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
+  const [tagSuggestions, setTagSuggestions] = useState<string[]>([]);
 
   useEffect(() => {
     if (question) {
@@ -77,26 +76,13 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
 
   const handleTagInputChange = (value: string) => {
     setTagInput(value);
-    if (value.trim()) {
-      const tagNameLower = value.toLowerCase();
-      const filtered = existingTags.filter(
-        tag => tag.name.toLowerCase().includes(tagNameLower) &&
-        !tags.some(t => t.name.toLowerCase() === tag.name.toLowerCase())
-      );
-      setTagSuggestions(filtered.slice(0, 5));
-    } else {
-      setTagSuggestions([]);
-    }
+    setTagSuggestions([]);
   };
 
-  const handleAddTag = (tag: Tag) => {
-    const tagNameLower = tag.name.toLowerCase();
-    if (!tags.some(t => t.name.toLowerCase() === tagNameLower)) {
-      const newTag: Tag = {
-        id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-        name: tag.name.trim(),
-      };
-      setTags([...tags, newTag]);
+  const handleAddTag = (tag: string) => {
+    const tagNameLower = tag.toLowerCase();
+    if (!tags.some(t => t.toLowerCase() === tagNameLower)) {
+      setTags([...tags, tag.trim()]);
       setTagInput('');
       setTagSuggestions([]);
     }
@@ -106,12 +92,8 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
     const tagName = tagInput.trim();
     if (tagName) {
       const tagNameLower = tagName.toLowerCase();
-      if (!tags.some(t => t.name.toLowerCase() === tagNameLower)) {
-        const newTag: Tag = {
-          id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-          name: tagName,
-        };
-        setTags([...tags, newTag]);
+      if (!tags.some(t => t.toLowerCase() === tagNameLower)) {
+        setTags([...tags, tagName]);
         setTagInput('');
         setTagSuggestions([]);
       }
@@ -119,7 +101,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
   };
 
   const handleRemoveTag = (tagName: string) => {
-    setTags(tags.filter(t => t.name !== tagName));
+    setTags(tags.filter(t => t !== tagName));
   };
 
   const handleSubmit = () => {
@@ -148,10 +130,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
       text: text.trim(),
       answers,
       correctAnswerId,
-      tags: tags.map(tag => ({
-        id: tag.id,
-        name: tag.name.trim(),
-      })),
+      tags: tags.map(tag => tag.trim()),
     });
   };
 
@@ -195,13 +174,13 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
             <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-background">
               {tagSuggestions.map(tag => (
                 <Button
-                  key={tag.id}
+                  key={tag}
                   type="button"
                   variant="outline"
                   size="sm"
                   onClick={() => handleAddTag(tag)}
                 >
-                  {tag.name}
+                  {tag}
                 </Button>
               ))}
             </div>
@@ -210,13 +189,13 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
             <div className="flex flex-wrap gap-2">
               {tags.map(tag => (
                 <div
-                  key={tag.id}
+                  key={tag}
                   className="inline-flex items-center gap-1 px-2 py-1 bg-primary/10 text-primary rounded-md text-sm"
                 >
-                  <span>{tag.name}</span>
+                  <span>{tag}</span>
                   <button
                     type="button"
-                    onClick={() => handleRemoveTag(tag.name)}
+                    onClick={() => handleRemoveTag(tag)}
                     className="hover:bg-primary/20 rounded p-0.5"
                   >
                     <X className="h-3 w-3" />

@@ -7,11 +7,11 @@ import { DesignError } from '../types/designError';
 describe('listQuestions Use Case', () => {
   it('Successfully list all questions in global bank', async () => {
     const { module, questions } = await givenQuestions([
-      { id: 'q-1', tags: [{ id: 'tag-1', name: 'math' }] },
-      { id: 'q-2', tags: [{ id: 'tag-2', name: 'history' }] },
-      { id: 'q-3', tags: [{ id: 'tag-3', name: 'science' }] },
-      { id: 'q-4', tags: [{ id: 'tag-4', name: 'english' }] },
-      { id: 'q-5', tags: [{ id: 'tag-5', name: 'geography' }] },
+      { id: 'q-1', tags: ['math'] },
+      { id: 'q-2', tags: ['history'] },
+      { id: 'q-3', tags: ['science'] },
+      { id: 'q-4', tags: ['english'] },
+      { id: 'q-5', tags: ['geography'] },
     ]);
 
     const result = await module.listQuestions();
@@ -21,9 +21,9 @@ describe('listQuestions Use Case', () => {
 
   it('Successfully list questions filtered by single tag', async () => {
     const { module, questions } = await givenQuestions([
-      { id: 'q-1', tags: [{ id: 'tag-1', name: 'math' }] },
-      { id: 'q-2', tags: [{ id: 'tag-1', name: 'math' }, { id: 'tag-2', name: 'algebra' }] },
-      { id: 'q-3', tags: [{ id: 'tag-3', name: 'history' }] },
+      { id: 'q-1', tags: ['math'] },
+      { id: 'q-2', tags: ['math', 'algebra'] },
+      { id: 'q-3', tags: ['history'] },
     ]);
 
     const result = await module.listQuestions({ tags: ['math'] });
@@ -33,9 +33,9 @@ describe('listQuestions Use Case', () => {
 
   it('Successfully list questions filtered by multiple tags (AND logic)', async () => {
     const { module, questions } = await givenQuestions([
-      { id: 'q-1', tags: [{ id: 'tag-1', name: 'math' }] },
-      { id: 'q-2', tags: [{ id: 'tag-1', name: 'math' }, { id: 'tag-2', name: 'algebra' }] },
-      { id: 'q-3', tags: [{ id: 'tag-3', name: 'history' }] },
+      { id: 'q-1', tags: ['math'] },
+      { id: 'q-2', tags: ['math', 'algebra'] },
+      { id: 'q-3', tags: ['history'] },
     ]);
 
     const result = await module.listQuestions({ tags: ['math', 'algebra'] });
@@ -45,8 +45,8 @@ describe('listQuestions Use Case', () => {
 
   it('Successfully list questions with no matching tags', async () => {
     const { module } = await givenQuestions([
-      { id: 'q-1', tags: [{ id: 'tag-1', name: 'math' }] },
-      { id: 'q-2', tags: [{ id: 'tag-2', name: 'history' }] },
+      { id: 'q-1', tags: ['math'] },
+      { id: 'q-2', tags: ['history'] },
     ]);
 
     const result = await module.listQuestions({ tags: ['science'] });
@@ -59,7 +59,7 @@ describe('listQuestions Use Case', () => {
 const givenQuestions = async (
   questionSpecs: Array<{
     id: string;
-    tags?: Array<{ id: string; name: string }>;
+    tags?: string[];
   }>
 ): Promise<{
   module: ReturnType<typeof configureDesignModule>;

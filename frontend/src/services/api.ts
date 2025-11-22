@@ -23,10 +23,7 @@ export interface Answer {
   isCorrect: boolean;
 }
 
-export type Tag = {
-  id: string;
-  name: string;
-};
+export type Tag = string;
 
 export interface BankQuestion {
   id: string;
@@ -36,7 +33,7 @@ export interface BankQuestion {
     text: string;
   }>;
   correctAnswerId: string;
-  tags: Tag[];
+  tags: string[];
   createdAt: string;
   updatedAt: string;
 }
@@ -48,7 +45,7 @@ export interface CreateBankQuestionRequest {
     text: string;
   }>;
   correctAnswerId: string;
-  tags?: Tag[];
+  tags?: string[];
 }
 
 export interface UpdateBankQuestionRequest {
@@ -58,7 +55,7 @@ export interface UpdateBankQuestionRequest {
     text: string;
   }>;
   correctAnswerId?: string;
-  tags?: Tag[];
+  tags?: string[];
 }
 
 export interface Question {
@@ -355,7 +352,7 @@ export const questionBankApi = {
       text: string;
       answers: Array<{ id: string; text: string }>;
       correctAnswerId: string;
-      tags: Tag[];
+      tags: string[];
       createdAt: Date | string;
       updatedAt: Date | string;
     }>>('/design/questions');
@@ -368,7 +365,7 @@ export const questionBankApi = {
       text: string;
       answers: Array<{ id: string; text: string }>;
       correctAnswerId: string;
-      tags: Tag[];
+      tags: string[];
       createdAt: Date | string;
       updatedAt: Date | string;
     }>('/design/questions', {
@@ -384,7 +381,7 @@ export const questionBankApi = {
       text: string;
       answers: Array<{ id: string; text: string }>;
       correctAnswerId: string;
-      tags: Tag[];
+      tags: string[];
       createdAt: Date | string;
       updatedAt: Date | string;
     }>(`/design/questions/${id}`, {

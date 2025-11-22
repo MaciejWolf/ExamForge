@@ -33,7 +33,7 @@ export const createInMemoryQuestionRepository = () => {
       }
 
       return allQuestions.filter(question =>
-        tags.every(tagName => question.tags.some(tag => tag.name === tagName || tag.id === tagName))
+        tags.every(tagName => question.tags.some(tag => tag === tagName))
       );
     },
   };

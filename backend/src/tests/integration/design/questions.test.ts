@@ -21,10 +21,7 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-3', text: '5' },
         ],
         correctAnswerId: 'answer-2',
-        tags: [
-          { id: 'tag-1', name: 'math' },
-          { id: 'tag-2', name: 'arithmetic' },
-        ],
+        tags: ['math', 'arithmetic'],
       };
 
       const response = await request(app)
@@ -143,7 +140,7 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-2', text: '4' },
         ],
         correctAnswerId: 'answer-2',
-        tags: [{ id: 'tag-1', name: 'math' }],
+        tags: ['math'],
       };
 
       const createResponse = await request(app)
@@ -178,7 +175,7 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-2', text: 'Option 2' },
         ],
         correctAnswerId: 'answer-1',
-        tags: [{ id: 'tag-1', name: 'original' }],
+        tags: ['original'],
       };
 
       const response = await request(app)
@@ -237,11 +234,7 @@ describe('Design Module Integration Tests - Questions API', () => {
 
     it('should update question tags and verify changes are persisted', async () => {
       const updateData = {
-        tags: [
-          { id: 'tag-1', name: 'math' },
-          { id: 'tag-2', name: 'algebra' },
-          { id: 'tag-3', name: 'updated' },
-        ],
+        tags: ['math', 'algebra', 'updated'],
       };
 
       const updateResponse = await request(app)
@@ -318,10 +311,7 @@ describe('Design Module Integration Tests - Questions API', () => {
           { id: 'answer-3', text: 'Answer 3' },
         ],
         correctAnswerId: 'answer-2',
-        tags: [
-          { id: 'tag-1', name: 'test' },
-          { id: 'tag-2', name: 'integration' },
-        ],
+        tags: ['test', 'integration'],
       };
 
       const response = await request(app)
@@ -362,7 +352,7 @@ describe('Design Module Integration Tests - Questions API', () => {
       // First, update the question
       const updateData = {
         text: 'Updated question text',
-        tags: [{ id: 'tag-3', name: 'updated' }],
+        tags: ['updated'],
       };
 
       await request(app)
