@@ -36,13 +36,6 @@ export type Pool = {
     questionIds: string[];
 };
 
-export type UpdateQuestionInput = {
-    text?: string;
-    answers?: Answer[];
-    correctAnswerId?: string;
-    tags?: Tag[];
-};
-
 export type DesignError =
     | { type: 'InvalidQuestionData'; message: string }
     | { type: 'QuestionNotFound'; questionId: string }

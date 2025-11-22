@@ -8,7 +8,7 @@ describe('createQuestion Use Case', () => {
       now: () => new Date('2025-11-22T00:00:00Z'),
     });
 
-    const input = {
+    const cmd = {
       text: 'What is 2+2?',
       answers: [
         { id: 'answer-1', text: '3' },
@@ -18,9 +18,13 @@ describe('createQuestion Use Case', () => {
       ],
       correctAnswerId: 'answer-2',
       points: 2,
+      tags: [
+        { id: 'tag-1', name: 'math' },
+        { id: 'tag-2', name: 'algebra' },
+      ],
     };
 
-    const result = await design.createQuestion(input);
+    const result = await design.createQuestion(cmd);
 
     expect(result.ok).toBe(true);
 
@@ -45,7 +49,9 @@ describe('createQuestion Use Case', () => {
     expect(question.createdAt).toEqual(new Date('2025-11-22T00:00:00Z'));
     expect(question.updatedAt).toEqual(new Date('2025-11-22T00:00:00Z'));
 
-    expect(question.tags).toEqual([]);
-    expect(Array.isArray(question.tags)).toBe(true);
+    expect(question.tags).toEqual([
+      { id: 'tag-1', name: 'math' },
+      { id: 'tag-2', name: 'algebra' },
+    ]);
   });
 });
