@@ -1,25 +1,19 @@
 import { describe, it, expect, beforeEach } from 'vitest';
-import express, { Express } from 'express';
+import { Express } from 'express';
 import request from 'supertest';
-import { configureDesignModule } from '../../index';
-import { createDesignRouter } from '../../http';
-import { Question } from '../../types/question';
+import { createApp } from '../../index';
+import { Question } from '../../design/types/question';
 
 describe('Design Module Integration Tests - Questions API', () => {
   let app: Express;
-  let module: ReturnType<typeof configureDesignModule>;
 
   beforeEach(() => {
-    // Create a fresh module with in-memory repository for each test
-    module = configureDesignModule({
-      idGenerator: () => `question-${Date.now()}-${Math.random()}`,
-      now: () => new Date('2025-01-01T00:00:00Z'),
+    app = createApp({
+      designModule: {
+        idGenerator: () => `question-${Date.now()}-${Math.random()}`,
+        now: () => new Date('2025-01-01T00:00:00Z'),
+      },
     });
-
-    // Create Express app with design router
-    app = express();
-    app.use(express.json());
-    app.use('/api/design', createDesignRouter(module));
   });
 
   describe('POST /api/design/questions', () => {
