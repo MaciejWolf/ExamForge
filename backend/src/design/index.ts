@@ -1,16 +1,17 @@
 import { v4 as uuidv4 } from 'uuid';
 import * as useCases from './useCases';
-import { createInMemoryQuestionRepository } from './repository';
+import { createInMemoryQuestionRepository, createSupabaseQuestionRepository, QuestionRepository } from './repository';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 export type DesignModuleConfig = {
-    postgresConnectionString?: string;
+    supabaseClient?: SupabaseClient;
     idGenerator?: () => string;
     now?: () => Date;
 };
 
 export const configureDesignModule = (config: DesignModuleConfig = {}) => {
-    const repo = config.postgresConnectionString
-        ? (() => { throw new Error('Postgres repository not implemented yet'); })()
+    const repo: QuestionRepository = config.supabaseClient
+        ? createSupabaseQuestionRepository(config.supabaseClient)
         : createInMemoryQuestionRepository();
 
     const idGenerator = config.idGenerator ?? uuidv4;

@@ -1,9 +1,13 @@
 import express, { Express } from 'express';
 import cors from 'cors';
-import { configureDesignModule } from './design/index';
+import { configureDesignModule, DesignModuleConfig } from './design/index';
 import { createDesignRouter } from './design/http';
+import { createSupabaseClient } from './lib/supabase';
+import dotenv from 'dotenv';
 
-export const createApp = (): Express => {
+dotenv.config();
+
+export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = {}): Express => {
   const app = express();
 
   // CORS middleware - allow requests from frontend
@@ -32,18 +36,36 @@ export const createApp = (): Express => {
 
   app.use(express.json());
 
-  app.use('/api/design', createDesignRouter(configureDesignModule()));
+  app.use('/api/design', createDesignRouter(configureDesignModule(config.designModuleConfig)));
 
   return app;
 };
 
-const app = createApp();
 const port = process.env.PORT || 3000;
 
-if (require.main === module) {
+if (process.env.NODE_ENV !== 'test') {
+const supabaseUrl = process.env.SUPABASE_URL;
+const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables');
+    process.exit(1);
+  }
+
+  const supabaseClient = createSupabaseClient({
+    supabaseUrl,
+    supabaseAnonKey,
+  });
+
+  const app = createApp({
+    designModuleConfig: {
+      supabaseClient,
+    },
+  });
+
   app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);
   });
 }
 
-export default app;
+export default createApp;

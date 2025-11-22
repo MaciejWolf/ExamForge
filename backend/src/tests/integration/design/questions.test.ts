@@ -3,12 +3,28 @@ import { Express } from 'express';
 import request from 'supertest';
 import { createApp } from '../../../index';
 import { Question } from '../../../design/types/question';
+import { createSupabaseClient } from '../../../lib/supabase';
+import { SupabaseClient } from '@supabase/supabase-js';
 
 describe('Design Module Integration Tests - Questions API', () => {
   let app: Express;
+  let supabase: SupabaseClient;
 
-  beforeEach(() => {
-    app = createApp();
+  beforeEach(async () => {
+    supabase = createSupabaseClient();
+
+    // Clean the questions table before each test
+    const { error } = await supabase.from('questions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
+    if (error) {
+        console.error("Failed to clean questions table", error);
+        throw error;
+    }
+
+    app = createApp({
+        designModuleConfig: {
+            supabaseClient: supabase
+        }
+    });
   });
 
   describe('POST /api/design/questions', () => {
