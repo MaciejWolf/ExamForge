@@ -1,3 +1,4 @@
+import { useState, useEffect, useRef } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import type { Tag } from '@/services/api';
@@ -7,8 +8,7 @@ type FilterBarProps = {
   searchQuery: string;
   onSearchChange: (query: string) => void;
   selectedTags: Tag[];
-  availableTags: Tag[];
-  onTagToggle: (tag: Tag) => void;
+  onTagInputChange: (tagInput: string) => void;
   onTagRemove: (tag: Tag) => void;
 };
 
@@ -16,13 +16,19 @@ export const FilterBar = ({
   searchQuery,
   onSearchChange,
   selectedTags,
-  availableTags,
-  onTagToggle,
+  onTagInputChange,
   onTagRemove,
 }: FilterBarProps) => {
-  const unselectedTags = availableTags.filter(
-    tag => !selectedTags.some(selected => selected.id === tag.id)
-  );
+  const [tagInput, setTagInput] = useState('');
+  const onTagInputChangeRef = useRef(onTagInputChange);
+
+  useEffect(() => {
+    onTagInputChangeRef.current = onTagInputChange;
+  }, [onTagInputChange]);
+
+  useEffect(() => {
+    onTagInputChangeRef.current(tagInput);
+  }, [tagInput]);
 
   return (
     <div className="space-y-4">
@@ -40,42 +46,49 @@ export const FilterBar = ({
 
       {/* Tag Filter */}
       <div className="space-y-2">
-        <Label>Filter by Tags</Label>
+        <Label htmlFor="tag-filter">Filter by Tags</Label>
         <div className="space-y-2">
-          {/* Selected Tags */}
+          {/* Tag Input */}
+          <Input
+            id="tag-filter"
+            type="text"
+            placeholder="Type tags like #math #advanced..."
+            value={tagInput}
+            onChange={(e) => setTagInput(e.target.value)}
+          />
+
+          {/* Selected Tags as Chips */}
           {selectedTags.length > 0 && (
             <div className="flex flex-wrap gap-2">
-              {selectedTags.map(tag => (
-                <div
-                  key={tag.id}
-                  className="inline-flex items-center gap-1 px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm cursor-pointer hover:bg-primary/90"
-                  onClick={() => onTagRemove(tag)}
-                >
-                  <span>{tag.name}</span>
-                  <X className="h-3 w-3" />
-                </div>
-              ))}
-            </div>
-          )}
+              {selectedTags.map(tag => {
+                const handleChipRemove = () => {
+                  // Remove tag from input string
+                  const tagName = tag.name.toLowerCase();
+                  const updatedInput = tagInput
+                    .split(/\s+/)
+                    .filter(part => {
+                      const normalized = part.trim().toLowerCase();
+                      return !normalized.startsWith('#') || normalized.slice(1) !== tagName;
+                    })
+                    .join(' ')
+                    .trim();
+                  
+                  setTagInput(updatedInput);
+                  onTagRemove(tag);
+                };
 
-          {/* Available Tags */}
-          {unselectedTags.length > 0 && (
-            <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-muted/50">
-              {unselectedTags.map(tag => (
-                <button
-                  key={tag.id}
-                  type="button"
-                  onClick={() => onTagToggle(tag)}
-                  className="px-3 py-1 border rounded-md text-sm hover:bg-accent hover:text-accent-foreground transition-colors"
-                >
-                  {tag.name}
-                </button>
-              ))}
+                return (
+                  <div
+                    key={tag.id}
+                    className="inline-flex items-center gap-1 px-3 py-1 bg-primary text-primary-foreground rounded-md text-sm cursor-pointer hover:bg-primary/90"
+                    onClick={handleChipRemove}
+                  >
+                    <span>#{tag.name}</span>
+                    <X className="h-3 w-3" />
+                  </div>
+                );
+              })}
             </div>
-          )}
-
-          {availableTags.length === 0 && (
-            <p className="text-sm text-muted-foreground">No tags available</p>
           )}
         </div>
       </div>

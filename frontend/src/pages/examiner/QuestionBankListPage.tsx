@@ -55,21 +55,6 @@ const QuestionBankListPage = () => {
     }
   };
 
-  // Calculate tag statistics
-  const tagStatistics = useMemo(() => {
-    const stats = new Map<string, { tag: Tag; count: number }>();
-    questions.forEach(question => {
-      question.tags.forEach(tag => {
-        const existing = stats.get(tag.id);
-        if (existing) {
-          existing.count++;
-        } else {
-          stats.set(tag.id, { tag, count: 1 });
-        }
-      });
-    });
-    return Array.from(stats.values()).sort((a, b) => b.count - a.count);
-  }, [questions]);
 
   // Get all unique tags
   const availableTags = useMemo(() => {
@@ -178,12 +163,27 @@ const QuestionBankListPage = () => {
     setIsDeleteOpen(true);
   };
 
-  const handleTagToggle = (tag: Tag) => {
-    if (selectedTags.some(t => t.id === tag.id)) {
-      setSelectedTags(selectedTags.filter(t => t.id !== tag.id));
-    } else {
-      setSelectedTags([...selectedTags, tag]);
-    }
+  const handleTagInputChange = (tagInput: string) => {
+    // Parse tags from input: #math #advanced -> ['math', 'advanced']
+    const tagNames = tagInput
+      .split(/\s+/)
+      .map(part => part.trim())
+      .filter(part => part.startsWith('#'))
+      .map(part => part.slice(1).trim())
+      .filter(part => part.length > 0);
+
+    // Match tag names to existing tags (case-insensitive)
+    const matchedTags: Tag[] = [];
+    tagNames.forEach(tagName => {
+      const matchedTag = availableTags.find(
+        tag => tag.name.toLowerCase() === tagName.toLowerCase()
+      );
+      if (matchedTag && !matchedTags.some(t => t.id === matchedTag.id)) {
+        matchedTags.push(matchedTag);
+      }
+    });
+
+    setSelectedTags(matchedTags);
   };
 
   const handleTagRemove = (tag: Tag) => {
@@ -213,33 +213,6 @@ const QuestionBankListPage = () => {
           </h1>
         </div>
 
-        {/* Tag Statistics */}
-        {tagStatistics.length > 0 && (
-          <Card>
-            <CardHeader>
-              <CardTitle>Tag Statistics</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex flex-wrap gap-2">
-                {tagStatistics.map(({ tag, count }) => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => handleTagToggle(tag)}
-                    className={`px-3 py-1 rounded-md text-sm border transition-colors ${
-                      selectedTags.some(t => t.id === tag.id)
-                        ? 'bg-primary text-primary-foreground border-primary'
-                        : 'bg-background hover:bg-accent'
-                    }`}
-                  >
-                    {tag.name}: {count}
-                  </button>
-                ))}
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
         {/* Filter Controls */}
         <Card>
           <CardHeader>
@@ -250,8 +223,7 @@ const QuestionBankListPage = () => {
               searchQuery={searchQuery}
               onSearchChange={setSearchQuery}
               selectedTags={selectedTags}
-              availableTags={availableTags}
-              onTagToggle={handleTagToggle}
+              onTagInputChange={handleTagInputChange}
               onTagRemove={handleTagRemove}
             />
           </CardContent>
@@ -286,7 +258,7 @@ const QuestionBankListPage = () => {
                     <TableHead>Question</TableHead>
                     <TableHead>Tags</TableHead>
                     <TableHead>Answers</TableHead>
-                    <TableHead className="text-right">Points</TableHead>
+                    <TableHead>Correct Answer</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -312,7 +284,9 @@ const QuestionBankListPage = () => {
                         </div>
                       </TableCell>
                       <TableCell>{question.answers.length}</TableCell>
-                      <TableCell className="text-right">{question.points}</TableCell>
+                      <TableCell>
+                        {question.answers.find(a => a.id === question.correctAnswerId)?.text || 'N/A'}
+                      </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
