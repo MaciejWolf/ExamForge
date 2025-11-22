@@ -36,7 +36,6 @@ export interface BankQuestion {
     text: string;
   }>;
   correctAnswerId: string;
-  points: number;
   tags: Tag[];
   createdAt: string;
   updatedAt: string;
@@ -49,7 +48,6 @@ export interface CreateBankQuestionRequest {
     text: string;
   }>;
   correctAnswerId: string;
-  points: number;
   tags?: Tag[];
 }
 
@@ -60,7 +58,6 @@ export interface UpdateBankQuestionRequest {
     text: string;
   }>;
   correctAnswerId?: string;
-  points?: number;
   tags?: Tag[];
 }
 
@@ -346,7 +343,6 @@ const MOCK_QUESTION_BANK_DATA: BankQuestion[] = [
       { id: 'a4', text: '6' },
     ],
     correctAnswerId: 'a2',
-    points: 2,
     tags: [
       { id: 'tag1', name: 'Mathematics' },
       { id: 'tag2', name: 'Basic' },
@@ -364,7 +360,6 @@ const MOCK_QUESTION_BANK_DATA: BankQuestion[] = [
       { id: 'b4', text: 'x = 15' },
     ],
     correctAnswerId: 'b2',
-    points: 3,
     tags: [
       { id: 'tag1', name: 'Mathematics' },
       { id: 'tag3', name: 'Advanced' },
@@ -380,7 +375,6 @@ const MOCK_QUESTION_BANK_DATA: BankQuestion[] = [
       { id: 'c2', text: 'False' },
     ],
     correctAnswerId: 'c1',
-    points: 3,
     tags: [
       { id: 'tag4', name: 'Physics' },
       { id: 'tag3', name: 'Advanced' },
@@ -398,7 +392,6 @@ const MOCK_QUESTION_BANK_DATA: BankQuestion[] = [
       { id: 'd4', text: 'O2' },
     ],
     correctAnswerId: 'd1',
-    points: 2,
     tags: [
       { id: 'tag5', name: 'Chemistry' },
       { id: 'tag2', name: 'Basic' },
@@ -416,7 +409,6 @@ const MOCK_QUESTION_BANK_DATA: BankQuestion[] = [
       { id: 'e4', text: 'Mark Twain' },
     ],
     correctAnswerId: 'e2',
-    points: 2,
     tags: [
       { id: 'tag6', name: 'History' },
       { id: 'tag2', name: 'Basic' },
@@ -451,7 +443,6 @@ export const questionBankApi = {
       text: data.text,
       answers: data.answers,
       correctAnswerId: data.correctAnswerId,
-      points: data.points,
       tags: data.tags || [],
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),

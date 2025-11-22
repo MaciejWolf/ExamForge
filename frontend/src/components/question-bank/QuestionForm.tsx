@@ -10,7 +10,6 @@ type QuestionFormData = {
   text: string;
   answers: Array<{ id: string; text: string }>;
   correctAnswerId: string;
-  points: number;
   tags: Tag[];
 };
 
@@ -28,7 +27,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
     { id: 'temp-2', text: '' },
   ]);
   const [correctAnswerId, setCorrectAnswerId] = useState<string>('');
-  const [points, setPoints] = useState<number>(1);
   const [tags, setTags] = useState<Tag[]>([]);
   const [tagInput, setTagInput] = useState('');
   const [tagSuggestions, setTagSuggestions] = useState<Tag[]>([]);
@@ -38,7 +36,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
       setText(question.text);
       setAnswers(question.answers);
       setCorrectAnswerId(question.correctAnswerId);
-      setPoints(question.points);
       setTags(question.tags);
     } else {
       resetForm();
@@ -53,7 +50,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
     setText('');
     setAnswers(initialAnswers);
     setCorrectAnswerId(initialAnswers[0].id);
-    setPoints(1);
     setTags([]);
     setTagInput('');
   };
@@ -130,10 +126,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
       toast.error('Please select a correct answer');
       return;
     }
-    if (points <= 0) {
-      toast.error('Points must be greater than 0');
-      return;
-    }
     if (answers.some(a => !a.text.trim())) {
       toast.error('All answers must have non-empty text');
       return;
@@ -147,7 +139,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
       text: text.trim(),
       answers,
       correctAnswerId,
-      points,
       tags,
     });
   };
@@ -164,18 +155,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
           placeholder="Enter your question here..."
           rows={4}
           className="flex min-h-[80px] w-full rounded-md border border-input bg-transparent px-3 py-2 text-sm shadow-xs placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-ring/50 focus-visible:border-ring disabled:cursor-not-allowed disabled:opacity-50"
-        />
-      </div>
-
-      {/* Points */}
-      <div className="space-y-2">
-        <Label htmlFor="points">Points</Label>
-        <Input
-          id="points"
-          type="number"
-          min="1"
-          value={points}
-          onChange={(e) => setPoints(parseInt(e.target.value) || 1)}
         />
       </div>
 

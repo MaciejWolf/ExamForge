@@ -95,7 +95,6 @@ const QuestionBankListPage = () => {
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    points: number;
     tags: Tag[];
   }) => {
     try {
@@ -114,7 +113,6 @@ const QuestionBankListPage = () => {
     text: string;
     answers: Array<{ id: string; text: string }>;
     correctAnswerId: string;
-    points: number;
     tags: Tag[];
   }) => {
     if (!currentQuestion) return;
