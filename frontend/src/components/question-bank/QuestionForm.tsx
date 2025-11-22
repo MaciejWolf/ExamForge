@@ -78,9 +78,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
   const handleTagInputChange = (value: string) => {
     setTagInput(value);
     if (value.trim()) {
+      const tagNameLower = value.toLowerCase();
       const filtered = existingTags.filter(
-        tag => tag.name.toLowerCase().includes(value.toLowerCase()) &&
-        !tags.some(t => t.id === tag.id)
+        tag => tag.name.toLowerCase().includes(tagNameLower) &&
+        !tags.some(t => t.name.toLowerCase() === tag.name.toLowerCase())
       );
       setTagSuggestions(filtered.slice(0, 5));
     } else {
@@ -89,19 +90,11 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
   };
 
   const handleAddTag = (tag: Tag) => {
-    if (!tags.some(t => t.id === tag.id)) {
-      setTags([...tags, tag]);
-      setTagInput('');
-      setTagSuggestions([]);
-    }
-  };
-
-  const handleCreateTag = () => {
-    const tagName = tagInput.trim();
-    if (tagName && !tags.some(t => t.name.toLowerCase() === tagName.toLowerCase())) {
+    const tagNameLower = tag.name.toLowerCase();
+    if (!tags.some(t => t.name.toLowerCase() === tagNameLower)) {
       const newTag: Tag = {
-        id: `tag-${Date.now()}`,
-        name: tagName,
+        id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+        name: tag.name.trim(),
       };
       setTags([...tags, newTag]);
       setTagInput('');
@@ -109,8 +102,24 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
     }
   };
 
-  const handleRemoveTag = (tagId: string) => {
-    setTags(tags.filter(t => t.id !== tagId));
+  const handleCreateTag = () => {
+    const tagName = tagInput.trim();
+    if (tagName) {
+      const tagNameLower = tagName.toLowerCase();
+      if (!tags.some(t => t.name.toLowerCase() === tagNameLower)) {
+        const newTag: Tag = {
+          id: `tag-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: tagName,
+        };
+        setTags([...tags, newTag]);
+        setTagInput('');
+        setTagSuggestions([]);
+      }
+    }
+  };
+
+  const handleRemoveTag = (tagName: string) => {
+    setTags(tags.filter(t => t.name !== tagName));
   };
 
   const handleSubmit = () => {
@@ -139,7 +148,10 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
       text: text.trim(),
       answers,
       correctAnswerId,
-      tags,
+      tags: tags.map(tag => ({
+        id: tag.id,
+        name: tag.name.trim(),
+      })),
     });
   };
 
@@ -178,11 +190,6 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
               }}
               placeholder="Type to search or create tags..."
             />
-            {tagInput.trim() && !tagSuggestions.some(t => t.name.toLowerCase() === tagInput.trim().toLowerCase()) && (
-              <Button type="button" variant="outline" onClick={handleCreateTag}>
-                Create "{tagInput.trim()}"
-              </Button>
-            )}
           </div>
           {tagSuggestions.length > 0 && (
             <div className="flex flex-wrap gap-2 p-2 border rounded-md bg-background">
@@ -209,7 +216,7 @@ export const QuestionForm = ({ question, onSubmit, onCancel, existingTags = [] }
                   <span>{tag.name}</span>
                   <button
                     type="button"
-                    onClick={() => handleRemoveTag(tag.id)}
+                    onClick={() => handleRemoveTag(tag.name)}
                     className="hover:bg-primary/20 rounded p-0.5"
                   >
                     <X className="h-3 w-3" />

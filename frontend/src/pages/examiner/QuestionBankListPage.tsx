@@ -56,13 +56,18 @@ const QuestionBankListPage = () => {
   };
 
 
-  // Get all unique tags
+  // Get all unique tags (by name, not ID)
   const availableTags = useMemo(() => {
     const tagMap = new Map<string, Tag>();
     questions.forEach(question => {
       question.tags.forEach(tag => {
-        if (!tagMap.has(tag.id)) {
-          tagMap.set(tag.id, tag);
+        const normalizedName = tag.name.trim().toLowerCase();
+        if (!tagMap.has(normalizedName)) {
+          // Store tag with trimmed name for consistency
+          tagMap.set(normalizedName, {
+            ...tag,
+            name: tag.name.trim(),
+          });
         }
       });
     });
@@ -82,9 +87,10 @@ const QuestionBankListPage = () => {
     // Filter by selected tags (AND logic - question must have all selected tags)
     if (selectedTags.length > 0) {
       filtered = filtered.filter(q =>
-        selectedTags.every(selectedTag =>
-          q.tags.some(tag => tag.id === selectedTag.id)
-        )
+        selectedTags.every(selectedTag => {
+          const selectedTagName = selectedTag.name.trim().toLowerCase();
+          return q.tags.some(tag => tag.name.trim().toLowerCase() === selectedTagName);
+        })
       );
     }
 
@@ -170,14 +176,28 @@ const QuestionBankListPage = () => {
       .map(part => part.slice(1).trim())
       .filter(part => part.length > 0);
 
-    // Match tag names to existing tags (case-insensitive) and add to selected tags
+    // Add tags for filtering (use existing tag if found, otherwise create temporary one)
     const newTags: Tag[] = [];
     tagNames.forEach(tagName => {
+      const normalizedTagName = tagName.trim().toLowerCase();
+      // Check if already selected
+      if (selectedTags.some(t => t.name.trim().toLowerCase() === normalizedTagName)) {
+        return;
+      }
+      
+      // Try to find existing tag from availableTags
       const matchedTag = availableTags.find(
-        tag => tag.name.toLowerCase() === tagName.toLowerCase()
+        tag => tag.name.trim().toLowerCase() === normalizedTagName
       );
-      if (matchedTag && !selectedTags.some(t => t.id === matchedTag.id)) {
+      
+      if (matchedTag) {
         newTags.push(matchedTag);
+      } else {
+        // Create temporary tag for filtering (even if it doesn't exist in availableTags yet)
+        newTags.push({
+          id: `filter-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
+          name: tagName.trim(),
+        });
       }
     });
 
@@ -187,7 +207,7 @@ const QuestionBankListPage = () => {
   };
 
   const handleTagRemove = (tag: Tag) => {
-    setSelectedTags(selectedTags.filter(t => t.id !== tag.id));
+    setSelectedTags(selectedTags.filter(t => t.name.toLowerCase() !== tag.name.toLowerCase()));
   };
 
   const truncateText = (text: string, maxLength: number = 100) => {
