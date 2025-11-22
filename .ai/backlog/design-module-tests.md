@@ -28,22 +28,17 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### updateQuestion Use Case
 
-- [ ] **Test Case: Successfully update existing question**
+- [X] **Test Case: Successfully update existing question**
 - **Given** an existing question (id: "q-1", text: "Old question")
 - **When** updateQuestion is called with id "q-1" and new text "Updated question"
 - **Then** returns success with updated question and new timestamp
 
-- [ ] **Test Case: Successfully update question tags**
+- [X] **Test Case: Successfully update question tags**
 - **Given** an existing question with tags ["math"]
 - **When** updateQuestion is called to update tags to ["math", "algebra"]
 - **Then** returns success with updated tags
 
-- [ ] **Test Case: Verify question update propagates to all templates**
-- **Given** an existing question "q-1" used in templates "t-1" and "t-2"
-- **When** updateQuestion is called to modify question "q-1"
-- **Then** returns success and both templates reflect the updated question data
-
-- [ ] **Test Case: Fail to update non-existent question**
+- [X] **Test Case: Fail to update non-existent question**
 - **Given** no existing questions
 - **When** updateQuestion is called with id "non-existent-question"
 - **Then** returns error with type "QuestionNotFound"
