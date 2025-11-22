@@ -19,6 +19,7 @@ export const configureDesignModule = (config: DesignModuleConfig = {}) => {
     return {
         createQuestion: useCases.createQuestion({ repo, idGenerator, now }),
         updateQuestion: useCases.updateQuestion({ repo, now }),
+        deleteQuestion: useCases.deleteQuestion({ repo }),
     };
 };
 

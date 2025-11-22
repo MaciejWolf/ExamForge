@@ -145,3 +145,23 @@ export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {
     return ok(savedQuestion);
   };
 };
+
+type DeleteQuestionDeps = {
+  repo: QuestionRepository;
+};
+
+export const deleteQuestion = ({ repo }: DeleteQuestionDeps) => {
+  return async (id: string): Promise<Result<void, DesignError>> => {
+    const existing = await repo.findById(id);
+    if (!existing) {
+      return err({
+        type: 'QuestionNotFound',
+        questionId: id,
+      });
+    }
+
+    await repo.delete(id);
+
+    return ok(undefined);
+  };
+};

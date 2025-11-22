@@ -45,7 +45,7 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### deleteQuestion Use Case
 
-- [ ] **Test Case: Successfully delete unused question**
+- [X] **Test Case: Successfully delete unused question**
 - **Given** an existing question (id: "q-1") not used in any template
 - **When** deleteQuestion is called with id "q-1"
 - **Then** returns success and question is no longer retrievable
@@ -55,7 +55,7 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** deleteQuestion is called with id "q-1"
 - **Then** returns error with type "QuestionInUse" containing list of templates using it
 
-- [ ] **Test Case: Fail to delete non-existent question**
+- [X] **Test Case: Fail to delete non-existent question**
 - **Given** no existing questions
 - **When** deleteQuestion is called with id "non-existent-question"
 - **Then** returns error with type "QuestionNotFound"
