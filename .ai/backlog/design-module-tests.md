@@ -62,12 +62,12 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### getQuestion Use Case
 
-- [ ] **Test Case: Successfully retrieve existing question**
+- [x] **Test Case: Successfully retrieve existing question**
 - **Given** an existing question (id: "q-1")
 - **When** getQuestion is called with id "q-1"
 - **Then** returns success with complete question data including answers, points, and tags
 
-- [ ] **Test Case: Fail to retrieve non-existent question**
+- [x] **Test Case: Fail to retrieve non-existent question**
 - **Given** no existing questions
 - **When** getQuestion is called with id "non-existent-question"
 - **Then** returns error with type "QuestionNotFound"

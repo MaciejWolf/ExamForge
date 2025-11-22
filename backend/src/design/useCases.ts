@@ -165,3 +165,21 @@ export const deleteQuestion = ({ repo }: DeleteQuestionDeps) => {
     return ok(undefined);
   };
 };
+
+type GetQuestionDeps = {
+  repo: QuestionRepository;
+};
+
+export const getQuestion = ({ repo }: GetQuestionDeps) => {
+  return async (id: string): Promise<Result<Question, DesignError>> => {
+    const question = await repo.findById(id);
+    if (!question) {
+      return err({
+        type: 'QuestionNotFound',
+        questionId: id,
+      });
+    }
+
+    return ok(question);
+  };
+};
