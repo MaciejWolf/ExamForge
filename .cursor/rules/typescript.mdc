@@ -6,4 +6,4 @@ alwaysApply: false
 - Avoid using `any`. Prefer generics and discriminated unions instead.
 - Prefer rich typing in functional programming manner
 - Prefer arrow functions over `function` keyword or classes.
-- Avoid comments.
+- Don't write comments, unless they refer to something really complicated. Treat reader as an experienced senior developer.
