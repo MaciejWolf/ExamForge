@@ -7,7 +7,7 @@ import { Question, DesignError } from '../domain';
 describe('createQuestion Use Case', () => {
   const module = givenDesignModule();
 
-  it('Successfully create a new question in the global bank', async () => {
+  it('Successfully create a new question', async () => {
     const command = aValidQuestion();
 
     const result = await module.createQuestion(command);
