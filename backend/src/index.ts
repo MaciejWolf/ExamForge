@@ -1,9 +1,11 @@
-import express, { Express } from 'express';
+import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { configureDesignModule, DesignModuleConfig } from './design/index';
 import { createDesignRouter } from './design/http';
 import { createSupabaseClient } from './lib/supabase';
 import dotenv from 'dotenv';
+import swaggerUi from 'swagger-ui-express';
+import swaggerSpec from './swagger';
 
 dotenv.config();
 
@@ -35,6 +37,41 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
   }));
 
   app.use(express.json());
+  app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
+
+  /**
+   * @swagger
+   * /health:
+   *   get:
+   *     summary: Health check
+   *     description: Responds if the app is up and running
+   *     responses:
+   *       200:
+   *         description: App is up and running
+   */
+  app.get('/health', (req: Request, res: Response) => {
+    res.status(200).json({ status: 'API is up and running' });
+  });
+
+  /**
+   * @swagger
+   * /echo:
+   *   post:
+   *     summary: Echo endpoint
+   *     description: Echoes the request body
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *     responses:
+   *       200:
+   *         description: The echoed request body
+   */
+  app.post('/echo', (req: Request, res: Response) => {
+    res.status(200).json({ received: req.body });
+  });
 
   app.use('/api/design', createDesignRouter(configureDesignModule(config.designModuleConfig)));
 
@@ -44,8 +81,8 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
 const port = process.env.PORT || 3000;
 
 if (process.env.NODE_ENV !== 'test') {
-const supabaseUrl = process.env.SUPABASE_URL;
-const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables');
