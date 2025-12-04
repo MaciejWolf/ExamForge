@@ -23,9 +23,8 @@ const swaggerOptions: swaggerJSDoc.Options = {
       },
     },
   },
-  apis: ['./src/index.ts'], // Path to the API docs
+  apis: ['./src/index.ts', './src/design/**/*.ts'],
 };
 
 const swaggerSpec = swaggerJSDoc(swaggerOptions);
-
 export default swaggerSpec;

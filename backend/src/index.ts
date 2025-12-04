@@ -12,24 +12,17 @@ dotenv.config();
 export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = {}): Express => {
   const app = express();
 
-  // CORS middleware - allow requests from frontend
   app.use(cors({
     origin: (origin, callback) => {
-      // Allow requests with no origin (like mobile apps or curl requests)
       if (!origin) return callback(null, true);
-
-      // Allow localhost on any port for development
       if (origin.startsWith('http://localhost:') || origin.startsWith('http://127.0.0.1:')) {
         return callback(null, true);
       }
-
-      // Allow specific frontend URL from environment
       const allowedOrigin = process.env.FRONTEND_URL;
       if (allowedOrigin && origin === allowedOrigin) {
         return callback(null, true);
       }
-
-      callback(null, true); // Allow all origins in development
+      callback(null, true);
     },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS', 'PATCH'],
@@ -37,6 +30,8 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
   }));
 
   app.use(express.json());
+
+  // Swagger UI – uses the same spec we log
   app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec));
 
   /**

@@ -355,8 +355,9 @@ describe('Design Module Integration Tests - Questions API', () => {
     });
 
     it('should return error response when retrieving a non-existent question ID', async () => {
+      const nonExistentQuestionId = 'non-existent-id';
       const response = await request(app)
-        .get('/api/design/questions/non-existent-id')
+        .get(`/api/design/questions/${nonExistentQuestionId}`)
         .expect(404);
 
       expect(response.body.error).toBeDefined();

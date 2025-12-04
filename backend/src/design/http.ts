@@ -6,7 +6,196 @@ import { DesignError } from './types/designError';
 export const createDesignRouter = (module: DesignModule): Router => {
   const router = Router();
 
-  // POST /questions
+  /**
+   * @swagger
+   * components:
+   *   schemas:
+   *     Answer:
+   *       type: object
+   *       required:
+   *         - id
+   *         - text
+   *       properties:
+   *         id:
+   *           type: string
+   *           description: Unique identifier for the answer
+   *           example: "ans-1"
+   *         text:
+   *           type: string
+   *           description: The answer text
+   *           example: "Paris"
+   *     Question:
+   *       type: object
+   *       required:
+   *         - id
+   *         - text
+   *         - answers
+   *         - correctAnswerId
+   *         - tags
+   *         - createdAt
+   *         - updatedAt
+   *       properties:
+   *         id:
+   *           type: string
+   *           description: Unique identifier for the question
+   *           example: "q-123"
+   *         text:
+   *           type: string
+   *           description: The question text
+   *           example: "What is the capital of France?"
+   *         answers:
+   *           type: array
+   *           description: Array of possible answers (2-6 answers)
+   *           minItems: 2
+   *           maxItems: 6
+   *           items:
+   *             $ref: '#/components/schemas/Answer'
+   *         correctAnswerId:
+   *           type: string
+   *           description: ID of the correct answer from the answers array
+   *           example: "ans-1"
+   *         tags:
+   *           type: array
+   *           description: Tags for categorizing the question (cannot contain '#')
+   *           items:
+   *             type: string
+   *           example: ["geography", "europe"]
+   *         createdAt:
+   *           type: string
+   *           format: date-time
+   *           description: Timestamp when the question was created
+   *         updatedAt:
+   *           type: string
+   *           format: date-time
+   *           description: Timestamp when the question was last updated
+   *     CreateQuestionRequest:
+   *       type: object
+   *       required:
+   *         - text
+   *         - answers
+   *         - correctAnswerId
+   *       properties:
+   *         text:
+   *           type: string
+   *           description: The question text
+   *           example: "What is the capital of France?"
+   *         answers:
+   *           type: array
+   *           description: Array of possible answers (2-6 answers)
+   *           minItems: 2
+   *           maxItems: 6
+   *           items:
+   *             $ref: '#/components/schemas/Answer'
+   *         correctAnswerId:
+   *           type: string
+   *           description: ID of the correct answer from the answers array
+   *           example: "ans-1"
+   *         tags:
+   *           type: array
+   *           description: Optional tags for categorizing the question
+   *           items:
+   *             type: string
+   *           example: ["geography", "europe"]
+   *     UpdateQuestionRequest:
+   *       type: object
+   *       properties:
+   *         text:
+   *           type: string
+   *           description: The question text
+   *           example: "What is the capital of France?"
+   *         answers:
+   *           type: array
+   *           description: Array of possible answers (2-6 answers)
+   *           items:
+   *             $ref: '#/components/schemas/Answer'
+   *         correctAnswerId:
+   *           type: string
+   *           description: ID of the correct answer from the answers array
+   *           example: "ans-1"
+   *         tags:
+   *           type: array
+   *           description: Tags for categorizing the question
+   *           items:
+   *             type: string
+   *           example: ["geography", "europe"]
+   *     Error:
+   *       type: object
+   *       properties:
+   *         error:
+   *           type: object
+   *           properties:
+   *             type:
+   *               type: string
+   *               description: Error type identifier
+   *             message:
+   *               type: string
+   *               description: Human-readable error message
+   *             questionId:
+   *               type: string
+   *               description: Question ID (for QuestionNotFound errors)
+   */
+
+  /**
+   * @swagger
+   * /api/design/questions:
+   *   post:
+   *     summary: Create a new question
+   *     description: Creates a new question with answers and tags
+   *     tags:
+   *       - Questions
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/CreateQuestionRequest'
+   *           examples:
+   *             basic:
+   *               summary: Basic question
+   *               value:
+   *                 text: "What is the capital of France?"
+   *                 answers:
+   *                   - id: "ans-1"
+   *                     text: "Paris"
+   *                   - id: "ans-2"
+   *                     text: "London"
+   *                   - id: "ans-3"
+   *                     text: "Berlin"
+   *                 correctAnswerId: "ans-1"
+   *                 tags: ["geography", "europe"]
+   *     responses:
+   *       201:
+   *         description: Question created successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Question'
+   *       400:
+   *         description: Invalid question data
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   *             examples:
+   *               missingText:
+   *                 summary: Missing text
+   *                 value:
+   *                   error:
+   *                     type: "InvalidQuestionData"
+   *                     message: "Question text is required"
+   *               invalidAnswers:
+   *                 summary: Invalid answers
+   *                 value:
+   *                   error:
+   *                     type: "InvalidQuestionData"
+   *                     message: "Question must have at least 2 answers"
+   *       500:
+   *         description: Internal server error
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   */
   router.post('/questions', async (req: Request, res: Response) => {
     try {
       // Validate required fields
@@ -61,7 +250,72 @@ export const createDesignRouter = (module: DesignModule): Router => {
     }
   });
 
-  // PUT /questions/:id
+  /**
+   * @swagger
+   * /api/design/questions/{id}:
+   *   put:
+   *     summary: Update an existing question
+   *     description: Updates a question by ID with partial or full data
+   *     tags:
+   *       - Questions
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The question ID
+   *         example: "q-123"
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             $ref: '#/components/schemas/UpdateQuestionRequest'
+   *           examples:
+   *             updateText:
+   *               summary: Update text only
+   *               value:
+   *                 text: "What is the capital city of France?"
+   *             updateTags:
+   *               summary: Update tags only
+   *               value:
+   *                 tags: ["geography", "europe", "capitals"]
+   *             fullUpdate:
+   *               summary: Update all fields
+   *               value:
+   *                 text: "What is the capital of France?"
+   *                 answers:
+   *                   - id: "ans-1"
+   *                     text: "Paris"
+   *                   - id: "ans-2"
+   *                     text: "London"
+   *                 correctAnswerId: "ans-1"
+   *                 tags: ["geography"]
+   *     responses:
+   *       200:
+   *         description: Question updated successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Question'
+   *       400:
+   *         description: Invalid question data
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   *       404:
+   *         description: Question not found
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   *             example:
+   *               error:
+   *                 type: "QuestionNotFound"
+   *                 questionId: "q-123"
+   */
   router.put('/questions/:id', async (req: Request, res: Response) => {
     const command: UpdateQuestionCommand = {
       id: req.params.id,
@@ -80,7 +334,47 @@ export const createDesignRouter = (module: DesignModule): Router => {
     return handleError(result.error, res);
   });
 
-  // GET /questions
+  /**
+   * @swagger
+   * /api/design/questions:
+   *   get:
+   *     summary: List all questions
+   *     description: Retrieves a list of questions, optionally filtered by tags
+   *     tags:
+   *       - Questions
+   *     parameters:
+   *       - in: query
+   *         name: tags
+   *         schema:
+   *           oneOf:
+   *             - type: string
+   *             - type: array
+   *               items:
+   *                 type: string
+   *         description: Filter questions by tags (can be a single tag or array of tags)
+   *         examples:
+   *           single:
+   *             summary: Single tag
+   *             value: "geography"
+   *           multiple:
+   *             summary: Multiple tags
+   *             value: ["geography", "europe"]
+   *     responses:
+   *       200:
+   *         description: List of questions retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: array
+   *               items:
+   *                 $ref: '#/components/schemas/Question'
+   *       500:
+   *         description: Internal server error
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   */
   router.get('/questions', async (req: Request, res: Response) => {
     try {
       const tags = req.query.tags;
@@ -105,7 +399,40 @@ export const createDesignRouter = (module: DesignModule): Router => {
     }
   });
 
-  // GET /questions/:id
+  /**
+   * @swagger
+   * /api/design/questions/{id}:
+   *   get:
+   *     summary: Get a question by ID
+   *     description: Retrieves a single question by its unique identifier
+   *     tags:
+   *       - Questions
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The question ID
+   *         example: "q-123"
+   *     responses:
+   *       200:
+   *         description: Question retrieved successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Question'
+   *       404:
+   *         description: Question not found
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   *             example:
+   *               error:
+   *                 type: "QuestionNotFound"
+   *                 questionId: "q-123"
+   */
   router.get('/questions/:id', async (req: Request, res: Response) => {
     const result = await module.getQuestion(req.params.id);
 
@@ -116,7 +443,44 @@ export const createDesignRouter = (module: DesignModule): Router => {
     return handleError(result.error, res);
   });
 
-  // DELETE /questions/:id
+  /**
+   * @swagger
+   * /api/design/questions/{id}:
+   *   delete:
+   *     summary: Delete a question
+   *     description: Deletes a question by its unique identifier
+   *     tags:
+   *       - Questions
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *         description: The question ID
+   *         example: "q-123"
+   *     responses:
+   *       200:
+   *         description: Question deleted successfully
+   *         content:
+   *           application/json:
+   *             schema:
+   *               type: object
+   *               properties:
+   *                 message:
+   *                   type: string
+   *                   example: "Question deleted successfully"
+   *       404:
+   *         description: Question not found
+   *         content:
+   *           application/json:
+   *             schema:
+   *               $ref: '#/components/schemas/Error'
+   *             example:
+   *               error:
+   *                 type: "QuestionNotFound"
+   *                 questionId: "q-123"
+   */
   router.delete('/questions/:id', async (req: Request, res: Response) => {
     const result = await module.deleteQuestion(req.params.id);
 
