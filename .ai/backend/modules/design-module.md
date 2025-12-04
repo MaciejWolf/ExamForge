@@ -81,27 +81,33 @@ See `backend-architecture.md` for details on cross-module interactions.
 
 ## Database Architecture
 
-### Strategy: Hybrid Relational + JSONB
+### Strategy: Document Database with JSONB
 
-We utilize PostgreSQL's `JSONB` capabilities to balance schema flexibility with query power. This allows for easy evolution of complex nested structures (like Question content or Template hierarchy) while maintaining top-level relational access for primary entities.
+We utilize PostgreSQL as a document database, storing the entire domain model as JSONB documents. This approach provides:
+- **Direct mapping**: Domain model maps directly to stored JSONB structure
+- **Schema flexibility**: Easy to evolve without migrations
+- **Query power**: GIN indexes enable efficient queries on nested JSONB fields
+- **Type safety**: TypeScript types match the stored structure
 
 ### Schema Design
 
 #### `questions` Table
-- `id`: UUID (PK)
-- `created_at`: Timestamp
-- `updated_at`: Timestamp
-- `tags`: JSONB Array (e.g., `["math", "easy"]`). *Decision: Simplicity over relational normalization for V1.*
-- `content`: JSONB. Stores the variable structure of a question.
+- `id`: UUID (PK) - Denormalized from `data.id` for efficient lookups
+- `created_at`: TIMESTAMPTZ - Denormalized from `data.createdAt` for efficient sorting/filtering
+- `updated_at`: TIMESTAMPTZ - Denormalized from `data.updatedAt` for efficient sorting/filtering
+- `data`: JSONB - Stores the complete Question domain model as a document
   ```json
   {
-    "type": "multiple_choice",
-    "prompt": "What is 2+2?",
-    "points": 5,
+    "id": "uuid-here",
+    "text": "What is 2+2?",
     "answers": [
-      { "id": "1", "text": "4", "correct": true },
-      { "id": "2", "text": "5", "correct": false }
-    ]
+      { "id": "answer-1", "text": "4" },
+      { "id": "answer-2", "text": "5" }
+    ],
+    "correctAnswerId": "answer-1",
+    "tags": ["math", "easy"],
+    "createdAt": "2024-01-01T00:00:00.000Z",
+    "updatedAt": "2024-01-01T00:00:00.000Z"
   }
   ```
 
@@ -128,3 +134,4 @@ We utilize PostgreSQL's `JSONB` capabilities to balance schema flexibility with 
 - **Enforcement**: The application layer (Service) must perform a check before deleting a question:
   `SELECT 1 FROM templates WHERE structure->'pools' @> '[{"questions": ["QUESTION_ID"]}]'` (or equivalent JSON path query).
   If a match is found, deletion is blocked.
+- **Data Consistency**: The `data` JSONB column must always contain the complete Question domain model. The `id`, `created_at`, and `updated_at` columns are denormalized from `data` for efficient querying but should be kept in sync.
