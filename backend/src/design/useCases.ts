@@ -409,6 +409,16 @@ type PoolValidationResult = {
   errorType?: DesignError['type'];
 };
 
+type DeleteTemplateDeps = {
+  templateRepo: TemplateRepository;
+};
+
+export const deleteTemplate = ({ templateRepo }: DeleteTemplateDeps) => {
+  return async (id: string): Promise<Result<void, DesignError>> => {
+    throw new Error('Not implemented');
+  };
+};
+
 const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolValidationResult> => {
   if (pools.length === 0) {
     return {
