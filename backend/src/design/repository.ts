@@ -1,5 +1,6 @@
 import { Question } from "./types/question";
 import { SupabaseClient } from "@supabase/supabase-js";
+import { TestTemplate } from "./types/testTemplate";
 
 export type Document<T> = {
   id: string;
@@ -166,6 +167,152 @@ export const createInMemoryQuestionRepository = () => {
       return allQuestions.filter(question =>
         tags.every(tagName => question.tags.some(tag => tag === tagName))
       );
+    },
+  };
+};
+
+export type TemplateRepository = {
+  save: (template: TestTemplate) => Promise<TestTemplate>;
+  findById: (id: string) => Promise<TestTemplate | null>;
+  findAll: () => Promise<TestTemplate[]>;
+  findByName: (name: string) => Promise<TestTemplate | null>;
+  delete: (id: string) => Promise<boolean>;
+};
+
+const mapDocumentToTemplate = (doc: Document<TestTemplate>): TestTemplate => {
+  const template = doc.data;
+  return {
+    ...template,
+    createdAt: new Date(template.createdAt),
+    updatedAt: new Date(template.updatedAt),
+  };
+};
+
+const mapTemplateToDocument = (template: TestTemplate): Omit<Document<TestTemplate>, 'created_at' | 'updated_at'> => {
+  return {
+    id: template.id,
+    data: template,
+  };
+};
+
+export const createSupabaseTemplateRepository = (supabase: SupabaseClient): TemplateRepository => {
+  return {
+    save: async (template: TestTemplate) => {
+      const doc = mapTemplateToDocument(template);
+      const createdAt = template.createdAt instanceof Date
+        ? template.createdAt.toISOString()
+        : template.createdAt;
+      const updatedAt = template.updatedAt instanceof Date
+        ? template.updatedAt.toISOString()
+        : template.updatedAt;
+
+      const { data, error } = await supabase
+        .from('templates')
+        .upsert({
+          id: doc.id,
+          created_at: createdAt,
+          updated_at: updatedAt,
+          data: doc.data,
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving template:', error);
+        throw new Error('Could not save template');
+      }
+
+      const templateDoc = data as Document<TestTemplate>;
+      return mapDocumentToTemplate(templateDoc);
+    },
+    findById: async (id: string) => {
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('id', id)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        console.error('Error finding template by id:', error);
+        throw new Error('Could not find template by id');
+      }
+
+      const templateDoc = data as Document<TestTemplate>;
+      return mapDocumentToTemplate(templateDoc);
+    },
+    findAll: async () => {
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*')
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error finding all templates:', error);
+        throw new Error('Could not find all templates');
+      }
+
+      return (data as Document<TestTemplate>[]).map(mapDocumentToTemplate);
+    },
+    findByName: async (name: string) => {
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*')
+        .eq('data->>name', name)
+        .single();
+
+      if (error) {
+        if (error.code === 'PGRST116') {
+          return null;
+        }
+        console.error('Error finding template by name:', error);
+        throw new Error('Could not find template by name');
+      }
+
+      const templateDoc = data as Document<TestTemplate>;
+      return mapDocumentToTemplate(templateDoc);
+    },
+    delete: async (id: string) => {
+      const { error } = await supabase
+        .from('templates')
+        .delete()
+        .eq('id', id);
+
+      if (error) {
+        console.error('Error deleting template:', error);
+        return false;
+      }
+      return true;
+    },
+  };
+};
+
+export const createInMemoryTemplateRepository = () => {
+  const templates = new Map<string, TestTemplate>();
+
+  return {
+    save: async (template: TestTemplate) => {
+      templates.set(template.id, template);
+      return template;
+    },
+
+    findById: async (id: string) => {
+      return templates.get(id) || null;
+    },
+
+    findAll: async () => {
+      return Array.from(templates.values());
+    },
+
+    findByName: async (name: string) => {
+      const allTemplates = Array.from(templates.values());
+      return allTemplates.find(t => t.name === name) || null;
+    },
+
+    delete: async (id: string) => {
+      return templates.delete(id);
     },
   };
 };

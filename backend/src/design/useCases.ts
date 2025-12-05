@@ -2,7 +2,8 @@ import { err, ok, Result } from '../shared/result';
 import { Question } from './types/question';
 import { DesignError } from './types/designError';
 import { Answer } from './types/question';
-import { QuestionRepository } from './repository';
+import { QuestionRepository, TemplateRepository } from './repository';
+import { TestTemplate, Pool } from './types/testTemplate';
 
 type CreateQuestionDeps = {
   repo: QuestionRepository;
@@ -217,4 +218,237 @@ export const listQuestions = ({ repo }: ListQuestionsDeps) => {
     const questions = await repo.findByTags(tags);
     return ok(questions);
   };
+};
+
+type CreateTemplateDeps = {
+  templateRepo: TemplateRepository;
+  questionRepo: QuestionRepository;
+  idGenerator: () => string;
+  now: () => Date;
+};
+
+export type CreateTemplateCommand = {
+  name: string;
+  description?: string;
+  pools: Omit<Pool, 'id'>[];
+};
+
+export const createTemplate = ({ templateRepo, questionRepo, idGenerator, now }: CreateTemplateDeps) => {
+  return async (cmd: CreateTemplateCommand): Promise<Result<TestTemplate, DesignError>> => {
+    // Validate template name
+    if (!cmd.name || cmd.name.trim().length === 0) {
+      return err({
+        type: 'InvalidQuestionData',
+        message: 'Template name is required',
+      });
+    }
+
+    // Check for name conflict
+    const existingTemplate = await templateRepo.findByName(cmd.name);
+    if (existingTemplate) {
+      return err({
+        type: 'TemplateNameConflict',
+        name: cmd.name,
+      });
+    }
+
+    // Validate pools
+    const poolValidation = await validatePools(cmd.pools);
+    if (!poolValidation.valid) {
+      return err({
+        type: poolValidation.errorType || 'InvalidQuestionData',
+        message: poolValidation.message,
+      } as DesignError);
+    }
+
+    // Verify all question IDs exist
+    const allQuestionIds = cmd.pools.flatMap(pool => pool.questionIds);
+    const uniqueQuestionIds = [...new Set(allQuestionIds)];
+
+    for (const questionId of uniqueQuestionIds) {
+      const question = await questionRepo.findById(questionId);
+      if (!question) {
+        return err({
+          type: 'InvalidQuestionData',
+          message: `Question with ID ${questionId} not found`,
+        });
+      }
+    }
+
+    // Generate IDs for pools
+    const poolsWithIds: Pool[] = cmd.pools.map(pool => ({
+      ...pool,
+      id: idGenerator(),
+    }));
+
+    const timestamp = now();
+    const template: TestTemplate = {
+      id: idGenerator(),
+      name: cmd.name.trim(),
+      description: cmd.description,
+      pools: poolsWithIds,
+      createdAt: timestamp,
+      updatedAt: timestamp,
+    };
+
+    const savedTemplate = await templateRepo.save(template);
+
+    return ok(savedTemplate);
+  };
+};
+
+type UpdateTemplateDeps = {
+  templateRepo: TemplateRepository;
+  questionRepo: QuestionRepository;
+  idGenerator: () => string;
+  now: () => Date;
+};
+
+export type UpdateTemplateCommand = {
+  id: string;
+  name?: string;
+  description?: string;
+  pools?: Omit<Pool, 'id'>[];
+};
+
+export const updateTemplate = ({ templateRepo, questionRepo, idGenerator, now }: UpdateTemplateDeps) => {
+  return async (cmd: UpdateTemplateCommand): Promise<Result<TestTemplate, DesignError>> => {
+    // Check if template exists
+    const existing = await templateRepo.findById(cmd.id);
+    if (!existing) {
+      return err({
+        type: 'TemplateNotFound',
+        templateId: cmd.id,
+      });
+    }
+
+    // If name is being updated, check for conflicts
+    if (cmd.name !== undefined) {
+      if (!cmd.name || cmd.name.trim().length === 0) {
+        return err({
+          type: 'InvalidQuestionData',
+          message: 'Template name cannot be empty',
+        });
+      }
+
+      const existingWithName = await templateRepo.findByName(cmd.name.trim());
+      if (existingWithName && existingWithName.id !== cmd.id) {
+        return err({
+          type: 'TemplateNameConflict',
+          name: cmd.name.trim(),
+        });
+      }
+    }
+
+    // If pools are being updated, validate them
+    if (cmd.pools !== undefined) {
+      const poolValidation = await validatePools(cmd.pools);
+      if (!poolValidation.valid) {
+        return err({
+          type: poolValidation.errorType || 'InvalidQuestionData',
+          message: poolValidation.message,
+        } as DesignError);
+      }
+
+      // Verify all question IDs exist
+      const allQuestionIds = cmd.pools.flatMap(pool => pool.questionIds);
+      const uniqueQuestionIds = [...new Set(allQuestionIds)];
+
+      for (const questionId of uniqueQuestionIds) {
+        const question = await questionRepo.findById(questionId);
+        if (!question) {
+          return err({
+            type: 'InvalidQuestionData',
+            message: `Question with ID ${questionId} not found`,
+          });
+        }
+      }
+    }
+
+    // Build updated template (monolithic update - replace entire state)
+    // When pools are updated, preserve IDs where pool names match, otherwise generate new IDs
+    let updatedPools: Pool[] = existing.pools;
+
+    if (cmd.pools !== undefined) {
+      updatedPools = cmd.pools.map(pool => {
+        const existingPool = existing.pools.find(p => p.name === pool.name);
+        return {
+          ...pool,
+          id: existingPool?.id || idGenerator(), // Preserve ID if name matches, otherwise generate new ID
+        };
+      });
+    }
+
+    const updatedTemplate: TestTemplate = {
+      ...existing,
+      name: cmd.name !== undefined ? cmd.name.trim() : existing.name,
+      description: cmd.description !== undefined ? cmd.description : existing.description,
+      pools: updatedPools,
+      updatedAt: now(),
+    };
+
+    const savedTemplate = await templateRepo.save(updatedTemplate);
+
+    return ok(savedTemplate);
+  };
+};
+
+type PoolValidationResult = {
+  valid: boolean;
+  message: string;
+  errorType?: DesignError['type'];
+};
+
+const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolValidationResult> => {
+  if (pools.length === 0) {
+    return {
+      valid: false,
+      message: 'Template must have at least one pool',
+    };
+  }
+
+  // Check for duplicate pool names
+  const poolNames = pools.map(p => p.name);
+  const duplicateNames = poolNames.filter((name, index) => poolNames.indexOf(name) !== index);
+  if (duplicateNames.length > 0) {
+    return {
+      valid: false,
+      message: `Duplicate pool names found: ${duplicateNames.join(', ')}`,
+      errorType: 'DuplicatePoolNames',
+    };
+  }
+
+  // Validate each pool
+  for (const pool of pools) {
+    if (!pool.name || pool.name.trim().length === 0) {
+      return {
+        valid: false,
+        message: 'Pool name is required',
+      };
+    }
+
+    if (pool.questionCount < 0) {
+      return {
+        valid: false,
+        message: `Pool "${pool.name}" cannot have negative question count`,
+      };
+    }
+
+    if (pool.points < 0) {
+      return {
+        valid: false,
+        message: `Pool "${pool.name}" cannot have negative points`,
+      };
+    }
+
+    if (pool.questionIds.length < pool.questionCount) {
+      return {
+        valid: false,
+        message: `Pool "${pool.name}" has ${pool.questionIds.length} questions but requires ${pool.questionCount}`,
+        errorType: 'InvalidQuestionData',
+      };
+    }
+  }
+
+  return { valid: true, message: '' };
 };
