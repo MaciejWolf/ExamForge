@@ -482,3 +482,32 @@ const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolValidationR
 
   return { valid: true, message: '' };
 };
+
+type GetTemplateDeps = {
+  templateRepo: TemplateRepository;
+};
+
+export const getTemplate = ({ templateRepo }: GetTemplateDeps) => {
+  return async (id: string): Promise<Result<TestTemplate, DesignError>> => {
+    const template = await templateRepo.findById(id);
+    if (!template) {
+      return err({
+        type: 'TemplateNotFound',
+        templateId: id,
+      });
+    }
+
+    return ok(template);
+  };
+};
+
+type ListTemplatesDeps = {
+  templateRepo: TemplateRepository;
+};
+
+export const listTemplates = ({ templateRepo }: ListTemplatesDeps) => {
+  return async (): Promise<Result<TestTemplate[], DesignError>> => {
+    const templates = await templateRepo.findAll();
+    return ok(templates);
+  };
+};

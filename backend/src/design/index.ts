@@ -30,6 +30,8 @@ export const configureDesignModule = (config: DesignModuleConfig = {}) => {
     createTemplate: useCases.createTemplate({ templateRepo, questionRepo: repo, idGenerator, now }),
     updateTemplate: useCases.updateTemplate({ templateRepo, questionRepo: repo, idGenerator, now }),
     deleteTemplate: useCases.deleteTemplate({ templateRepo }),
+    getTemplate: useCases.getTemplate({ templateRepo }),
+    listTemplates: useCases.listTemplates({ templateRepo }),
   };
 };
 

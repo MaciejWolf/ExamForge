@@ -181,24 +181,24 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### getTemplate Use Case
 
-- [ ] **Test Case: Successfully retrieve existing template with pools**
+- [x] **Test Case: Successfully retrieve existing template with pools**
 - **Given** existing template (id: "t-1") containing 2 pools
 - **When** getTemplate is called with id "t-1"
 - **Then** returns success with complete template data including all pools and their questions
 
-- [ ] **Test Case: Fail to retrieve non-existent template**
+- [x] **Test Case: Fail to retrieve non-existent template**
 - **Given** no existing templates
 - **When** getTemplate is called with id "non-existent-template"
 - **Then** returns error with type "TemplateNotFound"
 
 ### listTemplates Use Case
 
-- [ ] **Test Case: Successfully list all templates**
+- [x] **Test Case: Successfully list all templates**
 - **Given** 3 existing templates
 - **When** listTemplates is called
 - **Then** returns success with array containing all 3 templates
 
-- [ ] **Test Case: Successfully list empty templates**
+- [x] **Test Case: Successfully list empty templates**
 - **Given** no existing templates
 - **When** listTemplates is called
 - **Then** returns success with empty array
