@@ -1,4 +1,4 @@
-import { describe, it, expect, beforeEach } from 'vitest';
+import { describe, it, expect, beforeEach, beforeAll, afterAll } from 'vitest';
 import { Express } from 'express';
 import request from 'supertest';
 import { createApp } from '../../../index';
@@ -10,21 +10,58 @@ describe('Design Module Integration Tests - Questions API', () => {
   let app: Express;
   let supabase: SupabaseClient;
 
-  beforeEach(async () => {
+  beforeAll(async () => {
     supabase = createSupabaseClient();
 
-    // Clean the questions table before each test
-    const { error } = await supabase.from('questions').delete().neq('id', '00000000-0000-0000-0000-000000000000');
-    if (error) {
-        console.error("Failed to clean questions table", error);
-        throw error;
+    // Clean templates first (they reference questions)
+    const { error: templatesError } = await supabase
+      .from('templates')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (templatesError) {
+      console.error('Failed to clean templates table', templatesError);
+      throw templatesError;
+    }
+
+    // Clean the questions table before running tests
+    const { error: questionsError } = await supabase
+      .from('questions')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (questionsError) {
+      console.error('Failed to clean questions table', questionsError);
+      throw questionsError;
     }
 
     app = createApp({
-        designModuleConfig: {
-            supabaseClient: supabase
-        }
+      designModuleConfig: {
+        supabaseClient: supabase
+      }
     });
+  });
+
+  afterAll(async () => {
+    // Clean up templates first (they reference questions)
+    const { error: templatesError } = await supabase
+      .from('templates')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (templatesError) {
+      console.error('Failed to clean templates table in afterAll', templatesError);
+    }
+
+    // Clean up questions after templates are removed
+    const { error: questionsError } = await supabase
+      .from('questions')
+      .delete()
+      .neq('id', '00000000-0000-0000-0000-000000000000');
+
+    if (questionsError) {
+      console.error('Failed to clean questions table in afterAll', questionsError);
+    }
   });
 
   describe('POST /api/design/questions', () => {

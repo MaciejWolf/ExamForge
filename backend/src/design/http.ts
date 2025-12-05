@@ -1,6 +1,6 @@
 import { Router, Request, Response } from 'express';
 import { DesignModule } from './index';
-import { CreateQuestionCommand, UpdateQuestionCommand } from './useCases';
+import { CreateQuestionCommand, UpdateQuestionCommand, CreateTemplateCommand, UpdateTemplateCommand } from './useCases';
 import { DesignError } from './types/designError';
 
 export const createDesignRouter = (module: DesignModule): Router => {
@@ -491,6 +491,217 @@ export const createDesignRouter = (module: DesignModule): Router => {
     return handleError(result.error, res);
   });
 
+  /**
+   * @swagger
+   * /api/design/templates:
+   *   post:
+   *     summary: Create a new test template
+   *     description: Creates a new test template with pools referencing global questions
+   *     tags:
+   *       - Templates
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             required:
+   *               - name
+   *               - pools
+   *             properties:
+   *               name:
+   *                 type: string
+   *                 description: Template name
+   *               description:
+   *                 type: string
+   *                 description: Optional template description
+   *               pools:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *                   required:
+   *                     - name
+   *                     - questionCount
+   *                     - points
+   *                     - questionIds
+   *                   properties:
+   *                     name:
+   *                       type: string
+   *                     questionCount:
+   *                       type: number
+   *                     points:
+   *                       type: number
+   *                     questionIds:
+   *                       type: array
+   *                       items:
+   *                         type: string
+   *     responses:
+   *       201:
+   *         description: Template created successfully
+   *       400:
+   *         description: Invalid template data
+   */
+  router.post('/templates', async (req: Request, res: Response) => {
+    try {
+      const command: CreateTemplateCommand = {
+        name: req.body.name,
+        description: req.body.description,
+        pools: req.body.pools,
+      };
+
+      const result = await module.createTemplate(command);
+
+      if (result.ok) {
+        return res.status(201).json(result.value);
+      }
+
+      return handleError(result.error, res);
+    } catch (error) {
+      return res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: error instanceof Error ? error.message : 'An unexpected error occurred',
+        },
+      });
+    }
+  });
+
+  /**
+   * @swagger
+   * /api/design/templates/{id}:
+   *   get:
+   *     summary: Get a template by ID
+   *     description: Retrieves a test template with its pools and question references
+   *     tags:
+   *       - Templates
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Template retrieved successfully
+   *       404:
+   *         description: Template not found
+   */
+  router.get('/templates/:id', async (req: Request, res: Response) => {
+    const result = await module.getTemplate(req.params.id);
+
+    if (result.ok) {
+      return res.status(200).json(result.value);
+    }
+
+    return handleError(result.error, res);
+  });
+
+  /**
+   * @swagger
+   * /api/design/templates/{id}:
+   *   put:
+   *     summary: Update an existing template
+   *     description: Updates a template's metadata, pools, or question assignments
+   *     tags:
+   *       - Templates
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     requestBody:
+   *       required: true
+   *       content:
+   *         application/json:
+   *           schema:
+   *             type: object
+   *             properties:
+   *               name:
+   *                 type: string
+   *               description:
+   *                 type: string
+   *               pools:
+   *                 type: array
+   *                 items:
+   *                   type: object
+   *     responses:
+   *       200:
+   *         description: Template updated successfully
+   *       400:
+   *         description: Invalid template data
+   *       404:
+   *         description: Template not found
+   */
+  router.put('/templates/:id', async (req: Request, res: Response) => {
+    const command: UpdateTemplateCommand = {
+      id: req.params.id,
+      name: req.body.name,
+      description: req.body.description,
+      pools: req.body.pools,
+    };
+
+    const result = await module.updateTemplate(command);
+
+    if (result.ok) {
+      return res.status(200).json(result.value);
+    }
+
+    return handleError(result.error, res);
+  });
+
+  /**
+   * @swagger
+   * /api/design/templates/{id}:
+   *   delete:
+   *     summary: Delete a template
+   *     description: Deletes a test template by its ID
+   *     tags:
+   *       - Templates
+   *     parameters:
+   *       - in: path
+   *         name: id
+   *         required: true
+   *         schema:
+   *           type: string
+   *     responses:
+   *       200:
+   *         description: Template deleted successfully
+   *       404:
+   *         description: Template not found
+   */
+  router.delete('/templates/:id', async (req: Request, res: Response) => {
+    const result = await module.deleteTemplate(req.params.id);
+
+    if (result.ok) {
+      return res.status(200).json({ message: 'Template deleted successfully' });
+    }
+
+    return handleError(result.error, res);
+  });
+
+  /**
+   * @swagger
+   * /api/design/templates:
+   *   get:
+   *     summary: List all templates
+   *     description: Retrieves a list of all test templates
+   *     tags:
+   *       - Templates
+   *     responses:
+   *       200:
+   *         description: List of templates retrieved successfully
+   */
+  router.get('/templates', async (req: Request, res: Response) => {
+    const result = await module.listTemplates();
+
+    if (result.ok) {
+      return res.status(200).json(result.value);
+    }
+
+    return handleError(result.error, res);
+  });
+
   return router;
 };
 
@@ -508,6 +719,81 @@ const handleError = (error: DesignError, res: Response): Response => {
         error: {
           type: error.type,
           questionId: error.questionId,
+        },
+      });
+    case 'QuestionInUse':
+      return res.status(409).json({
+        error: {
+          type: error.type,
+          questionId: error.questionId,
+          templateIds: error.templateIds,
+        },
+      });
+    case 'TemplateNotFound':
+      return res.status(404).json({
+        error: {
+          type: error.type,
+          templateId: error.templateId,
+        },
+      });
+    case 'TemplateNameConflict':
+      return res.status(409).json({
+        error: {
+          type: error.type,
+          name: error.name,
+        },
+      });
+    case 'PoolNotFound':
+      return res.status(404).json({
+        error: {
+          type: error.type,
+          poolId: error.poolId,
+        },
+      });
+    case 'PoolNameConflict':
+      return res.status(409).json({
+        error: {
+          type: error.type,
+          name: error.name,
+        },
+      });
+    case 'DuplicatePoolNames':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          names: error.names,
+        },
+      });
+    case 'QuestionAlreadyInPool':
+      return res.status(409).json({
+        error: {
+          type: error.type,
+          questionId: error.questionId,
+          poolId: error.poolId,
+        },
+      });
+    case 'QuestionNotInPool':
+      return res.status(404).json({
+        error: {
+          type: error.type,
+          questionId: error.questionId,
+          poolId: error.poolId,
+        },
+      });
+    case 'InvalidPoolReferences':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          message: error.message,
+        },
+      });
+    case 'InsufficientQuestions':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          poolId: error.poolId,
+          required: error.required,
+          available: error.available,
         },
       });
     default:
