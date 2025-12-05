@@ -415,7 +415,17 @@ type DeleteTemplateDeps = {
 
 export const deleteTemplate = ({ templateRepo }: DeleteTemplateDeps) => {
   return async (id: string): Promise<Result<void, DesignError>> => {
-    throw new Error('Not implemented');
+    const existing = await templateRepo.findById(id);
+    if (!existing) {
+      return err({
+        type: 'TemplateNotFound',
+        templateId: id,
+      });
+    }
+
+    await templateRepo.delete(id);
+
+    return ok(undefined);
   };
 };
 
