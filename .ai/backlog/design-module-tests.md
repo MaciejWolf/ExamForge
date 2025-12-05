@@ -98,39 +98,39 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### createTemplate Use Case
 
-- [ ] **Test Case: Successfully create template with empty pools**
+- [x] **Test Case: Fail to create template with empty pools**
 - **Given** no existing templates
-- **When** createTemplate is called with valid template data (name: "Midterm Exam") and no pools
-- **Then** returns success with template containing generated ID, provided name, and empty pools array
+- **When** createTemplate is called with valid template data (name: "Midterm Exam") and empty pools array
+- **Then** returns error indicating that at least one pool is required
 
-- [ ] **Test Case: Successfully create template with pools**
+- [x] **Test Case: Successfully create template with pools**
 - **Given** no existing templates
 - **When** createTemplate is called with name "Final Exam" and pools: [{name: "Math", questionCount: 5}, {name: "History", questionCount: 3}]
 - **Then** returns success with template containing two pools with generated pool IDs
 
-- [ ] **Test Case: Fail to create template with duplicate name**
+- [x] **Test Case: Fail to create template with duplicate name**
 - **Given** existing template named "Midterm Exam"
 - **When** createTemplate is called with same name "Midterm Exam"
 - **Then** returns error with type "TemplateNameConflict"
 
-- [ ] **Test Case: Fail to create template with duplicate pool names**
+- [x] **Test Case: Fail to create template with duplicate pool names**
 - **Given** no existing templates
 - **When** createTemplate is called with pools having duplicate names: [{name: "Math", ...}, {name: "Math", ...}]
 - **Then** returns error with type "DuplicatePoolNames"
 
 ### updateTemplate Use Case
 
-- [ ] **Test Case: Successfully update template name**
+- [x] **Test Case: Successfully update template name**
 - **Given** existing template (id: "t-1", name: "Old Exam")
 - **When** updateTemplate is called with id "t-1" and new name "Updated Exam"
 - **Then** returns success with updated template and new timestamp
 
-- [ ] **Test Case: Successfully update template metadata**
+- [x] **Test Case: Successfully update template metadata**
 - **Given** existing template (id: "t-1")
 - **When** updateTemplate is called with id "t-1" and new description
 - **Then** returns success with updated template
 
-- [ ] **Test Case: Successfully update template, including adding a new pool and modifying an existing pool**
+- [x] **Test Case: Successfully update template, including adding a new pool and modifying an existing pool**
 - **Given** existing template (id: "t-1", name: "Template 1") with a pool "p-1" (name: "Math", questionCount: 5)
 - **When** updateTemplate is called with id "t-1" and an updated template object that:
     - Renames "Template 1" to "Updated Template 1"
@@ -138,7 +138,7 @@ This document contains unit test cases for the Design Module, written in Given/W
     - Adds a new pool "p-2" (name: "History", questionCount: 3)
 - **Then** returns success with the updated template, and `getTemplate("t-1")` reflects all changes (new name, updated pool, new pool).
 
-- [ ] **Test Case: Successfully update template, including removing a pool and a question from a pool**
+- [x] **Test Case: Successfully update template, including removing a pool and a question from a pool**
 - **Given** existing template (id: "t-1") with:
     - Pool "p-1" containing question "q-1"
     - Pool "p-2"
@@ -147,8 +147,7 @@ This document contains unit test cases for the Design Module, written in Given/W
     - Removes question "q-1" from pool "p-1"
 - **Then** returns success with the updated template, and `getTemplate("t-1")` reflects all changes (pool "p-2" is gone, question "q-1" is gone from "p-1").
 
-
-- [ ] **Test Case: Fail to update non-existent template**
+- [x] **Test Case: Fail to update non-existent template**
 - **Given** no existing templates
 - **When** updateTemplate is called with id "non-existent-template"
 - **Then** returns error with type "TemplateNotFound"
