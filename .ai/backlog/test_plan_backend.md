@@ -16,12 +16,15 @@ The testing strategy focuses on ensuring the reliability of the two main domains
 *   **Services**: `design.service.ts`
     *   **Global Question Bank**:
         *   - [x] **`createQuestion`, `updateQuestion`**: Verify validation (content, answers, points).
-        *   - [ ] **`deleteQuestion`**: Verify deletion is **blocked** if the question is used in any template.
+        *   - [x] **`deleteQuestion`**: Verify deletion is **blocked** if the question is used in any template.
         *   - [x] **`listQuestions`**: Verify filtering by tags.
         *   - [x] **`getQuestion`**: Verify retrieval of individual questions.
     *   **Template Management**:
-        *   - [ ] **`createTemplate`**: Verify template structure and local pool creation.
-        *   - [ ] **`updateTemplate`**: Verify monolithic update (replacing pools/questions).
+        *   - [x] **`createTemplate`**: Verify template structure and local pool creation.
+        *   - [x] **`updateTemplate`**: Verify monolithic update (replacing pools/questions).
+        *   - [ ] **`deleteTemplate`**: Verify template deletion (and local pool cleanup).
+        *   - [ ] **`getTemplate`**: Verify retrieval of template details.
+        *   - [ ] **`listTemplates`**: Verify listing of templates.
         *   - [ ] **`materializeTemplate`**:
             *   - [ ] Verify it correctly selects questions based on template/pool rules.
             *   - [ ] Verify it returns a `TestContentPackage` with the correct structure.
@@ -47,21 +50,20 @@ Integration tests will spin up the Express app and hit the API endpoints.
 
 *   **Question Management Integration Tests**
     *   **Create Question (`POST /api/design/questions`)**:
-        *   - [ ] Create a question with valid data (content, answers, points) and verify it returns the created question with an ID.
-        *   - [ ] Verify validation errors for missing required fields (content, answers, points).
-        *   - [ ] Verify validation errors for invalid data (empty content, negative points, invalid answer structure).
-        *   - [ ] Verify the question is persisted and can be retrieved after creation.
+        *   - [x] Create a question with valid data (content, answers, points) and verify it returns the created question with an ID.
+        *   - [x] Verify validation errors for missing required fields (content, answers, points).
+        *   - [x] Verify validation errors for invalid data (empty content, negative points, invalid answer structure).
+        *   - [x] Verify the question is persisted and can be retrieved after creation.
     *   **Update Question (`PUT /api/design/questions/:id`)**:
-        *   - [ ] Update question content and verify changes are persisted.
-        *   - [ ] Update question answers and verify changes are persisted.
-        *   - [ ] Update question points and verify changes are persisted.
-        *   - [ ] Update question tags and verify changes are persisted.
-        *   - [ ] Verify validation errors when updating with invalid data.
-        *   - [ ] Verify error response when updating a non-existent question ID.
+        *   - [x] Update question content and verify changes are persisted.
+        *   - [x] Update question answers and verify changes are persisted.
+        *   - [x] Update question tags and verify changes are persisted.
+        *   - [x] Verify validation errors when updating with invalid data.
+        *   - [x] Verify error response when updating a non-existent question ID.
     *   **Retrieve Question (`GET /api/design/questions/:id`)**:
-        *   - [ ] Retrieve an existing question by ID and verify all fields are returned correctly.
-        *   - [ ] Verify error response when retrieving a non-existent question ID.
-        *   - [ ] Verify the retrieved question matches the data that was created/updated.
+        *   - [x] Retrieve an existing question by ID and verify all fields are returned correctly.
+        *   - [x] Verify error response when retrieving a non-existent question ID.
+        *   - [x] Verify the retrieved question matches the data that was created/updated.
 
 *   **Flow: Create Test Content**
     *   - [ ] 1. `POST /api/design/questions`: Create questions in the global bank.
