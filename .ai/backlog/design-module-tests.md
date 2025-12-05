@@ -164,17 +164,17 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### deleteTemplate Use Case
 
-- [ ] **Test Case: Successfully delete existing template**
+- [x] **Test Case: Successfully delete existing template**
 - **Given** existing template (id: "t-1") containing local pools
 - **When** deleteTemplate is called with id "t-1"
 - **Then** returns success, template is no longer retrievable, and local pools are deleted
 
-- [ ] **Test Case: Verify deleting template does not delete questions from questions bank**
+- [x] **Test Case: Verify deleting template does not delete questions from questions bank**
 - **Given** template "t-1" containing pool with question "q-1"
 - **When** deleteTemplate is called with id "t-1"
 - **Then** returns success and question "q-1" still exists in questions bank
 
-- [ ] **Test Case: Fail to delete non-existent template**
+- [x] **Test Case: Fail to delete non-existent template**
 - **Given** no existing templates
 - **When** deleteTemplate is called with id "non-existent-template"
 - **Then** returns error with type "TemplateNotFound"
