@@ -22,9 +22,9 @@ The testing strategy focuses on ensuring the reliability of the two main domains
     *   **Template Management**:
         *   - [x] **`createTemplate`**: Verify template structure and local pool creation.
         *   - [x] **`updateTemplate`**: Verify monolithic update (replacing pools/questions).
-        *   - [ ] **`deleteTemplate`**: Verify template deletion (and local pool cleanup).
-        *   - [ ] **`getTemplate`**: Verify retrieval of template details.
-        *   - [ ] **`listTemplates`**: Verify listing of templates.
+        *   - [x] **`deleteTemplate`**: Verify template deletion (and local pool cleanup).
+        *   - [x] **`getTemplate`**: Verify retrieval of template details.
+        *   - [x] **`listTemplates`**: Verify listing of templates.
         *   - [ ] **`materializeTemplate`**:
             *   - [ ] Verify it correctly selects questions based on template/pool rules.
             *   - [ ] Verify it returns a `TestContentPackage` with the correct structure.
