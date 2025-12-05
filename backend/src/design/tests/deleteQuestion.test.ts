@@ -1,10 +1,14 @@
-import { describe, it, expect } from 'vitest';
+import { describe, it, expect, beforeEach } from 'vitest';
 import { configureDesignModule, DesignModule } from '../index';
 import { Result } from '../../shared/result';
 import { DesignError } from '../types/designError';
 
 describe('deleteQuestion Use Case', () => {
-  const module = givenDesignModule();
+  let module: DesignModule;
+
+  beforeEach(async () => {
+    module = givenDesignModule();
+  });
 
   it('Successfully delete unused question', async () => {
     const existingQuestion = await givenExistingQuestion(module);
@@ -28,6 +32,45 @@ describe('deleteQuestion Use Case', () => {
     const result = await module.deleteQuestion('non-existent-question');
 
     thenDeletionShouldFailBecause(result, 'QuestionNotFound');
+  });
+
+  it('Successfully delete question after removing it from template', async () => {
+    const existingQuestion = await givenExistingQuestion(module);
+    const otherQuestion = await givenExistingQuestion(module);
+    const template = await givenTemplateWithQuestion(module, existingQuestion.id);
+
+    // Remove question from template by updating pool to use different question
+    const updateResult = await module.updateTemplate({
+      id: template.id,
+      pools: [{
+        name: 'Pool 1',
+        questionCount: 1,
+        points: 10,
+        questionIds: [otherQuestion.id] // Use different question
+      }]
+    });
+    expect(updateResult.ok).toBe(true);
+
+    // Now question should be deletable
+    const result = await module.deleteQuestion(existingQuestion.id);
+
+    thenQuestionShouldBeDeleted(result);
+    await thenQuestionShouldNotBeRetrievable(module, existingQuestion.id);
+  });
+
+  it('Successfully delete question after deleting containing template', async () => {
+    const existingQuestion = await givenExistingQuestion(module);
+    const template = await givenTemplateWithQuestion(module, existingQuestion.id);
+
+    // Delete the template
+    const deleteTemplateResult = await module.deleteTemplate(template.id);
+    expect(deleteTemplateResult.ok).toBe(true);
+
+    // Now question should be deletable
+    const result = await module.deleteQuestion(existingQuestion.id);
+
+    thenQuestionShouldBeDeleted(result);
+    await thenQuestionShouldNotBeRetrievable(module, existingQuestion.id);
   });
 });
 
