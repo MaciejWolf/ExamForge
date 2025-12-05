@@ -168,15 +168,25 @@ export const updateQuestion = ({ repo, now }: UpdateQuestionDeps) => {
 
 type DeleteQuestionDeps = {
   repo: QuestionRepository;
+  templateRepo: TemplateRepository;
 };
 
-export const deleteQuestion = ({ repo }: DeleteQuestionDeps) => {
+export const deleteQuestion = ({ repo, templateRepo }: DeleteQuestionDeps) => {
   return async (id: string): Promise<Result<void, DesignError>> => {
     const existing = await repo.findById(id);
     if (!existing) {
       return err({
         type: 'QuestionNotFound',
         questionId: id,
+      });
+    }
+
+    const templatesUsingQuestion = await templateRepo.findByQuestionId(id);
+    if (templatesUsingQuestion.length > 0) {
+      return err({
+        type: 'QuestionInUse',
+        questionId: id,
+        templateIds: templatesUsingQuestion.map(t => t.id),
       });
     }
 

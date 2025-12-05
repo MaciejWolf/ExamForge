@@ -50,7 +50,7 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** deleteQuestion is called with id "q-1"
 - **Then** returns success and question is no longer retrievable
 
-- [ ] **Test Case: Fail to delete question used in template**
+- [x] **Test Case: Fail to delete question used in template**
 - **Given** question "q-1" assigned to a pool in template "t-1"
 - **When** deleteQuestion is called with id "q-1"
 - **Then** returns error with type "QuestionInUse" containing list of templates using it

@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { configureDesignModule } from '../index';
+import { configureDesignModule, DesignModule } from '../index';
 import { Result } from '../../shared/result';
 import { DesignError } from '../types/designError';
 
@@ -15,6 +15,15 @@ describe('deleteQuestion Use Case', () => {
     await thenQuestionShouldNotBeRetrievable(module, existingQuestion.id);
   });
 
+  it('Fail to delete question used in template', async () => {
+    const existingQuestion = await givenExistingQuestion(module);
+    await givenTemplateWithQuestion(module, existingQuestion.id);
+
+    const result = await module.deleteQuestion(existingQuestion.id);
+
+    thenDeletionShouldFailBecause(result, 'QuestionInUse');
+  });
+
   it('Fail to delete non-existent question', async () => {
     const result = await module.deleteQuestion('non-existent-question');
 
@@ -23,8 +32,9 @@ describe('deleteQuestion Use Case', () => {
 });
 
 const givenDesignModule = () => {
+  let count = 0;
   return configureDesignModule({
-    idGenerator: () => 'q-1',
+    idGenerator: () => `id-${++count}`,
     now: () => new Date('2025-11-22T00:00:00Z'),
   });
 };
@@ -58,6 +68,26 @@ const givenExistingQuestion = async (
   return { id: result.value.id };
 };
 
+const givenTemplateWithQuestion = async (
+  module: DesignModule,
+  questionId: string
+) => {
+  const result = await module.createTemplate({
+    name: 'Template 1',
+    pools: [{
+      name: 'Pool 1',
+      questionCount: 1,
+      points: 10,
+      questionIds: [questionId]
+    }]
+  });
+
+  if (!result.ok) {
+    throw new Error(`Failed to create test template: ${result.error}`);
+  }
+  return result.value;
+};
+
 const thenQuestionShouldBeDeleted = (result: Result<void, DesignError>) => {
   expect(result.ok).toBe(true);
   if (result.ok) {
@@ -66,7 +96,7 @@ const thenQuestionShouldBeDeleted = (result: Result<void, DesignError>) => {
 };
 
 const thenQuestionShouldNotBeRetrievable = async (
-  module: ReturnType<typeof configureDesignModule>,
+  module: DesignModule,
   questionId: string
 ) => {
   const updateResult = await module.updateQuestion({ id: questionId, text: 'Should fail' });

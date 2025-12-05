@@ -176,6 +176,7 @@ export type TemplateRepository = {
   findById: (id: string) => Promise<TestTemplate | null>;
   findAll: () => Promise<TestTemplate[]>;
   findByName: (name: string) => Promise<TestTemplate | null>;
+  findByQuestionId: (questionId: string) => Promise<TestTemplate[]>;
   delete: (id: string) => Promise<boolean>;
 };
 
@@ -286,6 +287,23 @@ export const createSupabaseTemplateRepository = (supabase: SupabaseClient): Temp
       }
       return true;
     },
+    findByQuestionId: async (questionId: string) => {
+      // Note: This is a robust implementation fetching all templates.
+      // Optimizing JSONB queries for deep nesting depends on specific Postgres indexes/extensions.
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*');
+
+      if (error) {
+        console.error('Error finding templates by question id:', error);
+        throw new Error('Could not find templates by question id');
+      }
+
+      const allTemplates = (data as Document<TestTemplate>[]).map(mapDocumentToTemplate);
+      return allTemplates.filter(t =>
+        t.pools.some(p => p.questionIds.includes(questionId))
+      );
+    },
   };
 };
 
@@ -313,6 +331,13 @@ export const createInMemoryTemplateRepository = () => {
 
     delete: async (id: string) => {
       return templates.delete(id);
+    },
+
+    findByQuestionId: async (questionId: string) => {
+      const allTemplates = Array.from(templates.values());
+      return allTemplates.filter(t =>
+        t.pools.some(p => p.questionIds.includes(questionId))
+      );
     },
   };
 };
