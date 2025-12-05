@@ -60,6 +60,16 @@ This document contains unit test cases for the Design Module, written in Given/W
 - **When** deleteQuestion is called with id "non-existent-question"
 - **Then** returns error with type "QuestionNotFound"
 
+- [X] **Test Case: Successfully delete question after removing it from template**
+- **Given** question "q-1" assigned to a pool in template "t-1"
+- **When** updateTemplate is called to remove "q-1" from template "t-1", then deleteQuestion is called with id "q-1"
+- **Then** returns success and question is no longer retrievable
+
+- [X] **Test Case: Successfully delete question after deleting containing template**
+- **Given** question "q-1" assigned to a pool in template "t-1"
+- **When** deleteTemplate is called with id "t-1", then deleteQuestion is called with id "q-1"
+- **Then** returns success and question is no longer retrievable
+
 ### getQuestion Use Case
 
 - [x] **Test Case: Successfully retrieve existing question**

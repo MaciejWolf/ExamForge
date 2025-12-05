@@ -16,7 +16,7 @@ The testing strategy focuses on ensuring the reliability of the two main domains
 *   **Services**: `design.service.ts`
     *   **Global Question Bank**:
         *   - [x] **`createQuestion`, `updateQuestion`**: Verify validation (content, answers, points).
-        *   - [x] **`deleteQuestion`**: Verify deletion is **blocked** if the question is used in any template.
+        *   - [x] **`deleteQuestion`**: Verify deletion is **blocked** if the question is used in any template, and **allowed** after removing question from template or deleting containing template.
         *   - [x] **`listQuestions`**: Verify filtering by tags.
         *   - [x] **`getQuestion`**: Verify retrieval of individual questions.
     *   **Template Management**:
