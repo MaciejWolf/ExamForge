@@ -2,20 +2,6 @@ import { supabase } from '@/lib/supabase';
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:3000/api';
 
-export interface QuestionPool {
-  id: string;
-  name: string;
-  questionCount: number;
-  createdAt: string;
-}
-
-export interface CreatePoolRequest {
-  name: string;
-}
-
-export interface UpdatePoolRequest {
-  name: string;
-}
 
 export interface Answer {
   id: string;
@@ -76,28 +62,33 @@ export interface UpdateQuestionRequest {
   answers: Omit<Answer, 'id'>[];
 }
 
-export interface PoolSelection {
-  poolId: string;
-  questionsToDraw: number;
+export interface Pool {
+  id: string;
+  name: string;
+  questionCount: number;
   points: number;
+  questionIds: string[];
 }
 
 export interface TestTemplate {
   id: string;
   name: string;
-  examiner_id: string;
-  poolSelections: PoolSelection[];
+  description?: string;
+  pools: Pool[];
   createdAt: string;
+  updatedAt: string;
 }
 
 export interface CreateTemplateRequest {
   name: string;
-  poolSelections: PoolSelection[];
+  description?: string;
+  pools: Omit<Pool, 'id'>[];
 }
 
 export interface UpdateTemplateRequest {
-  name: string;
-  poolSelections: PoolSelection[];
+  name?: string;
+  description?: string;
+  pools?: Omit<Pool, 'id'>[];
 }
 
 export interface Participant {
@@ -221,31 +212,6 @@ async function apiRequest<T>(
   return response.json();
 }
 
-export const questionPoolsApi = {
-  async getAll(): Promise<{ pools: QuestionPool[] }> {
-    return apiRequest<{ pools: QuestionPool[] }>('/question-pools');
-  },
-
-  async create(data: CreatePoolRequest): Promise<QuestionPool> {
-    return apiRequest<QuestionPool>('/question-pools', {
-      method: 'POST',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async update(id: string, data: UpdatePoolRequest): Promise<QuestionPool> {
-    return apiRequest<QuestionPool>(`/question-pools/${id}`, {
-      method: 'PUT',
-      body: JSON.stringify(data),
-    });
-  },
-
-  async delete(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/question-pools/${id}`, {
-      method: 'DELETE',
-    });
-  },
-};
 
 export const questionsApi = {
   async getByPool(poolId: string): Promise<{ questions: Question[] }> {
@@ -274,30 +240,34 @@ export const questionsApi = {
 };
 
 export const testTemplatesApi = {
-  async getAll(): Promise<{ templates: TestTemplate[] }> {
-    return apiRequest<{ templates: TestTemplate[] }>('/test-templates');
+  async getAll(): Promise<TestTemplate[]> {
+    const templates = await apiRequest<TestTemplate[]>('/design/templates');
+    return templates.map(convertTemplateDates);
   },
 
   async getById(id: string): Promise<TestTemplate> {
-    return apiRequest<TestTemplate>(`/test-templates/${id}`);
+    const template = await apiRequest<TestTemplate>(`/design/templates/${id}`);
+    return convertTemplateDates(template);
   },
 
   async create(data: CreateTemplateRequest): Promise<TestTemplate> {
-    return apiRequest<TestTemplate>('/test-templates', {
+    const template = await apiRequest<TestTemplate>('/design/templates', {
       method: 'POST',
       body: JSON.stringify(data),
     });
+    return convertTemplateDates(template);
   },
 
   async update(id: string, data: UpdateTemplateRequest): Promise<TestTemplate> {
-    return apiRequest<TestTemplate>(`/test-templates/${id}`, {
+    const template = await apiRequest<TestTemplate>(`/design/templates/${id}`, {
       method: 'PUT',
       body: JSON.stringify(data),
     });
+    return convertTemplateDates(template);
   },
 
   async delete(id: string): Promise<{ message: string }> {
-    return apiRequest<{ message: string }>(`/test-templates/${id}`, {
+    return apiRequest<{ message: string }>(`/design/templates/${id}`, {
       method: 'DELETE',
     });
   },
@@ -345,8 +315,32 @@ const convertQuestionDates = (question: {
   } as BankQuestion;
 };
 
-export const questionBankApi = {
-  async getAll(): Promise<BankQuestion[]> {
+// Helper function to convert template Date objects to ISO strings
+const convertTemplateDates = (template: {
+  id: string;
+  name: string;
+  description?: string;
+  pools: Pool[];
+  createdAt: Date | string;
+  updatedAt: Date | string;
+}): TestTemplate => {
+  const createdAtStr = typeof template.createdAt === 'string' 
+    ? template.createdAt 
+    : (template.createdAt as Date).toISOString();
+  const updatedAtStr = typeof template.updatedAt === 'string' 
+    ? template.updatedAt 
+    : (template.updatedAt as Date).toISOString();
+  
+  return {
+    ...template,
+    createdAt: createdAtStr,
+    updatedAt: updatedAtStr,
+  };
+};
+
+export const bankQuestionsApi = {
+  async getAll(tags?: string[]): Promise<BankQuestion[]> {
+    const params = tags && tags.length > 0 ? `?tags=${tags.join(',')}` : '';
     const questions = await apiRequest<Array<{
       id: string;
       text: string;
@@ -355,8 +349,21 @@ export const questionBankApi = {
       tags: string[];
       createdAt: Date | string;
       updatedAt: Date | string;
-    }>>('/design/questions');
+    }>>(`/design/questions${params}`);
     return questions.map(convertQuestionDates);
+  },
+
+  async getById(id: string): Promise<BankQuestion> {
+    const question = await apiRequest<{
+      id: string;
+      text: string;
+      answers: Array<{ id: string; text: string }>;
+      correctAnswerId: string;
+      tags: string[];
+      createdAt: Date | string;
+      updatedAt: Date | string;
+    }>(`/design/questions/${id}`);
+    return convertQuestionDates(question);
   },
 
   async create(data: CreateBankQuestionRequest): Promise<BankQuestion> {
@@ -391,10 +398,13 @@ export const questionBankApi = {
     return convertQuestionDates(question);
   },
 
-  async delete(id: string): Promise<void> {
-    await apiRequest<{ message: string }>(`/design/questions/${id}`, {
+  async delete(id: string): Promise<{ message: string }> {
+    return apiRequest<{ message: string }>(`/design/questions/${id}`, {
       method: 'DELETE',
     });
   },
 };
+
+// Legacy alias for backward compatibility (can be removed after updating all usages)
+export const questionBankApi = bankQuestionsApi;
 

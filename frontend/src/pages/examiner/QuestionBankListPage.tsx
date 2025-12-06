@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { questionBankApi } from '@/services/api';
+import { bankQuestionsApi } from '@/services/api';
 import type { BankQuestion } from '@/services/api';
 import { toast } from 'sonner';
 import { QuestionBankHeader } from '@/components/question-bank/QuestionBankHeader';
@@ -30,7 +30,7 @@ const QuestionBankListPage = () => {
   const fetchQuestions = async () => {
     try {
       setLoading(true);
-      const data = await questionBankApi.getAll();
+      const data = await bankQuestionsApi.getAll();
       setQuestions(data);
     } catch (error) {
       toast.error('Failed to load questions', {
@@ -60,7 +60,7 @@ const QuestionBankListPage = () => {
     tags: string[];
   }) => {
     try {
-      await questionBankApi.create(formData);
+      await bankQuestionsApi.create(formData);
       toast.success('Question created successfully');
       setIsCreateOpen(false);
       fetchQuestions();
@@ -80,7 +80,7 @@ const QuestionBankListPage = () => {
     if (!currentQuestion) return;
 
     try {
-      await questionBankApi.update(currentQuestion.id, formData);
+      await bankQuestionsApi.update(currentQuestion.id, formData);
       toast.success('Question updated successfully');
       setIsEditOpen(false);
       setCurrentQuestion(null);
@@ -96,7 +96,7 @@ const QuestionBankListPage = () => {
     if (!currentQuestion) return;
 
     try {
-      await questionBankApi.delete(currentQuestion.id);
+      await bankQuestionsApi.delete(currentQuestion.id);
       toast.success('Question deleted successfully');
       setIsDeleteOpen(false);
       setCurrentQuestion(null);

@@ -7,8 +7,6 @@ import { ExaminerLoginPage } from "./pages/auth/ExaminerLoginPage"
 import { ExaminerRegistrationPage } from "./pages/auth/ExaminerRegistrationPage"
 import { PasswordRecoveryPage } from "./pages/auth/PasswordRecoveryPage"
 import { DashboardPage } from "./pages/examiner/DashboardPage"
-import QuestionPoolsPage from "./pages/examiner/QuestionPoolsPage"
-import QuestionPoolManagementPage from "./pages/examiner/QuestionPoolManagementPage"
 import QuestionBankListPage from "./pages/examiner/QuestionBankListPage"
 import TestTemplatesListPage from "./pages/examiner/TestTemplatesListPage"
 import TestSessionLaunchPage from "./pages/examiner/TestSessionLaunchPage"
@@ -30,22 +28,6 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <DashboardPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/question-pools"
-            element={
-              <ProtectedRoute>
-                <QuestionPoolsPage />
-              </ProtectedRoute>
-            }
-          />
-          <Route
-            path="/question-pools/:id"
-            element={
-              <ProtectedRoute>
-                <QuestionPoolManagementPage />
               </ProtectedRoute>
             }
           />

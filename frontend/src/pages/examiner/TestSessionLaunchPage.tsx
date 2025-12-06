@@ -48,8 +48,8 @@ const TestSessionLaunchPage = () => {
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await testTemplatesApi.getAll();
-      setTemplates(response.templates);
+      const templates = await testTemplatesApi.getAll();
+      setTemplates(templates);
     } catch (error) {
       toast.error('Failed to load templates', {
         description: error instanceof Error ? error.message : 'Unknown error',

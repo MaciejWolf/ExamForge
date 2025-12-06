@@ -20,40 +20,51 @@ import {
 } from '@/components/ui/dialog';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Plus, Edit, Trash2, Eye, ArrowLeft } from 'lucide-react';
+import { Textarea } from '@/components/ui/textarea';
+import { Plus, Edit, Trash2, Eye, ArrowLeft, X, Search } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import {
   testTemplatesApi,
-  questionPoolsApi,
+  bankQuestionsApi,
   type TestTemplate,
-  type QuestionPool,
-  type PoolSelection,
+  type BankQuestion,
 } from '@/services/api';
 import { toast } from 'sonner';
 
+type PoolFormData = {
+  name: string;
+  questionCount: number;
+  points: number;
+  questionIds: string[];
+};
+
 const TestTemplatesListPage = () => {
   const [templates, setTemplates] = useState<TestTemplate[]>([]);
-  const [pools, setPools] = useState<QuestionPool[]>([]);
   const [isCreateOpen, setIsCreateOpen] = useState(false);
   const [isEditOpen, setIsEditOpen] = useState(false);
   const [isViewOpen, setIsViewOpen] = useState(false);
   const [isDeleteOpen, setIsDeleteOpen] = useState(false);
   const [currentTemplate, setCurrentTemplate] = useState<TestTemplate | null>(null);
   const [templateName, setTemplateName] = useState('');
-  const [poolSelections, setPoolSelections] = useState<Record<string, { questionsToDraw: number; points: number }>>({});
+  const [templateDescription, setTemplateDescription] = useState('');
+  const [pools, setPools] = useState<PoolFormData[]>([]);
   const [loading, setLoading] = useState(true);
+  const [questions, setQuestions] = useState<BankQuestion[]>([]);
+  const [questionSearchQuery, setQuestionSearchQuery] = useState('');
+  const [selectedPoolForQuestions, setSelectedPoolForQuestions] = useState<number | null>(null);
+  const [isQuestionSelectorOpen, setIsQuestionSelectorOpen] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
     fetchTemplates();
-    fetchPools();
+    fetchQuestions();
   }, []);
 
   const fetchTemplates = async () => {
     try {
       setLoading(true);
-      const response = await testTemplatesApi.getAll();
-      setTemplates(response.templates);
+      const data = await testTemplatesApi.getAll();
+      setTemplates(data);
     } catch (error) {
       toast.error('Failed to load test templates', {
         description: error instanceof Error ? error.message : 'Unknown error',
@@ -63,13 +74,12 @@ const TestTemplatesListPage = () => {
     }
   };
 
-  const fetchPools = async () => {
+  const fetchQuestions = async () => {
     try {
-      const response = await questionPoolsApi.getAll();
-      // Store all pools (needed for editing templates that might reference pools with 0 questions)
-      setPools(response.pools);
+      const data = await bankQuestionsApi.getAll();
+      setQuestions(data);
     } catch (error) {
-      toast.error('Failed to load question pools', {
+      toast.error('Failed to load questions', {
         description: error instanceof Error ? error.message : 'Unknown error',
       });
     }
@@ -77,7 +87,10 @@ const TestTemplatesListPage = () => {
 
   const resetForm = () => {
     setTemplateName('');
-    setPoolSelections({});
+    setTemplateDescription('');
+    setPools([]);
+    setSelectedPoolForQuestions(null);
+    setQuestionSearchQuery('');
   };
 
   const openCreateDialog = () => {
@@ -86,16 +99,18 @@ const TestTemplatesListPage = () => {
     setIsCreateOpen(true);
   };
 
-  const openEditDialog = async (template: TestTemplate) => {
+  const openEditDialog = (template: TestTemplate) => {
     setCurrentTemplate(template);
     setTemplateName(template.name);
-    const selections: Record<string, { questionsToDraw: number; points: number }> = {};
-    template.poolSelections.forEach((sel) => {
-      selections[sel.poolId] = { questionsToDraw: sel.questionsToDraw, points: sel.points };
-    });
-    setPoolSelections(selections);
-    // Refresh pools to ensure we have the latest pool data
-    await fetchPools();
+    setTemplateDescription(template.description || '');
+    setPools(
+      template.pools.map((pool) => ({
+        name: pool.name,
+        questionCount: pool.questionCount,
+        points: pool.points,
+        questionIds: [...pool.questionIds],
+      }))
+    );
     setIsEditOpen(true);
   };
 
@@ -109,43 +124,63 @@ const TestTemplatesListPage = () => {
     setIsDeleteOpen(true);
   };
 
-  const handlePoolToggle = (poolId: string, checked: boolean) => {
-    if (checked) {
-      setPoolSelections({ ...poolSelections, [poolId]: { questionsToDraw: 1, points: 1 } });
-    } else {
-      const newSelections = { ...poolSelections };
-      delete newSelections[poolId];
-      setPoolSelections(newSelections);
+  const addPool = () => {
+    setPools([
+      ...pools,
+      {
+        name: '',
+        questionCount: 0,
+        points: 1,
+        questionIds: [],
+      },
+    ]);
+  };
+
+  const removePool = (index: number) => {
+    setPools(pools.filter((_, i) => i !== index));
+  };
+
+  const updatePool = (index: number, updates: Partial<PoolFormData>) => {
+    const newPools = [...pools];
+    newPools[index] = { ...newPools[index], ...updates };
+    // Auto-update questionCount to match questionIds length
+    if (updates.questionIds !== undefined) {
+      newPools[index].questionCount = updates.questionIds.length;
     }
+    setPools(newPools);
   };
 
-  const handleQuestionsToDrawChange = (poolId: string, value: string) => {
-    const numValue = parseInt(value, 10);
-    const current = poolSelections[poolId] || { questionsToDraw: 0, points: 0 };
-    if (!isNaN(numValue) && numValue > 0) {
-      setPoolSelections({ ...poolSelections, [poolId]: { ...current, questionsToDraw: numValue } });
-    } else if (value === '') {
-      setPoolSelections({ ...poolSelections, [poolId]: { ...current, questionsToDraw: 0 } });
+  const openQuestionSelector = (poolIndex: number) => {
+    setSelectedPoolForQuestions(poolIndex);
+    setIsQuestionSelectorOpen(true);
+  };
+
+  const addQuestionToPool = (questionId: string) => {
+    if (selectedPoolForQuestions === null) return;
+    const pool = pools[selectedPoolForQuestions];
+    if (pool.questionIds.includes(questionId)) {
+      toast.info('Question already added to this pool');
+      return;
     }
+    updatePool(selectedPoolForQuestions, {
+      questionIds: [...pool.questionIds, questionId],
+    });
   };
 
-  const handlePointsChange = (poolId: string, value: string) => {
-    const numValue = parseFloat(value);
-    const current = poolSelections[poolId] || { questionsToDraw: 0, points: 0 };
-    if (!isNaN(numValue) && numValue > 0) {
-      setPoolSelections({ ...poolSelections, [poolId]: { ...current, points: numValue } });
-    } else if (value === '') {
-      setPoolSelections({ ...poolSelections, [poolId]: { ...current, points: 0 } });
-    }
+  const removeQuestionFromPool = (poolIndex: number, questionId: string) => {
+    const pool = pools[poolIndex];
+    updatePool(poolIndex, {
+      questionIds: pool.questionIds.filter((id) => id !== questionId),
+    });
   };
 
-  const calculateTotalQuestions = (): number => {
-    return Object.values(poolSelections).reduce((sum, sel) => sum + (sel.questionsToDraw || 0), 0);
+  const getQuestionById = (id: string): BankQuestion | undefined => {
+    return questions.find((q) => q.id === id);
   };
 
-  const calculateTotalPoints = (): number => {
-    return Object.values(poolSelections).reduce((sum, sel) => sum + (sel.points || 0), 0);
-  };
+  const filteredQuestions = questions.filter((q) =>
+    q.text.toLowerCase().includes(questionSearchQuery.toLowerCase())
+  );
 
   const validateForm = (): boolean => {
     if (!templateName.trim()) {
@@ -153,44 +188,40 @@ const TestTemplatesListPage = () => {
       return false;
     }
 
-    const selectedPools = Object.keys(poolSelections);
-    if (selectedPools.length === 0) {
-      toast.error('At least one question pool must be selected');
+    if (pools.length === 0) {
+      toast.error('At least one pool is required');
       return false;
     }
 
-    for (const poolId of selectedPools) {
-      const selection = poolSelections[poolId];
-      const pool = pools.find((p) => p.id === poolId);
-
-      if (!pool) {
-        toast.error(`Pool with id ${poolId} not found. It may have been deleted. Please remove it from the template.`);
+    for (let i = 0; i < pools.length; i++) {
+      const pool = pools[i];
+      if (!pool.name.trim()) {
+        toast.error(`Pool ${i + 1} name is required`);
         return false;
       }
 
-      if (!selection || !selection.questionsToDraw || selection.questionsToDraw <= 0) {
-        toast.error(`Questions to draw must be a positive number for pool "${pool.name}"`);
+      if (pool.questionIds.length === 0) {
+        toast.error(`Pool "${pool.name}" must have at least one question`);
         return false;
       }
 
-      if (!selection.points || selection.points <= 0) {
-        toast.error(`Points must be a positive number for pool "${pool.name}"`);
+      if (pool.questionCount !== pool.questionIds.length) {
+        toast.error(`Pool "${pool.name}" question count must match the number of selected questions`);
         return false;
       }
 
-      if (pool.questionCount === 0) {
-        toast.error(
-          `Pool "${pool.name}" has no questions available. Please remove it or add questions to the pool first.`
-        );
+      if (pool.points <= 0) {
+        toast.error(`Pool "${pool.name}" points must be greater than 0`);
         return false;
       }
+    }
 
-      if (selection.questionsToDraw > pool.questionCount) {
-        toast.error(
-          `Cannot draw ${selection.questionsToDraw} questions from pool "${pool.name}" (only ${pool.questionCount} available)`
-        );
-        return false;
-      }
+    // Check for duplicate pool names
+    const poolNames = pools.map((p) => p.name.trim().toLowerCase());
+    const uniqueNames = new Set(poolNames);
+    if (uniqueNames.size !== poolNames.length) {
+      toast.error('Pool names must be unique');
+      return false;
     }
 
     return true;
@@ -200,15 +231,15 @@ const TestTemplatesListPage = () => {
     if (!validateForm()) return;
 
     try {
-      const selections: PoolSelection[] = Object.entries(poolSelections).map(([poolId, selection]) => ({
-        poolId,
-        questionsToDraw: selection.questionsToDraw,
-        points: selection.points,
-      }));
-
       await testTemplatesApi.create({
         name: templateName.trim(),
-        poolSelections: selections,
+        description: templateDescription.trim() || undefined,
+        pools: pools.map((pool) => ({
+          name: pool.name.trim(),
+          questionCount: pool.questionIds.length,
+          points: pool.points,
+          questionIds: pool.questionIds,
+        })),
       });
       toast.success('Template created successfully');
       setIsCreateOpen(false);
@@ -225,15 +256,15 @@ const TestTemplatesListPage = () => {
     if (!currentTemplate || !validateForm()) return;
 
     try {
-      const selections: PoolSelection[] = Object.entries(poolSelections).map(([poolId, selection]) => ({
-        poolId,
-        questionsToDraw: selection.questionsToDraw,
-        points: selection.points,
-      }));
-
       await testTemplatesApi.update(currentTemplate.id, {
         name: templateName.trim(),
-        poolSelections: selections,
+        description: templateDescription.trim() || undefined,
+        pools: pools.map((pool) => ({
+          name: pool.name.trim(),
+          questionCount: pool.questionIds.length,
+          points: pool.points,
+          questionIds: pool.questionIds,
+        })),
       });
       toast.success('Template updated successfully');
       setIsEditOpen(false);
@@ -263,9 +294,12 @@ const TestTemplatesListPage = () => {
     }
   };
 
-
   const getTotalQuestions = (template: TestTemplate): number => {
-    return template.poolSelections.reduce((sum, sel) => sum + sel.questionsToDraw, 0);
+    return template.pools.reduce((sum, pool) => sum + pool.questionCount, 0);
+  };
+
+  const getTotalPoints = (template: TestTemplate): number => {
+    return template.pools.reduce((sum, pool) => sum + pool.points, 0);
   };
 
   return (
@@ -302,6 +336,7 @@ const TestTemplatesListPage = () => {
                     <TableHead>Template Name</TableHead>
                     <TableHead>Pools</TableHead>
                     <TableHead>Questions</TableHead>
+                    <TableHead>Total Points</TableHead>
                     <TableHead className="text-right">Actions</TableHead>
                   </TableRow>
                 </TableHeader>
@@ -309,8 +344,9 @@ const TestTemplatesListPage = () => {
                   {templates.map((template) => (
                     <TableRow key={template.id}>
                       <TableCell className="font-medium">{template.name}</TableCell>
-                      <TableCell>{template.poolSelections.length}</TableCell>
+                      <TableCell>{template.pools.length}</TableCell>
                       <TableCell>{getTotalQuestions(template)}</TableCell>
+                      <TableCell>{getTotalPoints(template)}</TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
                           <Button
@@ -357,21 +393,21 @@ const TestTemplatesListPage = () => {
           setCurrentTemplate(null);
         }
       }}>
-        <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
+        <DialogContent className="max-w-4xl max-h-[90vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>
               {currentTemplate ? 'Edit Test Template' : 'Create New Test Template'}
             </DialogTitle>
             <DialogDescription>
               {currentTemplate
-                ? 'Update the template name and question pool selections'
-                : 'Enter a template name and select question pools with the number of questions to draw from each'}
+                ? 'Update the template name, description, and pools'
+                : 'Enter template details and create pools with questions from the question bank'}
             </DialogDescription>
           </DialogHeader>
           <div className="space-y-6 py-4">
             {/* Template Name */}
             <div className="space-y-2">
-              <Label htmlFor="templateName">Template Name</Label>
+              <Label htmlFor="templateName">Template Name *</Label>
               <Input
                 id="templateName"
                 value={templateName}
@@ -380,249 +416,152 @@ const TestTemplatesListPage = () => {
               />
             </div>
 
-            {/* Question Pool Selection */}
+            {/* Template Description */}
+            <div className="space-y-2">
+              <Label htmlFor="templateDescription">Description (optional)</Label>
+              <Textarea
+                id="templateDescription"
+                value={templateDescription}
+                onChange={(e) => setTemplateDescription(e.target.value)}
+                placeholder="Optional description for this template"
+                rows={3}
+              />
+            </div>
+
+            {/* Pools Section */}
             <div className="space-y-4">
-              <Label>Question Pool Selection</Label>
-              {(() => {
-                // When creating, only show pools with questions
-                // When editing, show all pools (including those with 0 questions if already selected)
-                const poolsToShow = currentTemplate
-                  ? pools // When editing, show all pools
-                  : pools.filter((pool) => pool.questionCount > 0); // When creating, only pools with questions
+              <div className="flex items-center justify-between">
+                <Label className="text-base font-semibold">Pools *</Label>
+                <Button type="button" variant="outline" size="sm" onClick={addPool}>
+                  <Plus className="mr-2 h-4 w-4" />
+                  Add Pool
+                </Button>
+              </div>
 
-                // When editing, check for missing pools (deleted pools still referenced in template)
-                if (currentTemplate) {
-                  const referencedPoolIds = new Set(currentTemplate.poolSelections.map((sel) => sel.poolId));
-                  const missingPools = Array.from(referencedPoolIds).filter(
-                    (poolId) => !pools.find((p) => p.id === poolId)
-                  );
-                  
-                  if (missingPools.length > 0) {
-                    // Show missing pools so user can remove them
-                    return (
-                      <div className="space-y-3">
-                        <div className="border border-red-300 rounded-md p-4 bg-red-50">
-                          <p className="text-sm text-red-700 font-medium mb-2">
-                            Warning: Some pools referenced in this template no longer exist. Please remove them:
-                          </p>
-                            {missingPools.map((poolId) => {
-                              const isSelected = poolId in poolSelections;
-                              const selection = poolSelections[poolId] || { questionsToDraw: 0, points: 0 };
-                              const questionsToDraw = selection.questionsToDraw || 0;
-                              const points = selection.points || 0;
-                              return (
-                                <div key={poolId} className="border border-red-400 rounded-md p-3 bg-red-100 mb-2">
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="checkbox"
-                                      id={`pool-missing-${poolId}`}
-                                      checked={isSelected}
-                                      onChange={(e) => handlePoolToggle(poolId, e.target.checked)}
-                                      className="h-4 w-4 rounded border-gray-300"
-                                    />
-                                    <Label htmlFor={`pool-missing-${poolId}`} className="font-medium cursor-pointer text-red-800">
-                                      Pool ID: {poolId} (Deleted)
-                                    </Label>
-                                  </div>
-                                  {isSelected && (
-                                    <p className="ml-6 text-sm text-red-600 mt-1">
-                                      {questionsToDraw} question{questionsToDraw !== 1 ? 's' : ''} to draw, {points} point{points !== 1 ? 's' : ''}
-                                    </p>
-                                  )}
-                                </div>
-                              );
-                            })}
+              {pools.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  No pools yet. Click "Add Pool" to create one.
+                </p>
+              ) : (
+                <div className="space-y-4">
+                  {pools.map((pool, poolIndex) => (
+                    <Card key={poolIndex} className="p-4">
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <Label className="text-sm font-semibold">Pool {poolIndex + 1}</Label>
+                          <Button
+                            type="button"
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => removePool(poolIndex)}
+                          >
+                            <X className="h-4 w-4" />
+                          </Button>
                         </div>
-                        {poolsToShow.length > 0 && (
-                          <div className="space-y-3">
-                            {poolsToShow.map((pool) => {
-                              const isSelected = pool.id in poolSelections;
-                              const selection = poolSelections[pool.id] || { questionsToDraw: 0, points: 0 };
-                              const questionsToDraw = selection.questionsToDraw || 0;
-                              const hasQuestions = pool.questionCount > 0;
-                              const canSelect = hasQuestions || isSelected;
-                              const isValid = !isSelected || (questionsToDraw > 0 && questionsToDraw <= pool.questionCount);
 
-                              return (
-                                <div
-                                  key={pool.id}
-                                  className={`border rounded-md p-4 space-y-2 ${!canSelect ? 'opacity-60' : ''}`}
-                                >
-                                  <div className="flex items-center space-x-2">
-                                    <input
-                                      type="checkbox"
-                                      id={`pool-${pool.id}`}
-                                      checked={isSelected}
-                                      onChange={(e) => handlePoolToggle(pool.id, e.target.checked)}
-                                      disabled={!canSelect}
-                                      className="h-4 w-4 rounded border-gray-300 disabled:opacity-50"
-                                    />
-                                    <Label
-                                      htmlFor={`pool-${pool.id}`}
-                                      className={`font-medium ${canSelect ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                                    >
-                                      {pool.name}
-                                      {!hasQuestions && isSelected && (
-                                        <span className="ml-2 text-xs text-red-500">(No questions available)</span>
-                                      )}
-                                      {!hasQuestions && !isSelected && (
-                                        <span className="ml-2 text-xs text-muted-foreground">(No questions available)</span>
-                                      )}
-                                    </Label>
-                                  </div>
-                                  {isSelected && (
-                                    <div className="ml-6 space-y-2">
-                                      <div className="flex items-center gap-2">
-                                        <Label htmlFor={`questions-${pool.id}`} className="text-sm">
-                                          Questions to draw:
-                                        </Label>
-                                        <Input
-                                          id={`questions-${pool.id}`}
-                                          type="number"
-                                          min="1"
-                                          max={pool.questionCount}
-                                          value={questionsToDraw || ''}
-                                          onChange={(e) => handleQuestionsToDrawChange(pool.id, e.target.value)}
-                                          className={`w-24 ${!isValid ? 'border-red-500' : ''}`}
-                                          disabled={!hasQuestions}
-                                        />
-                                        <span className="text-sm text-muted-foreground">
-                                          (Available: {pool.questionCount} questions)
-                                        </span>
-                                      </div>
-                                      {!isValid && questionsToDraw > 0 && (
-                                        <p className="text-sm text-red-500">
-                                          Cannot exceed {pool.questionCount} available questions
-                                        </p>
-                                      )}
-                                      {!hasQuestions && (
-                                        <p className="text-sm text-red-500">
-                                          This pool has no questions. Please remove it or add questions to the pool first.
+                        <div className="grid grid-cols-2 gap-4">
+                          <div className="space-y-2">
+                            <Label htmlFor={`pool-name-${poolIndex}`}>Pool Name *</Label>
+                            <Input
+                              id={`pool-name-${poolIndex}`}
+                              value={pool.name}
+                              onChange={(e) => updatePool(poolIndex, { name: e.target.value })}
+                              placeholder="e.g., Algebra Basics"
+                            />
+                          </div>
+
+                          <div className="space-y-2">
+                            <Label htmlFor={`pool-points-${poolIndex}`}>Points per Question *</Label>
+                            <Input
+                              id={`pool-points-${poolIndex}`}
+                              type="number"
+                              min="0.01"
+                              step="0.01"
+                              value={pool.points}
+                              onChange={(e) =>
+                                updatePool(poolIndex, { points: parseFloat(e.target.value) || 0 })
+                              }
+                            />
+                          </div>
+                        </div>
+
+                        <div className="space-y-2">
+                          <div className="flex items-center justify-between">
+                            <Label>
+                              Questions ({pool.questionIds.length} selected)
+                            </Label>
+                            <Button
+                              type="button"
+                              variant="outline"
+                              size="sm"
+                              onClick={() => openQuestionSelector(poolIndex)}
+                            >
+                              <Plus className="mr-2 h-4 w-4" />
+                              Add Questions
+                            </Button>
+                          </div>
+
+                          {pool.questionIds.length === 0 ? (
+                            <p className="text-sm text-muted-foreground py-2">
+                              No questions selected. Click "Add Questions" to browse the question bank.
+                            </p>
+                          ) : (
+                            <div className="border rounded-md p-3 space-y-2 max-h-40 overflow-y-auto">
+                              {pool.questionIds.map((questionId) => {
+                                const question = getQuestionById(questionId);
+                                return (
+                                  <div
+                                    key={questionId}
+                                    className="flex items-center justify-between p-2 bg-muted rounded"
+                                  >
+                                    <div className="flex-1 min-w-0">
+                                      <p className="text-sm font-medium truncate">
+                                        {question?.text || `Question ${questionId}`}
+                                      </p>
+                                      {question?.tags && question.tags.length > 0 && (
+                                        <p className="text-xs text-muted-foreground">
+                                          Tags: {question.tags.join(', ')}
                                         </p>
                                       )}
                                     </div>
-                                  )}
-                                </div>
-                              );
-                            })}
-                          </div>
-                        )}
-                      </div>
-                    );
-                  }
-                }
-
-                if (poolsToShow.length === 0) {
-                  return (
-                    <p className="text-sm text-muted-foreground">
-                      No question pools with questions available. Create pools and add questions first.
-                    </p>
-                  );
-                }
-
-                return (
-                  <div className="space-y-3">
-                    {poolsToShow.map((pool) => {
-                      const isSelected = pool.id in poolSelections;
-                      const selection = poolSelections[pool.id] || { questionsToDraw: 0, points: 0 };
-                      const questionsToDraw = selection.questionsToDraw || 0;
-                      const hasQuestions = pool.questionCount > 0;
-                      const canSelect = hasQuestions || isSelected; // Can select if has questions OR already selected
-                      const isValid = !isSelected || (questionsToDraw > 0 && questionsToDraw <= pool.questionCount);
-
-                      return (
-                        <div
-                          key={pool.id}
-                          className={`border rounded-md p-4 space-y-2 ${!canSelect ? 'opacity-60' : ''}`}
-                        >
-                          <div className="flex items-center space-x-2">
-                            <input
-                              type="checkbox"
-                              id={`pool-${pool.id}`}
-                              checked={isSelected}
-                              onChange={(e) => handlePoolToggle(pool.id, e.target.checked)}
-                              disabled={!canSelect}
-                              className="h-4 w-4 rounded border-gray-300 disabled:opacity-50"
-                            />
-                            <Label
-                              htmlFor={`pool-${pool.id}`}
-                              className={`font-medium ${canSelect ? 'cursor-pointer' : 'cursor-not-allowed'}`}
-                            >
-                              {pool.name}
-                              {!hasQuestions && isSelected && (
-                                <span className="ml-2 text-xs text-red-500">(No questions available)</span>
-                              )}
-                              {!hasQuestions && !isSelected && (
-                                <span className="ml-2 text-xs text-muted-foreground">(No questions available)</span>
-                              )}
-                            </Label>
-                          </div>
-                          {isSelected && (
-                            <div className="ml-6 space-y-2">
-                              <div className="flex items-center gap-2">
-                                <Label htmlFor={`questions-${pool.id}`} className="text-sm">
-                                  Questions to draw:
-                                </Label>
-                                <Input
-                                  id={`questions-${pool.id}`}
-                                  type="number"
-                                  min="1"
-                                  max={pool.questionCount}
-                                  value={questionsToDraw || ''}
-                                  onChange={(e) => handleQuestionsToDrawChange(pool.id, e.target.value)}
-                                  className={`w-24 ${!isValid ? 'border-red-500' : ''}`}
-                                  disabled={!hasQuestions}
-                                />
-                                <span className="text-sm text-muted-foreground">
-                                  (Available: {pool.questionCount} questions)
-                                </span>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <Label htmlFor={`points-${pool.id}`} className="text-sm">
-                                  Points for this pool:
-                                </Label>
-                                <Input
-                                  id={`points-${pool.id}`}
-                                  type="number"
-                                  min="0.01"
-                                  step="0.01"
-                                  value={selection.points || ''}
-                                  onChange={(e) => handlePointsChange(pool.id, e.target.value)}
-                                  className="w-24"
-                                  disabled={!hasQuestions}
-                                />
-                              </div>
-                              {!isValid && questionsToDraw > 0 && (
-                                <p className="text-sm text-red-500">
-                                  Cannot exceed {pool.questionCount} available questions
-                                </p>
-                              )}
-                              {!hasQuestions && (
-                                <p className="text-sm text-red-500">
-                                  This pool has no questions. Please remove it or add questions to the pool first.
-                                </p>
-                              )}
+                                    <Button
+                                      type="button"
+                                      variant="ghost"
+                                      size="sm"
+                                      onClick={() => removeQuestionFromPool(poolIndex, questionId)}
+                                    >
+                                      <X className="h-4 w-4" />
+                                    </Button>
+                                  </div>
+                                );
+                              })}
                             </div>
                           )}
                         </div>
-                      );
-                    })}
-                  </div>
-                );
-              })()}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              )}
             </div>
 
-            {/* Total Questions and Points Display */}
-            <div className="border-t pt-4 space-y-2">
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">Total Questions:</Label>
-                <span className="text-lg font-bold">{calculateTotalQuestions()}</span>
+            {/* Summary */}
+            {pools.length > 0 && (
+              <div className="border-t pt-4 space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-semibold">Total Questions:</Label>
+                  <span className="text-lg font-bold">
+                    {pools.reduce((sum, pool) => sum + pool.questionIds.length, 0)}
+                  </span>
+                </div>
+                <div className="flex justify-between items-center">
+                  <Label className="text-base font-semibold">Total Points:</Label>
+                  <span className="text-lg font-bold">
+                    {pools.reduce((sum, pool) => sum + pool.points * pool.questionIds.length, 0)}
+                  </span>
+                </div>
               </div>
-              <div className="flex justify-between items-center">
-                <Label className="text-base font-semibold">Total Points:</Label>
-                <span className="text-lg font-bold">{calculateTotalPoints()}</span>
-              </div>
-            </div>
+            )}
           </div>
           <DialogFooter>
             <Button
@@ -643,6 +582,83 @@ const TestTemplatesListPage = () => {
         </DialogContent>
       </Dialog>
 
+      {/* Question Selector Dialog */}
+      <Dialog open={isQuestionSelectorOpen} onOpenChange={setIsQuestionSelectorOpen}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+          <DialogHeader>
+            <DialogTitle>Select Questions</DialogTitle>
+            <DialogDescription>
+              {selectedPoolForQuestions !== null &&
+                `Add questions to pool: ${pools[selectedPoolForQuestions]?.name || 'Unnamed Pool'}`}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4">
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search questions..."
+                value={questionSearchQuery}
+                onChange={(e) => setQuestionSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            <div className="space-y-2 max-h-96 overflow-y-auto">
+              {filteredQuestions.length === 0 ? (
+                <p className="text-sm text-muted-foreground py-4 text-center">
+                  {questionSearchQuery ? 'No questions match your search' : 'No questions available'}
+                </p>
+              ) : (
+                filteredQuestions.map((question) => {
+                  const poolIndex = selectedPoolForQuestions;
+                  const isSelected =
+                    poolIndex !== null && pools[poolIndex]?.questionIds.includes(question.id);
+                  return (
+                    <div
+                      key={question.id}
+                      className={`border rounded-md p-3 cursor-pointer transition-colors ${
+                        isSelected ? 'bg-muted' : 'hover:bg-muted/50'
+                      }`}
+                      onClick={() => {
+                        if (poolIndex !== null) {
+                          if (isSelected) {
+                            removeQuestionFromPool(poolIndex, question.id);
+                          } else {
+                            addQuestionToPool(question.id);
+                          }
+                        }
+                      }}
+                    >
+                      <div className="flex items-start gap-3">
+                        <input
+                          type="checkbox"
+                          checked={isSelected}
+                          onChange={() => {}}
+                          className="mt-1 h-4 w-4 rounded border-gray-300"
+                        />
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium">{question.text}</p>
+                          {question.tags && question.tags.length > 0 && (
+                            <p className="text-xs text-muted-foreground mt-1">
+                              Tags: {question.tags.join(', ')}
+                            </p>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsQuestionSelectorOpen(false)}>
+              Done
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* View Dialog */}
       <Dialog open={isViewOpen} onOpenChange={setIsViewOpen}>
         <DialogContent className="max-w-2xl max-h-[90vh] overflow-y-auto">
@@ -657,23 +673,44 @@ const TestTemplatesListPage = () => {
                 <p className="text-sm">{currentTemplate.name}</p>
               </div>
 
+              {currentTemplate.description && (
+                <div className="space-y-2">
+                  <Label className="text-base font-semibold">Description</Label>
+                  <p className="text-sm">{currentTemplate.description}</p>
+                </div>
+              )}
+
               <div className="space-y-4">
-                <Label className="text-base font-semibold">Question Pool Selections</Label>
+                <Label className="text-base font-semibold">Pools</Label>
                 <div className="space-y-3">
-                  {currentTemplate.poolSelections.map((selection) => {
-                    const pool = pools.find((p) => p.id === selection.poolId);
-                    return (
-                      <div key={selection.poolId} className="border rounded-md p-4">
+                  {currentTemplate.pools.map((pool, index) => (
+                    <Card key={pool.id || index} className="p-4">
+                      <div className="space-y-2">
                         <div className="flex justify-between items-center">
-                          <span className="font-medium">{pool?.name || 'Unknown Pool'}</span>
+                          <span className="font-medium">{pool.name}</span>
                           <span className="text-sm text-muted-foreground">
-                            {selection.questionsToDraw} question{selection.questionsToDraw !== 1 ? 's' : ''} to draw
-                            {pool && ` (${pool.questionCount} available)`}
+                            {pool.questionCount} question{pool.questionCount !== 1 ? 's' : ''} •{' '}
+                            {pool.points} point{pool.points !== 1 ? 's' : ''} each
                           </span>
                         </div>
+                        {pool.questionIds.length > 0 && (
+                          <div className="mt-2 space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground">Questions:</p>
+                            <div className="space-y-1">
+                              {pool.questionIds.map((questionId) => {
+                                const question = getQuestionById(questionId);
+                                return (
+                                  <div key={questionId} className="text-xs pl-2 border-l-2">
+                                    {question?.text || `Question ${questionId}`}
+                                  </div>
+                                );
+                              })}
+                            </div>
+                          </div>
+                        )}
                       </div>
-                    );
-                  })}
+                    </Card>
+                  ))}
                 </div>
               </div>
 
@@ -684,9 +721,7 @@ const TestTemplatesListPage = () => {
                 </div>
                 <div className="flex justify-between items-center">
                   <Label className="text-base font-semibold">Total Points:</Label>
-                  <span className="text-lg font-bold">
-                    {currentTemplate.poolSelections.reduce((sum, sel) => sum + sel.points, 0)}
-                  </span>
+                  <span className="text-lg font-bold">{getTotalPoints(currentTemplate)}</span>
                 </div>
               </div>
             </div>
@@ -726,4 +761,3 @@ const TestTemplatesListPage = () => {
 };
 
 export default TestTemplatesListPage;
-
