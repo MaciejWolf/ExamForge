@@ -4,8 +4,6 @@ import { TestTemplate } from "./types/testTemplate";
 
 export type Document<T> = {
   id: string;
-  created_at: string;
-  updated_at: string;
   data: T;
 };
 
@@ -21,7 +19,7 @@ const mapDocumentToQuestion = (doc: Document<Question>): Question => {
   return doc.data;
 };
 
-const mapQuestionToDocument = (question: Question): Omit<Document<Question>, 'created_at' | 'updated_at'> => {
+const mapQuestionToDocument = (question: Question): Document<Question> => {
   return {
     id: question.id,
     data: question,
@@ -32,21 +30,10 @@ export const createSupabaseQuestionRepository = (supabase: SupabaseClient): Ques
   return {
     save: async (question: Question) => {
       const doc = mapQuestionToDocument(question);
-      const createdAt = question.createdAt instanceof Date
-        ? question.createdAt.toISOString()
-        : question.createdAt;
-      const updatedAt = question.updatedAt instanceof Date
-        ? question.updatedAt.toISOString()
-        : question.updatedAt;
 
       const { data, error } = await supabase
         .from('questions')
-        .upsert({
-          id: doc.id,
-          created_at: createdAt,
-          updated_at: updatedAt,
-          data: doc.data,
-        })
+        .upsert(doc)
         .select()
         .single();
 
@@ -181,15 +168,10 @@ export type TemplateRepository = {
 };
 
 const mapDocumentToTemplate = (doc: Document<TestTemplate>): TestTemplate => {
-  const template = doc.data;
-  return {
-    ...template,
-    createdAt: new Date(template.createdAt),
-    updatedAt: new Date(template.updatedAt),
-  };
+  return doc.data;
 };
 
-const mapTemplateToDocument = (template: TestTemplate): Omit<Document<TestTemplate>, 'created_at' | 'updated_at'> => {
+const mapTemplateToDocument = (template: TestTemplate): Document<TestTemplate> => {
   return {
     id: template.id,
     data: template,
@@ -200,21 +182,10 @@ export const createSupabaseTemplateRepository = (supabase: SupabaseClient): Temp
   return {
     save: async (template: TestTemplate) => {
       const doc = mapTemplateToDocument(template);
-      const createdAt = template.createdAt instanceof Date
-        ? template.createdAt.toISOString()
-        : template.createdAt;
-      const updatedAt = template.updatedAt instanceof Date
-        ? template.updatedAt.toISOString()
-        : template.updatedAt;
 
       const { data, error } = await supabase
         .from('templates')
-        .upsert({
-          id: doc.id,
-          created_at: createdAt,
-          updated_at: updatedAt,
-          data: doc.data,
-        })
+        .upsert(doc)
         .select()
         .single();
 
