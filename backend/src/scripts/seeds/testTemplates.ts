@@ -25,7 +25,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Physical Sciences',
         questionsToDraw: 6,
-        points: 10,
+        points: 8,
         questionSeedIds: [
           ...getQuestionIds(chemistryFoundations),
           ...getQuestionIds(physicsAdvanced),
@@ -40,7 +40,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Math Core',
         questionsToDraw: 10,
-        points: 5,
+        points: 3,
         questionSeedIds: getQuestionIds(mathematicsBasic),
       },
       {
@@ -58,7 +58,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'World War II Knowledge',
         questionsToDraw: 10,
-        points: 10,
+        points: 1,
         questionSeedIds: getQuestionIds(historyWWII),
       },
     ],
@@ -70,7 +70,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Quantitative Reasoning',
         questionsToDraw: 5,
-        points: 5,
+        points: 2,
         questionSeedIds: getQuestionIds(mathematicsBasic),
       },
       {
@@ -86,7 +86,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Humanities & Tech',
         questionsToDraw: 5,
-        points: 5,
+        points: 3,
         questionSeedIds: [
           ...getQuestionIds(historyWWII),
           ...getQuestionIds(computerScience),

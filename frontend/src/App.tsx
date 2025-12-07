@@ -13,6 +13,7 @@ import TestSessionLaunchPage from "./pages/examiner/TestSessionLaunchPage"
 import TestSessionListPage from "./pages/examiner/TestSessionListPage"
 import TestSessionReportPage from "./pages/examiner/TestSessionReportPage"
 import { ParticipantDetailPage } from "./pages/examiner/ParticipantDetailPage"
+import TestTemplateFormPage from "./pages/examiner/TestTemplateFormPage"
 
 export const App = () => {
   return (
@@ -44,6 +45,22 @@ export const App = () => {
             element={
               <ProtectedRoute>
                 <TestTemplatesListPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test-templates/new"
+            element={
+              <ProtectedRoute>
+                <TestTemplateFormPage />
+              </ProtectedRoute>
+            }
+          />
+          <Route
+            path="/test-templates/:id/edit"
+            element={
+              <ProtectedRoute>
+                <TestTemplateFormPage />
               </ProtectedRoute>
             }
           />
