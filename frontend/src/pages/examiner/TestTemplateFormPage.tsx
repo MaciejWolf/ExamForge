@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -24,7 +24,7 @@ import { toast } from 'sonner';
 
 type PoolFormData = {
   name: string;
-  questionCount: number;
+  questionsToDraw: number;
   points: number;
   questionIds: string[];
 };
@@ -43,14 +43,18 @@ const TestTemplateFormPage = () => {
   const [selectedPoolForQuestions, setSelectedPoolForQuestions] = useState<number | null>(null);
   const [isQuestionSelectorOpen, setIsQuestionSelectorOpen] = useState(false);
 
-  useEffect(() => {
-    fetchQuestions();
-    if (isEditMode && id) {
-      fetchTemplate(id);
+  const fetchQuestions = useCallback(async () => {
+    try {
+      const data = await bankQuestionsApi.getAll();
+      setQuestions(data);
+    } catch (error) {
+      toast.error('Failed to load questions', {
+        description: error instanceof Error ? error.message : 'Unknown error',
+      });
     }
-  }, [id, isEditMode]);
+  }, []);
 
-  const fetchTemplate = async (templateId: string) => {
+  const fetchTemplate = useCallback(async (templateId: string) => {
     try {
       setLoading(true);
       const template = await testTemplatesApi.getById(templateId);
@@ -59,7 +63,7 @@ const TestTemplateFormPage = () => {
       setPools(
         template.pools.map((pool) => ({
           name: pool.name,
-          questionCount: pool.questionsToDraw,
+          questionsToDraw: pool.questionsToDraw,
           points: pool.points,
           questionIds: [...pool.questionIds],
         }))
@@ -72,25 +76,21 @@ const TestTemplateFormPage = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, [navigate]);
 
-  const fetchQuestions = async () => {
-    try {
-      const data = await bankQuestionsApi.getAll();
-      setQuestions(data);
-    } catch (error) {
-      toast.error('Failed to load questions', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
+  useEffect(() => {
+    fetchQuestions();
+    if (isEditMode && id) {
+      fetchTemplate(id);
     }
-  };
+  }, [id, isEditMode, fetchTemplate, fetchQuestions]);
 
   const addPool = () => {
     setPools([
       ...pools,
       {
         name: '',
-        questionCount: 0,
+        questionsToDraw: 0,
         points: 1,
         questionIds: [],
       },
@@ -104,10 +104,6 @@ const TestTemplateFormPage = () => {
   const updatePool = (index: number, updates: Partial<PoolFormData>) => {
     const newPools = [...pools];
     newPools[index] = { ...newPools[index], ...updates };
-    // Auto-update questionCount to match questionIds length
-    if (updates.questionIds !== undefined) {
-      newPools[index].questionCount = updates.questionIds.length;
-    }
     setPools(newPools);
   };
 
@@ -166,8 +162,15 @@ const TestTemplateFormPage = () => {
         return false;
       }
 
-      if (pool.questionCount !== pool.questionIds.length) {
-        toast.error(`Pool "${pool.name}" question count must match the number of selected questions`);
+      if (pool.questionsToDraw <= 0) {
+        toast.error(`Pool "${pool.name}" questions to draw must be greater than 0`);
+        return false;
+      }
+
+      if (pool.questionsToDraw > pool.questionIds.length) {
+        toast.error(
+          `Pool "${pool.name}" questions to draw (${pool.questionsToDraw}) cannot be greater than the number of questions in pool (${pool.questionIds.length})`
+        );
         return false;
       }
 
@@ -198,7 +201,7 @@ const TestTemplateFormPage = () => {
           description: templateDescription.trim() || undefined,
           pools: pools.map((pool) => ({
             name: pool.name.trim(),
-            questionCount: pool.questionIds.length,
+            questionsToDraw: pool.questionsToDraw,
             points: pool.points,
             questionIds: pool.questionIds,
           })),
@@ -210,7 +213,7 @@ const TestTemplateFormPage = () => {
           description: templateDescription.trim() || undefined,
           pools: pools.map((pool) => ({
             name: pool.name.trim(),
-            questionCount: pool.questionIds.length,
+            questionsToDraw: pool.questionsToDraw,
             points: pool.points,
             questionIds: pool.questionIds,
           })),
@@ -318,7 +321,7 @@ const TestTemplateFormPage = () => {
                             </Button>
                           </div>
 
-                          <div className="grid grid-cols-2 gap-4">
+                          <div className="grid grid-cols-3 gap-4">
                             <div className="space-y-2">
                               <Label htmlFor={`pool-name-${poolIndex}`}>Pool Name *</Label>
                               <Input
@@ -327,6 +330,30 @@ const TestTemplateFormPage = () => {
                                 onChange={(e) => updatePool(poolIndex, { name: e.target.value })}
                                 placeholder="e.g., Algebra Basics"
                               />
+                            </div>
+
+                            <div className="space-y-2">
+                              <Label htmlFor={`pool-questionsToDraw-${poolIndex}`}>
+                                Questions to Draw *
+                              </Label>
+                              <Input
+                                id={`pool-questionsToDraw-${poolIndex}`}
+                                type="number"
+                                min="1"
+                                step="1"
+                                value={pool.questionsToDraw}
+                                onChange={(e) =>
+                                  updatePool(poolIndex, {
+                                    questionsToDraw: parseInt(e.target.value) || 0,
+                                  })
+                                }
+                                placeholder="e.g., 5"
+                              />
+                              {pool.questionIds.length > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  Max: {pool.questionIds.length} questions in pool
+                                </p>
+                              )}
                             </div>
 
                             <div className="space-y-2">
@@ -408,15 +435,15 @@ const TestTemplateFormPage = () => {
               {pools.length > 0 && (
                 <div className="border-t pt-4 space-y-2">
                   <div className="flex justify-between items-center">
-                    <Label className="text-base font-semibold">Total Questions:</Label>
+                    <Label className="text-base font-semibold">Total Questions to Draw:</Label>
                     <span className="text-lg font-bold">
-                      {pools.reduce((sum, pool) => sum + pool.questionCount, 0)}
+                      {pools.reduce((sum, pool) => sum + pool.questionsToDraw, 0)}
                     </span>
                   </div>
                   <div className="flex justify-between items-center">
                     <Label className="text-base font-semibold">Total Points:</Label>
                     <span className="text-lg font-bold">
-                      {pools.reduce((sum, pool) => sum + pool.points * pool.questionCount, 0)}
+                      {pools.reduce((sum, pool) => sum + pool.points * pool.questionsToDraw, 0)}
                     </span>
                   </div>
                 </div>
