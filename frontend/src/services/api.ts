@@ -180,6 +180,38 @@ export interface CreateSessionResponse {
   participants: Participant[];
 }
 
+type ApiErrorData = {
+  type?: string;
+  message?: string;
+  questionId?: string;
+  templateIds?: string[];
+  [key: string]: unknown;
+};
+
+export class ApiError extends Error {
+  status: number;
+  errorData?: ApiErrorData;
+
+  constructor(
+    message: string,
+    status: number,
+    errorData?: ApiErrorData
+  ) {
+    super(message);
+    this.name = 'ApiError';
+    this.status = status;
+    this.errorData = errorData;
+  }
+
+  get isQuestionInUse(): boolean {
+    return this.errorData?.type === 'QuestionInUse';
+  }
+
+  get templateIds(): string[] {
+    return this.errorData?.templateIds || [];
+  }
+}
+
 async function getAuthToken(): Promise<string | null> {
   const { data: { session } } = await supabase.auth.getSession();
   return session?.access_token || null;
@@ -205,8 +237,9 @@ async function apiRequest<T>(
   });
 
   if (!response.ok) {
-    const error = await response.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(error.error || `HTTP error! status: ${response.status}`);
+    const errorData = await response.json().catch(() => ({ error: 'Unknown error' }));
+    const errorMessage = errorData.error?.message || errorData.error || `HTTP error! status: ${response.status}`;
+    throw new ApiError(errorMessage, response.status, errorData.error || errorData);
   }
 
   return response.json();

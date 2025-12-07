@@ -3,7 +3,7 @@ import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Plus } from 'lucide-react';
-import { bankQuestionsApi } from '@/services/api';
+import { bankQuestionsApi, ApiError } from '@/services/api';
 import type { BankQuestion } from '@/services/api';
 import { toast } from 'sonner';
 import { QuestionBankHeader } from '@/components/question-bank/QuestionBankHeader';
@@ -102,9 +102,18 @@ const QuestionBankListPage = () => {
       setCurrentQuestion(null);
       fetchQuestions();
     } catch (error) {
-      toast.error('Failed to delete question', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
+      if (error instanceof ApiError && error.isQuestionInUse) {
+        const templateCount = error.templateIds.length;
+        const templateText = templateCount === 1 ? 'template' : 'templates';
+        toast.error('Cannot delete question', {
+          description: `This question is currently being used in ${templateCount} ${templateText}. Please remove it from all templates before deleting.`,
+          duration: 6000,
+        });
+      } else {
+        toast.error('Failed to delete question', {
+          description: error instanceof Error ? error.message : 'Unknown error',
+        });
+      }
     }
   };
 
