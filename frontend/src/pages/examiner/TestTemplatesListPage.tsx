@@ -106,7 +106,7 @@ const TestTemplatesListPage = () => {
     setPools(
       template.pools.map((pool) => ({
         name: pool.name,
-        questionCount: pool.questionCount,
+        questionCount: pool.questionsToDraw,
         points: pool.points,
         questionIds: [...pool.questionIds],
       }))
@@ -295,7 +295,7 @@ const TestTemplatesListPage = () => {
   };
 
   const getTotalQuestions = (template: TestTemplate): number => {
-    return template.pools.reduce((sum, pool) => sum + pool.questionCount, 0);
+    return template.pools.reduce((sum, pool) => sum + pool.questionsToDraw, 0);
   };
 
   const getTotalPoints = (template: TestTemplate): number => {
@@ -689,7 +689,7 @@ const TestTemplatesListPage = () => {
                         <div className="flex justify-between items-center">
                           <span className="font-medium">{pool.name}</span>
                           <span className="text-sm text-muted-foreground">
-                            {pool.questionCount} question{pool.questionCount !== 1 ? 's' : ''} •{' '}
+                            {pool.questionsToDraw} question{pool.questionsToDraw !== 1 ? 's' : ''} •{' '}
                             {pool.points} point{pool.points !== 1 ? 's' : ''} each
                           </span>
                         </div>

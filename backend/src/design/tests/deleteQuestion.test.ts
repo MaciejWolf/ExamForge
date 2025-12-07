@@ -44,7 +44,7 @@ describe('deleteQuestion Use Case', () => {
       id: template.id,
       pools: [{
         name: 'Pool 1',
-        questionCount: 1,
+        questionsToDraw: 1,
         points: 10,
         questionIds: [otherQuestion.id] // Use different question
       }]
@@ -119,7 +119,7 @@ const givenTemplateWithQuestion = async (
     name: 'Template 1',
     pools: [{
       name: 'Pool 1',
-      questionCount: 1,
+      questionsToDraw: 1,
       points: 10,
       questionIds: [questionId]
     }]

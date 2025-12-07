@@ -65,7 +65,7 @@ export interface UpdateQuestionRequest {
 export interface Pool {
   id: string;
   name: string;
-  questionCount: number;
+  questionsToDraw: number;
   points: number;
   questionIds: string[];
 }

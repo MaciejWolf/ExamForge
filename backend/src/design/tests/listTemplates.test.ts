@@ -95,7 +95,7 @@ const givenTemplate = async (
     pools: [
       {
         name: 'Default Pool',
-        questionCount: 1,
+        questionsToDraw: 1,
         points: 10,
         questionIds: [questionId]
       }
@@ -108,3 +108,4 @@ const givenTemplate = async (
   }
   return result.value;
 };
+

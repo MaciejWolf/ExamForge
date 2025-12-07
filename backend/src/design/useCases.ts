@@ -457,7 +457,7 @@ const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolValidationR
       };
     }
 
-    if (pool.questionCount < 0) {
+    if (pool.questionsToDraw < 0) {
       return {
         valid: false,
         message: `Pool "${pool.name}" cannot have negative question count`,
@@ -471,10 +471,10 @@ const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolValidationR
       };
     }
 
-    if (pool.questionIds.length < pool.questionCount) {
+    if (pool.questionIds.length < pool.questionsToDraw) {
       return {
         valid: false,
-        message: `Pool "${pool.name}" has ${pool.questionIds.length} questions but requires ${pool.questionCount}`,
+        message: `Pool "${pool.name}" has ${pool.questionIds.length} questions but requires ${pool.questionsToDraw}`,
         errorType: 'InvalidQuestionData',
       };
     }

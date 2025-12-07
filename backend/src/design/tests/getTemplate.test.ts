@@ -20,13 +20,13 @@ describe('getTemplate Use Case', () => {
       pools: [
         {
           name: 'Pool 1',
-          questionCount: 1,
+          questionsToDraw: 1,
           points: 10,
           questionIds: [questionIds[0]]
         },
         {
           name: 'Pool 2',
-          questionCount: 1,
+          questionsToDraw: 1,
           points: 5,
           questionIds: [questionIds[1]]
         }
@@ -111,10 +111,11 @@ const aValidTemplate = (overrides: Partial<CreateTemplateCommand> = {}): CreateT
   pools: [
     {
       name: 'Math Pool',
-      questionCount: 1,
+      questionsToDraw: 1,
       points: 10,
       questionIds: ['question-1'],
     },
   ],
   ...overrides,
 });
+

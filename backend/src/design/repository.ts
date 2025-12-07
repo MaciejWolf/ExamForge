@@ -66,8 +66,7 @@ export const createSupabaseQuestionRepository = (supabase: SupabaseClient): Ques
     findAll: async () => {
       const { data, error } = await supabase
         .from('questions')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) {
         console.error('Error finding all questions:', error);
@@ -92,8 +91,7 @@ export const createSupabaseQuestionRepository = (supabase: SupabaseClient): Ques
       if (tags.length === 0) {
         const { data, error } = await supabase
           .from('questions')
-          .select('*')
-          .order('created_at', { ascending: false });
+          .select('*');
 
         if (error) {
           console.error('Error finding questions:', error);
@@ -218,8 +216,7 @@ export const createSupabaseTemplateRepository = (supabase: SupabaseClient): Temp
     findAll: async () => {
       const { data, error } = await supabase
         .from('templates')
-        .select('*')
-        .order('created_at', { ascending: false });
+        .select('*');
 
       if (error) {
         console.error('Error finding all templates:', error);

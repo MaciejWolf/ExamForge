@@ -18,7 +18,7 @@ describe('deleteTemplate Use Case', () => {
     const createCmd = aValidTemplate({
       pools: [{
         name: 'Pool 1',
-        questionCount: 1,
+        questionsToDraw: 1,
         points: 10,
         questionIds: [questionIds[0]]
       }]
@@ -48,7 +48,7 @@ describe('deleteTemplate Use Case', () => {
     const createCmd = aValidTemplate({
       pools: [{
         name: 'Pool 1',
-        questionCount: 1,
+        questionsToDraw: 1,
         points: 10,
         questionIds: [qId]
       }]
@@ -126,7 +126,7 @@ const aValidTemplate = (overrides: Partial<CreateTemplateCommand> = {}): CreateT
   pools: [
     {
       name: 'Math Pool',
-      questionCount: 1,
+      questionsToDraw: 1,
       points: 10,
       questionIds: ['question-1'],
     },

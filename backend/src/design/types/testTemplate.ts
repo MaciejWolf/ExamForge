@@ -10,7 +10,7 @@ export type TestTemplate = {
 export type Pool = {
   id: string;
   name: string;
-  questionCount: number;
+  questionsToDraw: number;
   points: number;
   questionIds: string[];
 };
