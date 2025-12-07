@@ -4,6 +4,7 @@ import { chemistryFoundations } from './questions/chemistryFoundations';
 import { computerScience } from './questions/computerScience';
 import { historyWWII } from './questions/historyWWII';
 import { biologyCells } from './questions/biologyCells';
+import { testTemplates } from './testTemplates';
 
 export {
   mathematicsBasic,
@@ -22,3 +23,5 @@ export const allQuestions = [
   ...historyWWII,
   ...biologyCells,
 ];
+
+export { testTemplates };

@@ -6,3 +6,14 @@ export type QuestionSeed = {
   createdAt: Date;
   category: string;
 };
+
+export type TestTemplateSeed = {
+  name: string;
+  description?: string;
+  pools: Array<{
+    name: string;
+    questionsToDraw: number;
+    points: number;
+    questionSeedIds: string[];
+  }>;
+};

@@ -1,9 +1,9 @@
 import dotenv from 'dotenv';
 import { createSupabaseClient } from '../lib/supabase';
 import { configureDesignModule } from '../design/index';
-import { CreateQuestionCommand } from '../design/useCases';
+import { CreateQuestionCommand, CreateTemplateCommand } from '../design/useCases';
 import { v4 as uuidv4 } from 'uuid';
-import { allQuestions } from './seeds/index';
+import { allQuestions, testTemplates } from './seeds/index';
 
 dotenv.config();
 
@@ -21,6 +21,10 @@ const seedQuestions = async () => {
   const supabaseClient = createSupabaseClient({
     supabaseUrl,
     supabaseAnonKey,
+  });
+
+  const designModule = configureDesignModule({
+    supabaseClient,
   });
 
   const createQuestionWithDate = async (
@@ -103,10 +107,65 @@ const seedQuestions = async () => {
       console.log(`\n🔗 Mapped ${seedIdToDbIdMap.size} seed IDs to DB IDs.`);
   }
 
+  return { seedIdToDbIdMap, designModule };
+};
+
+const seedTestTemplates = async (
+  seedIdToDbIdMap: Map<string, string>,
+  designModule: ReturnType<typeof configureDesignModule>
+) => {
+  console.log(`\n📄 Seeding ${testTemplates.length} test templates...`);
+  let templateSuccessCount = 0;
+  let templateErrorCount = 0;
+
+  for (const template of testTemplates) {
+    try {
+      const command: CreateTemplateCommand = {
+        name: template.name,
+        description: template.description,
+        pools: template.pools.map(pool => ({
+          name: pool.name,
+          questionsToDraw: pool.questionsToDraw,
+          points: pool.points,
+          questionIds: pool.questionSeedIds
+            .map(seedId => seedIdToDbIdMap.get(seedId))
+            .filter((id): id is string => !!id),
+        })),
+      };
+
+      const result = await designModule.createTemplate(command);
+
+      if (result.ok) {
+        console.log(`✅ Created template: "${template.name}"`);
+        templateSuccessCount++;
+      } else {
+        console.error(`❌ Failed to create template: "${template.name}"`);
+        const errorMessage =
+          result.error.type === 'InvalidQuestionData'
+            ? result.error.message
+            : result.error.type;
+        console.error(`   Error: ${errorMessage}`);
+        templateErrorCount++;
+      }
+    } catch (error) {
+      console.error(`❌ Exception creating template: "${template.name}"`);
+      console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+      templateErrorCount++;
+    }
+  }
+
+  console.log(`\n📊 Template Seed Summary:`);
+  console.log(`   ✅ Successfully created: ${templateSuccessCount} templates`);
+  console.log(`   ❌ Failed: ${templateErrorCount} templates`);
+};
+
+const seed = async () => {
+  const { seedIdToDbIdMap, designModule } = await seedQuestions();
+  await seedTestTemplates(seedIdToDbIdMap, designModule);
   console.log(`\n✨ Seed process completed!`);
 };
 
-seedQuestions()
+seed()
   .then(() => {
     process.exit(0);
   })
