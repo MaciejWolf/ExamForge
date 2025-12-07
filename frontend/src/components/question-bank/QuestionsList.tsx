@@ -20,11 +20,6 @@ type QuestionsListProps = {
   onDeleteClick: (questionId: string) => void;
 };
 
-const truncateText = (text: string, maxLength: number = 100) => {
-  if (text.length <= maxLength) return text;
-  return text.substring(0, maxLength) + '...';
-};
-
 export const QuestionsList = ({
   questions,
   totalQuestions,
@@ -48,23 +43,23 @@ export const QuestionsList = ({
               : 'No questions match your filters.'}
           </p>
         ) : (
-          <Table>
+          <Table style={{ tableLayout: 'fixed' }}>
             <TableHeader>
               <TableRow>
-                <TableHead>Question</TableHead>
-                <TableHead>Tags</TableHead>
-                <TableHead>Answers</TableHead>
-                <TableHead>Correct Answer</TableHead>
-                <TableHead className="text-right">Actions</TableHead>
+                <TableHead className="w-[30%]">Question</TableHead>
+                <TableHead className="w-[25%]">Tags</TableHead>
+                <TableHead className="w-[10%]">Answers</TableHead>
+                <TableHead className="w-[25%]">Correct Answer</TableHead>
+                <TableHead className="w-[10%] text-right">Actions</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
               {questions.map((question) => (
                 <TableRow key={question.id}>
-                  <TableCell>
-                    <div className="max-w-md">{truncateText(question.text)}</div>
+                  <TableCell className="w-[30%] whitespace-normal">
+                    <div className="break-words">{question.text}</div>
                   </TableCell>
-                  <TableCell>
+                  <TableCell className="w-[25%] whitespace-normal">
                     <div className="flex flex-wrap gap-1">
                       {question.tags.map((tag) => (
                         <TagChip key={tag} tag={tag} />
@@ -74,11 +69,13 @@ export const QuestionsList = ({
                       )}
                     </div>
                   </TableCell>
-                  <TableCell>{question.answers.length}</TableCell>
-                  <TableCell>
-                    {question.answers.find(a => a.id === question.correctAnswerId)?.text || 'N/A'}
+                  <TableCell className="w-[10%]">{question.answers.length}</TableCell>
+                  <TableCell className="w-[25%] whitespace-normal">
+                    <div className="break-words">
+                      {question.answers.find(a => a.id === question.correctAnswerId)?.text || 'N/A'}
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right">
+                  <TableCell className="w-[10%] text-right">
                     <div className="flex justify-end gap-2">
                       <Button
                         variant="ghost"
