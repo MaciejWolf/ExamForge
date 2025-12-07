@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { DashboardLayout } from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
@@ -35,6 +35,10 @@ const TestSessionLaunchPage = () => {
   const [selectedTemplateId, setSelectedTemplateId] = useState<string>('');
   const [timeLimitMinutes, setTimeLimitMinutes] = useState<number>(60);
   const [participantIdentifiersText, setParticipantIdentifiersText] = useState('');
+  const [startTimeDate, setStartTimeDate] = useState<string>('');
+  const [startTimeTime, setStartTimeTime] = useState<string>('');
+  const [endTimeDate, setEndTimeDate] = useState<string>('');
+  const [endTimeTime, setEndTimeTime] = useState<string>('');
   
   // Results state
   const [sessionId, setSessionId] = useState<string | null>(null);
@@ -44,6 +48,23 @@ const TestSessionLaunchPage = () => {
   useEffect(() => {
     fetchTemplates();
   }, []);
+
+  // Check if session duration is valid (must be at least timeLimitMinutes)
+  const sessionDurationError = useMemo(() => {
+    if (!startTimeDate || !startTimeTime || !endTimeDate || !endTimeTime) {
+      return false; // Don't show error if fields are empty (handled by required validation)
+    }
+
+    const startDateTime = new Date(`${startTimeDate}T${startTimeTime}`);
+    const endDateTime = new Date(`${endTimeDate}T${endTimeTime}`);
+
+    if (isNaN(startDateTime.getTime()) || isNaN(endDateTime.getTime())) {
+      return false; // Don't show error if dates are invalid (handled by validation)
+    }
+
+    const sessionDurationMinutes = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60);
+    return sessionDurationMinutes < timeLimitMinutes;
+  }, [startTimeDate, startTimeTime, endTimeDate, endTimeTime, timeLimitMinutes]);
 
   const fetchTemplates = async () => {
     try {
@@ -80,6 +101,47 @@ const TestSessionLaunchPage = () => {
       return false;
     }
 
+    if (!startTimeDate || !startTimeTime) {
+      toast.error('Please select a start date and time');
+      return false;
+    }
+
+    if (!endTimeDate || !endTimeTime) {
+      toast.error('Please select an end date and time');
+      return false;
+    }
+
+    const startDateTime = new Date(`${startTimeDate}T${startTimeTime}`);
+    const endDateTime = new Date(`${endTimeDate}T${endTimeTime}`);
+    const now = new Date();
+
+    if (isNaN(startDateTime.getTime())) {
+      toast.error('Invalid start date/time');
+      return false;
+    }
+
+    if (isNaN(endDateTime.getTime())) {
+      toast.error('Invalid end date/time');
+      return false;
+    }
+
+    if (startDateTime >= endDateTime) {
+      toast.error('End time must be after start time');
+      return false;
+    }
+
+    if (startDateTime < now) {
+      toast.error('Start time cannot be in the past');
+      return false;
+    }
+
+    // Check if session duration is at least equal to time limit
+    const sessionDurationMinutes = (endDateTime.getTime() - startDateTime.getTime()) / (1000 * 60);
+    if (sessionDurationMinutes < timeLimitMinutes) {
+      toast.error(`Session duration must be at least ${timeLimitMinutes} minutes (time limit)`);
+      return false;
+    }
+
     return true;
   };
 
@@ -97,10 +159,16 @@ const TestSessionLaunchPage = () => {
         .map((line) => line.trim())
         .filter((line) => line.length > 0);
 
+      // Combine date and time into ISO strings
+      const startDateTime = new Date(`${startTimeDate}T${startTimeTime}`);
+      const endDateTime = new Date(`${endTimeDate}T${endTimeTime}`);
+
       const response = await testSessionsApi.create({
         templateId: selectedTemplateId,
         timeLimitMinutes,
         participants: parsedParticipants,
+        startTime: startDateTime,
+        endTime: endDateTime,
       });
 
       setSessionId(response.session.id);
@@ -145,6 +213,10 @@ const TestSessionLaunchPage = () => {
     setSelectedTemplateId('');
     setTimeLimitMinutes(60);
     setParticipantIdentifiersText('');
+    setStartTimeDate('');
+    setStartTimeTime('');
+    setEndTimeDate('');
+    setEndTimeTime('');
     setSessionId(null);
     setParticipants([]);
     setCopiedCode(null);
@@ -250,6 +322,82 @@ const TestSessionLaunchPage = () => {
                 <p className="text-xs text-muted-foreground">
                   Minimum: 1 minute, Maximum: 480 minutes (8 hours)
                 </p>
+              </div>
+
+              {/* Start Time */}
+              <div className="space-y-2">
+                <Label htmlFor="startTime">Start Date & Time *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="startDate" className="text-xs text-muted-foreground">
+                      Date
+                    </Label>
+                    <Input
+                      id="startDate"
+                      type="date"
+                      value={startTimeDate}
+                      onChange={(e) => setStartTimeDate(e.target.value)}
+                      min={new Date().toISOString().split('T')[0]}
+                      className="w-full"
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="startTimeInput" className="text-xs text-muted-foreground">
+                      Time
+                    </Label>
+                    <Input
+                      id="startTimeInput"
+                      type="time"
+                      value={startTimeTime}
+                      onChange={(e) => setStartTimeTime(e.target.value)}
+                      className="w-full"
+                    />
+                  </div>
+                </div>
+                <p className="text-xs text-muted-foreground">
+                  When the test session becomes available to participants
+                </p>
+              </div>
+
+              {/* End Time */}
+              <div className="space-y-2">
+                <Label htmlFor="endTime">End Date & Time *</Label>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-1">
+                    <Label htmlFor="endDate" className="text-xs text-muted-foreground">
+                      Date
+                    </Label>
+                    <Input
+                      id="endDate"
+                      type="date"
+                      value={endTimeDate}
+                      onChange={(e) => setEndTimeDate(e.target.value)}
+                      min={startTimeDate || new Date().toISOString().split('T')[0]}
+                      className={`w-full ${sessionDurationError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    />
+                  </div>
+                  <div className="space-y-1">
+                    <Label htmlFor="endTimeInput" className="text-xs text-muted-foreground">
+                      Time
+                    </Label>
+                    <Input
+                      id="endTimeInput"
+                      type="time"
+                      value={endTimeTime}
+                      onChange={(e) => setEndTimeTime(e.target.value)}
+                      className={`w-full ${sessionDurationError ? 'border-red-500 focus-visible:ring-red-500' : ''}`}
+                    />
+                  </div>
+                </div>
+                {sessionDurationError ? (
+                  <p className="text-xs text-red-500 font-medium">
+                    Session duration must be at least {timeLimitMinutes} minutes (time limit)
+                  </p>
+                ) : (
+                  <p className="text-xs text-muted-foreground">
+                    When the test session closes and participants can no longer start
+                  </p>
+                )}
               </div>
 
               {/* Participant Identifiers */}

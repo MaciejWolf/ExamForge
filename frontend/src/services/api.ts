@@ -173,6 +173,8 @@ export interface CreateSessionRequest {
   templateId: string;
   timeLimitMinutes: number;
   participants: string[];
+  startTime: Date; // ISO 8601 datetime string
+  endTime: Date; // ISO 8601 datetime string
 }
 
 export interface CreateSessionResponse {
