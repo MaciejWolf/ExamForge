@@ -5,6 +5,7 @@
   "scripts": {
     "start": "ts-node src/index.ts",
     "dev": "nodemon src/index.ts",
+    "seed": "ts-node src/scripts/seed.ts",
     "build": "tsc",
     "test": "vitest"
   },
