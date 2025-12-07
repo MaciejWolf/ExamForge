@@ -7,6 +7,60 @@ import { allQuestions, testTemplates } from './seeds/index';
 
 dotenv.config();
 
+const cleanDatabase = async (supabaseClient: ReturnType<typeof createSupabaseClient>) => {
+  console.log('🧹 Cleaning database...\n');
+
+  // Delete all templates first (they may reference questions)
+  const { data: templates, error: fetchTemplatesError } = await supabaseClient
+    .from('templates')
+    .select('id');
+
+  if (fetchTemplatesError) {
+    console.error('❌ Error fetching templates:', fetchTemplatesError);
+    throw new Error('Could not fetch templates for cleanup');
+  }
+
+  if (templates && templates.length > 0) {
+    const templateIds = templates.map(t => t.id);
+    const { error: templateError } = await supabaseClient
+      .from('templates')
+      .delete()
+      .in('id', templateIds);
+
+    if (templateError) {
+      console.error('❌ Error cleaning templates:', templateError);
+      throw new Error('Could not clean templates');
+    }
+    console.log(`   🗑️  Deleted ${templateIds.length} template(s)`);
+  }
+
+  // Delete all questions
+  const { data: questions, error: fetchQuestionsError } = await supabaseClient
+    .from('questions')
+    .select('id');
+
+  if (fetchQuestionsError) {
+    console.error('❌ Error fetching questions:', fetchQuestionsError);
+    throw new Error('Could not fetch questions for cleanup');
+  }
+
+  if (questions && questions.length > 0) {
+    const questionIds = questions.map(q => q.id);
+    const { error: questionError } = await supabaseClient
+      .from('questions')
+      .delete()
+      .in('id', questionIds);
+
+    if (questionError) {
+      console.error('❌ Error cleaning questions:', questionError);
+      throw new Error('Could not clean questions');
+    }
+    console.log(`   🗑️  Deleted ${questionIds.length} question(s)`);
+  }
+
+  console.log('✅ Database cleaned successfully\n');
+};
+
 const seedQuestions = async () => {
   console.log('🌱 Starting seed process...\n');
 
@@ -22,6 +76,9 @@ const seedQuestions = async () => {
     supabaseUrl,
     supabaseAnonKey,
   });
+
+  // Clean database before seeding
+  await cleanDatabase(supabaseClient);
 
   const designModule = configureDesignModule({
     supabaseClient,
