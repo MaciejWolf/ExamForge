@@ -66,12 +66,12 @@ Integration tests will spin up the Express app and hit the API endpoints.
         *   - [x] Verify the retrieved question matches the data that was created/updated.
 
 *   **Flow: Create Test Content**
-    *   - [ ] 1. `POST /api/design/questions`: Create questions in the global bank.
-    *   - [ ] 2. `PUT /api/design/questions/:id`: Add tags to questions.
-    *   - [ ] 3. `POST /api/design/templates`: Create a test template with local pools referencing the global questions.
-    *   - [ ] 4. `GET /api/design/templates/:id`: Verify the template and its pools are retrievable.
-    *   - [ ] 5. `PUT /api/design/templates/:id`: Update the template structure.
-    *   - [ ] 6. `DELETE /api/design/questions/:id`: Attempt to delete a used question (expect failure), then remove from template and delete (expect success).
+    *   - [x] 1. `POST /api/design/questions`: Create questions in the global bank.
+    *   - [x] 2. `PUT /api/design/questions/:id`: Add tags to questions.
+    *   - [x] 3. `POST /api/design/templates`: Create a test template with local pools referencing the global questions.
+    *   - [x] 4. `GET /api/design/templates/:id`: Verify the template and its pools are retrievable.
+    *   - [x] 5. `PUT /api/design/templates/:id`: Update the template structure.
+    *   - [x] 6. `DELETE /api/design/questions/:id`: Attempt to delete a used question (expect failure), then remove from template and delete (expect success).
 
 ### 3.2 Assessment API (`/api/assessment`)
 *   **Flow: Run a Session**
