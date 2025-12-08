@@ -207,37 +207,37 @@ This document contains unit test cases for the Design Module, written in Given/W
 
 ### materializeTemplate Use Case
 
-- [ ] **Test Case: Successfully materialize template with sufficient questions**
+- [x] **Test Case: Successfully materialize template with sufficient questions**
 - **Given** template "t-1" having pool "p-1" with 10 questions, questionCount set to 5
 - **When** materializeTemplate is called with templateId "t-1"
 - **Then** returns success with TestContentPackage containing 5 randomly selected questions from pool
 
-- [ ] **Test Case: Successfully materialize template with multiple pools**
+- [x] **Test Case: Successfully materialize template with multiple pools**
 - **Given** template "t-1" having pools "p-1" (10 questions, select 3) and "p-2" (8 questions, select 2)
 - **When** materializeTemplate is called with templateId "t-1"
 - **Then** returns success with TestContentPackage containing 3 questions from "p-1" and 2 from "p-2"
 
-- [ ] **Test Case: Fail to materialize template with insufficient questions in pool**
+- [x] **Test Case: Fail to materialize template with insufficient questions in pool**
 - **Given** template "t-1" having pool "p-1" with 3 questions, questionCount set to 5
 - **When** materializeTemplate is called with templateId "t-1"
 - **Then** returns error with type "InsufficientQuestions" indicating pool "p-1" needs 2 more questions
 
-- [ ] **Test Case: Fail to materialize template with empty pool**
+- [x] **Test Case: Fail to materialize template with empty pool**
 - **Given** template "t-1" having pool "p-1" with 0 questions, questionCount set to 5
 - **When** materializeTemplate is called with templateId "t-1"
 - **Then** returns error with type "InsufficientQuestions"
 
-- [ ] **Test Case: Fail to materialize non-existent template**
+- [x] **Test Case: Fail to materialize non-existent template**
 - **Given** no existing templates
 - **When** materializeTemplate is called with templateId "non-existent-template"
 - **Then** returns error with type "TemplateNotFound"
 
-- [ ] **Test Case: Successfully materialize template with exact question count**
+- [x] **Test Case: Successfully materialize template with exact question count**
 - **Given** template "t-1" having pool "p-1" with 5 questions, questionCount set to 5
 - **When** materializeTemplate is called with templateId "t-1"
 - **Then** returns success with TestContentPackage containing all 5 questions
 
-- [ ] **Test Case: Verify materialization creates frozen snapshot**
+- [x] **Test Case: Verify materialization creates frozen snapshot**
 - **Given** template "t-1" and question "q-1" in pool
 - **When** materializeTemplate is called with templateId "t-1", then question "q-1" is updated in global bank
 - **Then** the materialized TestContentPackage contains the original version of "q-1" (frozen snapshot)

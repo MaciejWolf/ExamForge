@@ -7,6 +7,7 @@ export type DesignModuleConfig = {
   supabaseClient?: SupabaseClient;
   idGenerator?: () => string;
   now?: () => Date;
+  randomSelector?: <T>(items: T[], count: number) => T[];
 };
 
 export const configureDesignModule = (config: DesignModuleConfig = {}) => {
@@ -32,9 +33,17 @@ export const configureDesignModule = (config: DesignModuleConfig = {}) => {
     deleteTemplate: useCases.deleteTemplate({ templateRepo }),
     getTemplate: useCases.getTemplate({ templateRepo }),
     listTemplates: useCases.listTemplates({ templateRepo }),
+    materializeTemplate: useCases.materializeTemplate({
+      templateRepo,
+      questionRepo: repo,
+      idGenerator,
+      now,
+      randomSelector: config.randomSelector
+    }),
   };
 };
 
 export type DesignModule = ReturnType<typeof configureDesignModule>;
 
 export * from './types/testTemplate';
+export * from './types/testContentPackage';

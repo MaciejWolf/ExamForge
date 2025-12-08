@@ -139,7 +139,7 @@ describe('createTemplate Use Case', () => {
     thenCreationShouldFailBecause(result, 'not found');
   });
 
-  it('Fail to create template with insufficient questions in pool', async () => {
+  it('Successfully create template with insufficient questions in pool (validation deferred to materialization)', async () => {
     const questionIds = await givenQuestions(module, 1);
 
     const command = aValidTemplate({
@@ -155,7 +155,12 @@ describe('createTemplate Use Case', () => {
 
     const result = await module.createTemplate(command);
 
-    thenCreationShouldFailBecause(result, 'has 1 questions but requires 3');
+    // Template creation should succeed - validation happens at materialization time
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.pools[0].questionIds).toHaveLength(1);
+      expect(result.value.pools[0].questionsToDraw).toBe(3);
+    }
   });
 
   it('Fail to create template with duplicate name', async () => {

@@ -70,7 +70,7 @@ The function returns an object containing all initialized use cases, which form 
 ## 5. Unit Testing Strategy
 
 - **Test the Module, Not the Adapter**: Write tests against the Public API returned by `configureFeatureModule`. Avoid testing the HTTP layer for business logic
-- **No Mocks (for Repositories)**: Utilize the In-Memory repository adapter for all unit/integration tests to test the true flow of the application without complex mocking frameworks
+- **No Mocks (for Repositories)**: Utilize the In-Memory repository adapter for all unit tests to test the true flow of the application without complex mocking frameworks
 - **Determinism**: Use the configuration object to inject fixed values for IDs and Dates in tests
 
 ---

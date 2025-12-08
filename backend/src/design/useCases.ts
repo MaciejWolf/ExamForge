@@ -4,6 +4,7 @@ import { DesignError } from './types/designError';
 import { Answer } from './types/question';
 import { QuestionRepository, TemplateRepository } from './repository';
 import { TestTemplate, Pool } from './types/testTemplate';
+import { TestContentPackage, MaterializedSection } from './types/testContentPackage';
 
 type CreateQuestionDeps = {
   repo: QuestionRepository;
@@ -471,13 +472,9 @@ const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolValidationR
       };
     }
 
-    if (pool.questionIds.length < pool.questionsToDraw) {
-      return {
-        valid: false,
-        message: `Pool "${pool.name}" has ${pool.questionIds.length} questions but requires ${pool.questionsToDraw}`,
-        errorType: 'InvalidQuestionData',
-      };
-    }
+    // Note: We don't validate if pool has sufficient questions here
+    // This validation happens at materialization time to allow flexibility
+    // in template creation and editing
   }
 
   return { valid: true, message: '' };
@@ -510,4 +507,103 @@ export const listTemplates = ({ templateRepo }: ListTemplatesDeps) => {
     const templates = await templateRepo.findAll();
     return ok(templates);
   };
+};
+
+type MaterializeTemplateDeps = {
+  templateRepo: TemplateRepository;
+  questionRepo: QuestionRepository;
+  idGenerator: () => string;
+  now: () => Date;
+  randomSelector?: <T>(items: T[], count: number) => T[];
+};
+
+export const materializeTemplate = ({
+  templateRepo,
+  questionRepo,
+  idGenerator,
+  now,
+  randomSelector = defaultRandomSelector
+}: MaterializeTemplateDeps) => {
+  return async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
+    // Check if template exists
+    const template = await templateRepo.findById(templateId);
+    if (!template) {
+      return err({
+        type: 'TemplateNotFound',
+        templateId,
+      });
+    }
+
+    // Validate and materialize each pool
+    const sections: MaterializedSection[] = [];
+
+    for (const pool of template.pools) {
+      // Check if pool has sufficient questions
+      const available = pool.questionIds.length;
+      const required = pool.questionsToDraw;
+
+      if (available < required) {
+        return err({
+          type: 'InsufficientQuestions',
+          poolId: pool.id,
+          required,
+          available,
+        });
+      }
+
+      // Fetch all questions in the pool
+      const poolQuestions: Question[] = [];
+      for (const questionId of pool.questionIds) {
+        const question = await questionRepo.findById(questionId);
+        if (question) {
+          poolQuestions.push(question);
+        }
+      }
+
+      // Select random questions from the pool
+      const selectedQuestions = randomSelector(poolQuestions, pool.questionsToDraw);
+
+      // Create frozen snapshots of selected questions
+      const frozenQuestions = selectedQuestions.map(q => createQuestionSnapshot(q));
+
+      // Create materialized section
+      sections.push({
+        poolId: pool.id,
+        poolName: pool.name,
+        points: pool.points,
+        questions: frozenQuestions,
+      });
+    }
+
+    // Create the test content package
+    const contentPackage: TestContentPackage = {
+      id: idGenerator(),
+      templateId: template.id,
+      sections,
+      createdAt: now(),
+    };
+
+    return ok(contentPackage);
+  };
+};
+
+// Helper function to create a deep copy/snapshot of a question
+const createQuestionSnapshot = (question: Question): Question => {
+  return {
+    ...question,
+    answers: question.answers.map(a => ({ ...a })),
+    tags: [...question.tags],
+    createdAt: new Date(question.createdAt),
+    updatedAt: new Date(question.updatedAt),
+  };
+};
+
+// Default random selector using Fisher-Yates shuffle algorithm
+const defaultRandomSelector = <T>(items: T[], count: number): T[] => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled.slice(0, count);
 };
