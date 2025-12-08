@@ -39,7 +39,6 @@ Perform and evaluate tests created by the design module.
 POST   /api/assessment/sessions
 GET    /api/assessment/sessions
 GET    /api/assessment/sessions/:sessionId
-DELETE /api/assessment/sessions/:sessionId
 
 GET    /api/assessment/sessions/:sessionId/participants
 POST   /api/assessment/sessions/:sessionId/participants
