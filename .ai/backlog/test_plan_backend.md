@@ -25,9 +25,9 @@ The testing strategy focuses on ensuring the reliability of the two main domains
         *   - [x] **`deleteTemplate`**: Verify template deletion (and local pool cleanup).
         *   - [x] **`getTemplate`**: Verify retrieval of template details.
         *   - [x] **`listTemplates`**: Verify listing of templates.
-        *   - [ ] **`materializeTemplate`**:
-            *   - [ ] Verify it correctly selects questions based on template/pool rules.
-            *   - [ ] Verify it returns a `TestContentPackage` with the correct structure.
+        *   - [X] **`materializeTemplate`**:
+            *   - [X] Verify it correctly selects questions based on template/pool rules.
+            *   - [X] Verify it returns a `TestContentPackage` with the correct structure.
 
 ### 2.2 `testAssessment` Module
 *   **Services**: `assessment.service.ts`
