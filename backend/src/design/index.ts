@@ -8,6 +8,7 @@ export type DesignModuleConfig = {
   idGenerator?: () => string;
   now?: () => Date;
   randomSelector?: <T>(items: T[], count: number) => T[];
+  answerShuffler?: <T>(items: T[]) => T[];
 };
 
 export const configureDesignModule = (config: DesignModuleConfig = {}) => {
@@ -38,7 +39,8 @@ export const configureDesignModule = (config: DesignModuleConfig = {}) => {
       questionRepo: repo,
       idGenerator,
       now,
-      randomSelector: config.randomSelector
+      randomSelector: config.randomSelector,
+      answerShuffler: config.answerShuffler
     }),
   };
 };

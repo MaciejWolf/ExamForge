@@ -243,6 +243,253 @@ describe('materializeTemplate Use Case', () => {
       expect(result2.value.sections[0].questions[0].text).toBe('Updated Question Text');
     }
   });
+
+  it('Verify answer selection with 2 answers - keeps all answers', async () => {
+    // Given a question with only 2 answers
+    const twoAnswerResult = await module.createQuestion({
+      text: 'Two Answer Question',
+      answers: [
+        { id: 'ans-1', text: 'Correct Answer' },
+        { id: 'ans-2', text: 'Wrong Answer' },
+      ],
+      correctAnswerId: 'ans-1',
+      tags: ['test'],
+    });
+
+    expect(twoAnswerResult.ok).toBe(true);
+    if (!twoAnswerResult.ok) return;
+
+    const templateResult = await module.createTemplate({
+      name: 'Two Answer Template',
+      pools: [{
+        name: 'Two Answer Pool',
+        questionsToDraw: 1,
+        points: 10,
+        questionIds: [twoAnswerResult.value.id],
+      }],
+    });
+
+    expect(templateResult.ok).toBe(true);
+    if (!templateResult.ok) return;
+
+    // When materializeTemplate is called
+    const result = await module.materializeTemplate(templateResult.value.id);
+
+    // Then all 2 answers should be included
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const materializedQuestion = result.value.sections[0].questions[0];
+      expect(materializedQuestion.answers).toHaveLength(2);
+
+      // Verify correct answer is included
+      const hasCorrectAnswer = materializedQuestion.answers.some(a => a.id === 'ans-1');
+      expect(hasCorrectAnswer).toBe(true);
+    }
+  });
+
+  it('Verify answer selection with 3 answers - keeps all answers', async () => {
+    // Given a question with 3 answers
+    const threeAnswerResult = await module.createQuestion({
+      text: 'Three Answer Question',
+      answers: [
+        { id: 'ans-1', text: 'Correct Answer' },
+        { id: 'ans-2', text: 'Wrong Answer 1' },
+        { id: 'ans-3', text: 'Wrong Answer 2' },
+      ],
+      correctAnswerId: 'ans-1',
+      tags: ['test'],
+    });
+
+    expect(threeAnswerResult.ok).toBe(true);
+    if (!threeAnswerResult.ok) return;
+
+    const templateResult = await module.createTemplate({
+      name: 'Three Answer Template',
+      pools: [{
+        name: 'Three Answer Pool',
+        questionsToDraw: 1,
+        points: 10,
+        questionIds: [threeAnswerResult.value.id],
+      }],
+    });
+
+    expect(templateResult.ok).toBe(true);
+    if (!templateResult.ok) return;
+
+    // When materializeTemplate is called
+    const result = await module.materializeTemplate(templateResult.value.id);
+
+    // Then all 3 answers should be included
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const materializedQuestion = result.value.sections[0].questions[0];
+      expect(materializedQuestion.answers).toHaveLength(3);
+
+      // Verify correct answer is included
+      const hasCorrectAnswer = materializedQuestion.answers.some(a => a.id === 'ans-1');
+      expect(hasCorrectAnswer).toBe(true);
+    }
+  });
+
+  it('Verify answer selection with 4 answers - keeps all answers', async () => {
+    // Given a question with 4 answers
+    const fourAnswerResult = await module.createQuestion({
+      text: 'Four Answer Question',
+      answers: [
+        { id: 'ans-1', text: 'Correct Answer' },
+        { id: 'ans-2', text: 'Wrong Answer 1' },
+        { id: 'ans-3', text: 'Wrong Answer 2' },
+        { id: 'ans-4', text: 'Wrong Answer 3' },
+      ],
+      correctAnswerId: 'ans-1',
+      tags: ['test'],
+    });
+
+    expect(fourAnswerResult.ok).toBe(true);
+    if (!fourAnswerResult.ok) return;
+
+    const templateResult = await module.createTemplate({
+      name: 'Four Answer Template',
+      pools: [{
+        name: 'Four Answer Pool',
+        questionsToDraw: 1,
+        points: 10,
+        questionIds: [fourAnswerResult.value.id],
+      }],
+    });
+
+    expect(templateResult.ok).toBe(true);
+    if (!templateResult.ok) return;
+
+    // When materializeTemplate is called
+    const result = await module.materializeTemplate(templateResult.value.id);
+
+    // Then all 4 answers should be included
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const materializedQuestion = result.value.sections[0].questions[0];
+      expect(materializedQuestion.answers).toHaveLength(4);
+
+      // Verify correct answer is included
+      const hasCorrectAnswer = materializedQuestion.answers.some(a => a.id === 'ans-1');
+      expect(hasCorrectAnswer).toBe(true);
+    }
+  });
+
+  it('Verify answer selection with 6 answers - selects 4 total (1 correct + 3 incorrect)', async () => {
+    // Given a question with 6 answers
+    const sixAnswerResult = await module.createQuestion({
+      text: 'Six Answer Question',
+      answers: [
+        { id: 'ans-1', text: 'Correct Answer' },
+        { id: 'ans-2', text: 'Wrong Answer 1' },
+        { id: 'ans-3', text: 'Wrong Answer 2' },
+        { id: 'ans-4', text: 'Wrong Answer 3' },
+        { id: 'ans-5', text: 'Wrong Answer 4' },
+        { id: 'ans-6', text: 'Wrong Answer 5' },
+      ],
+      correctAnswerId: 'ans-1',
+      tags: ['test'],
+    });
+
+    expect(sixAnswerResult.ok).toBe(true);
+    if (!sixAnswerResult.ok) return;
+
+    const templateResult = await module.createTemplate({
+      name: 'Six Answer Template',
+      pools: [{
+        name: 'Six Answer Pool',
+        questionsToDraw: 1,
+        points: 10,
+        questionIds: [sixAnswerResult.value.id],
+      }],
+    });
+
+    expect(templateResult.ok).toBe(true);
+    if (!templateResult.ok) return;
+
+    // When materializeTemplate is called
+    const result = await module.materializeTemplate(templateResult.value.id);
+
+    // Then exactly 4 answers should be selected (1 correct + 3 incorrect)
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      const materializedQuestion = result.value.sections[0].questions[0];
+      expect(materializedQuestion.answers).toHaveLength(4);
+
+      // Verify correct answer is included
+      const correctAnswer = materializedQuestion.answers.find(a => a.id === 'ans-1');
+      expect(correctAnswer).toBeDefined();
+      expect(correctAnswer?.text).toBe('Correct Answer');
+
+      // Verify 3 incorrect answers are included
+      const incorrectAnswers = materializedQuestion.answers.filter(a => a.id !== 'ans-1');
+      expect(incorrectAnswers).toHaveLength(3);
+
+      // Verify all selected answers are from the original set
+      materializedQuestion.answers.forEach(answer => {
+        expect(['ans-1', 'ans-2', 'ans-3', 'ans-4', 'ans-5', 'ans-6']).toContain(answer.id);
+      });
+    }
+  });
+
+  it('Verify answers are shuffled in random order', async () => {
+    // Create a module with actual random shuffling
+    let idCounter = 1;
+    const moduleWithRandomShuffle = configureDesignModule({
+      idGenerator: () => `test-id-${idCounter++}`,
+      now: () => new Date('2025-11-22T00:00:00Z'),
+      randomSelector: deterministicSelector, // Keep question selection deterministic
+      // answerShuffler not specified - uses default random shuffler
+    });
+
+    // Given a question with 4 answers
+    const questionResult = await moduleWithRandomShuffle.createQuestion({
+      text: 'Shuffle Test Question',
+      answers: [
+        { id: 'ans-1', text: 'Answer A' },
+        { id: 'ans-2', text: 'Answer B' },
+        { id: 'ans-3', text: 'Answer C' },
+        { id: 'ans-4', text: 'Answer D' },
+      ],
+      correctAnswerId: 'ans-1',
+      tags: ['test'],
+    });
+
+    expect(questionResult.ok).toBe(true);
+    if (!questionResult.ok) return;
+
+    const templateResult = await moduleWithRandomShuffle.createTemplate({
+      name: 'Shuffle Template',
+      pools: [{
+        name: 'Shuffle Pool',
+        questionsToDraw: 1,
+        points: 10,
+        questionIds: [questionResult.value.id],
+      }],
+    });
+
+    expect(templateResult.ok).toBe(true);
+    if (!templateResult.ok) return;
+
+    // When we materialize the template multiple times
+    const results = [];
+    for (let i = 0; i < 10; i++) {
+      const result = await moduleWithRandomShuffle.materializeTemplate(templateResult.value.id);
+      if (result.ok) {
+        const answerOrder = result.value.sections[0].questions[0].answers.map(a => a.id).join(',');
+        results.push(answerOrder);
+      }
+    }
+
+    // Then we should see at least some variation in answer order (not all the same)
+    // Note: There's a small chance this could fail due to random chance, but it's very unlikely
+    const uniqueOrders = new Set(results);
+    expect(uniqueOrders.size).toBeGreaterThan(1);
+
+    // Verify all materializations still have all 4 answers
+    expect(results).toHaveLength(10);
+  });
 });
 
 // Helper functions
@@ -254,6 +501,7 @@ const givenDesignModule = () => {
     idGenerator: () => `test-id-${idCounter++}`,
     now: () => new Date('2025-11-22T00:00:00Z'),
     randomSelector: deterministicSelector, // Use deterministic selection for tests
+    answerShuffler: deterministicShuffler, // Use deterministic shuffling for tests
   });
 };
 
@@ -287,4 +535,9 @@ const givenQuestions = async (
 // Deterministic selector for predictable testing - returns first N items
 const deterministicSelector = <T>(items: T[], count: number): T[] => {
   return items.slice(0, count);
+};
+
+// Deterministic shuffler for predictable testing - returns items in original order
+const deterministicShuffler = <T>(items: T[]): T[] => {
+  return [...items];
 };

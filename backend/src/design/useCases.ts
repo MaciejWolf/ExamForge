@@ -515,6 +515,7 @@ type MaterializeTemplateDeps = {
   idGenerator: () => string;
   now: () => Date;
   randomSelector?: <T>(items: T[], count: number) => T[];
+  answerShuffler?: <T>(items: T[]) => T[];
 };
 
 export const materializeTemplate = ({
@@ -522,7 +523,8 @@ export const materializeTemplate = ({
   questionRepo,
   idGenerator,
   now,
-  randomSelector = defaultRandomSelector
+  randomSelector = defaultRandomSelector,
+  answerShuffler = defaultShuffler
 }: MaterializeTemplateDeps) => {
   return async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
     // Check if template exists
@@ -563,8 +565,10 @@ export const materializeTemplate = ({
       // Select random questions from the pool
       const selectedQuestions = randomSelector(poolQuestions, pool.questionsToDraw);
 
-      // Create frozen snapshots of selected questions
-      const frozenQuestions = selectedQuestions.map(q => createQuestionSnapshot(q));
+      // Create frozen snapshots of selected questions with answer selection and shuffling
+      const frozenQuestions = selectedQuestions.map(q =>
+        createQuestionSnapshot(q, randomSelector, answerShuffler)
+      );
 
       // Create materialized section
       sections.push({
@@ -587,15 +591,60 @@ export const materializeTemplate = ({
   };
 };
 
-// Helper function to create a deep copy/snapshot of a question
-const createQuestionSnapshot = (question: Question): Question => {
+// Helper function to create a deep copy/snapshot of a question with answer selection and shuffling
+const createQuestionSnapshot = (
+  question: Question,
+  randomSelector: <T>(items: T[], count: number) => T[],
+  answerShuffler: <T>(items: T[]) => T[]
+): Question => {
+  const selectedAnswers = selectAndShuffleAnswers(
+    question.answers,
+    question.correctAnswerId,
+    randomSelector,
+    answerShuffler
+  );
+
   return {
     ...question,
-    answers: question.answers.map(a => ({ ...a })),
+    answers: selectedAnswers,
     tags: [...question.tags],
     createdAt: new Date(question.createdAt),
     updatedAt: new Date(question.updatedAt),
   };
+};
+
+// Helper function to select and shuffle answers
+// Rules:
+// - If question has <= 4 answers: select all and shuffle
+// - If question has > 4 answers: select 1 correct + 3 random incorrect, then shuffle
+const selectAndShuffleAnswers = (
+  answers: Answer[],
+  correctAnswerId: string,
+  randomSelector: <T>(items: T[], count: number) => T[],
+  answerShuffler: <T>(items: T[]) => T[]
+): Answer[] => {
+  // If 4 or fewer answers, return all of them shuffled
+  if (answers.length <= 4) {
+    const copiedAnswers = answers.map(a => ({ ...a }));
+    return answerShuffler(copiedAnswers);
+  }
+
+  // If more than 4 answers, select 1 correct + 3 incorrect
+  const correctAnswer = answers.find(a => a.id === correctAnswerId);
+  const incorrectAnswers = answers.filter(a => a.id !== correctAnswerId);
+
+  if (!correctAnswer) {
+    // Fallback: if correct answer not found, just take first 4 and shuffle
+    const copiedAnswers = answers.slice(0, 4).map(a => ({ ...a }));
+    return answerShuffler(copiedAnswers);
+  }
+
+  // Select 3 random incorrect answers
+  const selectedIncorrect = randomSelector(incorrectAnswers, Math.min(3, incorrectAnswers.length));
+
+  // Combine correct + selected incorrect, make deep copies, and shuffle
+  const selectedAnswers = [correctAnswer, ...selectedIncorrect].map(a => ({ ...a }));
+  return answerShuffler(selectedAnswers);
 };
 
 // Default random selector using Fisher-Yates shuffle algorithm
@@ -606,4 +655,14 @@ const defaultRandomSelector = <T>(items: T[], count: number): T[] => {
     [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
   }
   return shuffled.slice(0, count);
+};
+
+// Default shuffler using Fisher-Yates shuffle algorithm
+const defaultShuffler = <T>(items: T[]): T[] => {
+  const shuffled = [...items];
+  for (let i = shuffled.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+  }
+  return shuffled;
 };
