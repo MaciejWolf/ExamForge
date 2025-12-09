@@ -3,6 +3,7 @@ import { TestSession } from './types/testSession';
 export interface SessionRepository {
   save(session: TestSession): Promise<void>;
   findById(id: string): Promise<TestSession | null>;
+  listAll(): Promise<TestSession[]>;
 }
 
 export const createInMemorySessionRepository = (): SessionRepository => {
@@ -14,6 +15,9 @@ export const createInMemorySessionRepository = (): SessionRepository => {
     },
     findById: async (id: string) => {
       return sessions.get(id) || null;
+    },
+    listAll: async () => {
+      return Array.from(sessions.values());
     }
   };
 };

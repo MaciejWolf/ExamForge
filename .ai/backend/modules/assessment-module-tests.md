@@ -23,7 +23,7 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- [ ] **[Success] Create Session**
+- [X] **[Success] Create Session**
   - **Arrange**: Mock `designModule.materializeTemplate` to return a valid `TestContentPackage`.
   - **Act**: Call `startSession(templateId)`.
   - **Assert**:
@@ -33,17 +33,17 @@ This document outlines the detailed unit test plan for the Assessment Module use
     - Session is saved to repository.
     - Returns the created session DTO.
 
-- [ ] **[Failure] Template Not Found**
+- [X] **[Failure] Template Not Found**
   - **Arrange**: Mock `designModule.materializeTemplate` to throw `TemplateNotFoundError`.
   - **Act**: Call `startSession(invalidId)`.
   - **Assert**: Throws `TemplateNotFoundError`.
 
-- [ ] **[Failure] Repository Error**
+- [X] **[Failure] Repository Error**
   - **Arrange**: Mock repository save to throw error.
   - **Act**: Call `startSession` with valid data.
   - **Assert**: Throws internal error / Repository error.
 
-- [ ] **[Failure] Insufficient Questions**
+- [X] **[Failure] Insufficient Questions**
   - **Arrange**: Mock `designModule.materializeTemplate` to return `InsufficientQuestions` error result.
   - **Act**: Call `startSession(templateId)`.
   - **Assert**: Throws `InsufficientQuestionsError` (propagating details).
@@ -70,33 +70,15 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- [ ] **[Success] List All**
+- [x] **[Success] List All**
   - **Arrange**: Repository has 3 sessions.
   - **Act**: Call `listSessions()`.
   - **Assert**: Returns array of 3 sessions.
 
-- [ ] **[Success] Empty List**
+- [x] **[Success] Empty List**
   - **Arrange**: Repository is empty.
   - **Act**: Call `listSessions()`.
   - **Assert**: Returns empty array.
-
-### 4. `deleteSession`
-
-**Description**: Deletes a test session.
-
-**Test Cases**:
-
-- [ ] **[Success] Delete Existing**
-  - **Arrange**: Repository has session `S1`.
-  - **Act**: Call `deleteSession('S1')`.
-  - **Assert**:
-    - Repository no longer contains `S1`.
-    - Returns success/void.
-
-- [ ] **[Failure] Not Found**
-  - **Arrange**: Repository empty.
-  - **Act**: Call `deleteSession('S1')`.
-  - **Assert**: Throws `SessionNotFoundError` (or returns silently if idempotent, generally throw if strict).
 
 ### 5. `createParticipant`
 

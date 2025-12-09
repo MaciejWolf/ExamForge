@@ -28,6 +28,9 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
       materializeTemplate: config.materializeTemplate,
       idGenerator,
       now
+    }),
+    listSessions: useCases.listSessions({
+      sessionRepo
     })
   };
 };
