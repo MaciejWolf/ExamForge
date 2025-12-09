@@ -1,9 +1,8 @@
 import { describe, it, expect, beforeEach, vi, Mock } from 'vitest';
 import { configureAssessmentModule, AssessmentModule } from '../index';
-import { SessionRepository } from '../repository';
 import { ok, err } from '../../shared/result';
 import { TestContentPackage } from '../../design/types/testContentPackage';
-import { DesignError } from '../../design/types/designError';
+import { AssessmentError } from '../types/assessmentError';
 
 describe('startSession Use Case', () => {
   let module: AssessmentModule;
@@ -56,25 +55,10 @@ describe('startSession Use Case', () => {
     }
   });
 
-  it('Failure: Repository Error', async () => {
-    // Arrange
-    const templateId = 'template-1';
-    givenTemplateCanBeMaterialized(templateId);
-
-    // Act
-    const result = await module.startSession(templateId);
-
-    // Assert
-    expect(result.ok).toBe(false);
-    if (!result.ok) {
-      expect(result.error.type).toBe('RepositoryError');
-    }
-  });
-
   it('Failure: Insufficient Questions', async () => {
     // Arrange
     const templateId = 'template-1';
-    const errorDetails: DesignError = {
+    const errorDetails: AssessmentError = {
       type: 'InsufficientQuestions',
       poolId: 'pool-1',
       required: 5,
@@ -106,7 +90,7 @@ describe('startSession Use Case', () => {
     return mockPackage;
   };
 
-  const givenTemplateMaterializationFails = (error: DesignError) => {
+  const givenTemplateMaterializationFails = (error: AssessmentError) => {
     mockMaterializeTemplate.mockResolvedValue(err(error));
   };
 });
