@@ -23,7 +23,7 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Create Session**
+- [ ] **[Success] Create Session**
   - **Arrange**: Mock `designModule.materializeTemplate` to return a valid `TestContentPackage`.
   - **Act**: Call `startSession(templateId)`.
   - **Assert**:
@@ -33,17 +33,17 @@ This document outlines the detailed unit test plan for the Assessment Module use
     - Session is saved to repository.
     - Returns the created session DTO.
 
-- **[Failure] Template Not Found**
+- [ ] **[Failure] Template Not Found**
   - **Arrange**: Mock `designModule.materializeTemplate` to throw `TemplateNotFoundError`.
   - **Act**: Call `startSession(invalidId)`.
   - **Assert**: Throws `TemplateNotFoundError`.
 
-- **[Failure] Repository Error**
+- [ ] **[Failure] Repository Error**
   - **Arrange**: Mock repository save to throw error.
   - **Act**: Call `startSession` with valid data.
   - **Assert**: Throws internal error / Repository error.
 
-- **[Failure] Insufficient Questions**
+- [ ] **[Failure] Insufficient Questions**
   - **Arrange**: Mock `designModule.materializeTemplate` to return `InsufficientQuestions` error result.
   - **Act**: Call `startSession(templateId)`.
   - **Assert**: Throws `InsufficientQuestionsError` (propagating details).
@@ -54,12 +54,12 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Get Existing Session**
+- [ ] **[Success] Get Existing Session**
   - **Arrange**: Repository contains a session with ID `S1`.
   - **Act**: Call `getSession('S1')`.
   - **Assert**: Returns correct session object.
 
-- **[Failure] Session Not Found**
+- [ ] **[Failure] Session Not Found**
   - **Arrange**: Repository is empty.
   - **Act**: Call `getSession('NonExistent')`.
   - **Assert**: Throws `SessionNotFoundError`.
@@ -70,12 +70,12 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] List All**
+- [ ] **[Success] List All**
   - **Arrange**: Repository has 3 sessions.
   - **Act**: Call `listSessions()`.
   - **Assert**: Returns array of 3 sessions.
 
-- **[Success] Empty List**
+- [ ] **[Success] Empty List**
   - **Arrange**: Repository is empty.
   - **Act**: Call `listSessions()`.
   - **Assert**: Returns empty array.
@@ -86,14 +86,14 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Delete Existing**
+- [ ] **[Success] Delete Existing**
   - **Arrange**: Repository has session `S1`.
   - **Act**: Call `deleteSession('S1')`.
   - **Assert**:
     - Repository no longer contains `S1`.
     - Returns success/void.
 
-- **[Failure] Not Found**
+- [ ] **[Failure] Not Found**
   - **Arrange**: Repository empty.
   - **Act**: Call `deleteSession('S1')`.
   - **Assert**: Throws `SessionNotFoundError` (or returns silently if idempotent, generally throw if strict).
@@ -104,19 +104,19 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Add Participant**
+- [ ] **[Success] Add Participant**
   - **Arrange**: Session `S1` exists.
   - **Act**: Call `createParticipant('S1', { email: 'test@example.com', name: 'John' })`.
   - **Assert**:
     - Participant is saved to repository (linked to S1).
     - Returns new participant details (including ID/Access Token).
 
-- **[Failure] Session Not Found**
+- [ ] **[Failure] Session Not Found**
   - **Arrange**: Session `S1` does not exist.
   - **Act**: Call `createParticipant('S1', ...)`.
   - **Assert**: Throws `SessionNotFoundError`.
 
-- **[Failure] Validation Error**
+- [ ] **[Failure] Validation Error**
   - **Act**: Call with invalid email or missing name.
   - **Assert**: Throws validation error.
 
@@ -126,12 +126,12 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Get Existing**
+- [ ] **[Success] Get Existing**
   - **Arrange**: Participant `P1` exists.
   - **Act**: Call `getParticipant('P1')`.
   - **Assert**: Returns participant DTO.
 
-- **[Failure] Not Found**
+- [ ] **[Failure] Not Found**
   - **Act**: Call `getParticipant('BadID')`.
   - **Assert**: Throws `ParticipantNotFoundError`.
 
@@ -141,12 +141,12 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] List for Session**
+- [ ] **[Success] List for Session**
   - **Arrange**: Session `S1` has 2 participants.
   - **Act**: Call `listParticipants('S1')`.
   - **Assert**: Returns count of 2.
 
-- **[Failure] Session Not Found**
+- [ ] **[Failure] Session Not Found**
   - **Arrange**: Session `S1` does not exist.
   - **Act**: Call `listParticipants('S1')`.
   - **Assert**: Throws `SessionNotFoundError`.
@@ -157,23 +157,23 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Record Valid Answer**
+- [ ] **[Success] Record Valid Answer**
   - **Arrange**: Participant `P1` exists. Question `Q1` is part of their session.
   - **Act**: Call `recordAnswer('P1', 'Q1', { selectedOptionId: 'A' })`.
   - **Assert**:
     - Answer is saved in repository.
     - Returns confirmation.
 
-- **[Failure] Invalid Question**
+- [ ] **[Failure] Invalid Question**
   - **Arrange**: Question `Q_Bad` is NOT in the session package.
   - **Act**: Call `recordAnswer`.
   - **Assert**: Throws `InvalidQuestionError`.
 
-- **[Failure] Participant Not Found**
+- [ ] **[Failure] Participant Not Found**
   - **Act**: Call with invalid participant ID.
   - **Assert**: Throws `ParticipantNotFoundError`.
 
-- **[Failure] Session Closed** (Optional Business Rule)
+- [ ] **[Failure] Session Closed** (Optional Business Rule)
   - **Arrange**: Session is marked as `FINISHED` or `CLOSED`.
   - **Act**: Call `recordAnswer`.
   - **Assert**: Throws `SessionClosedError`.
@@ -184,7 +184,7 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Retrieve Answers**
+- [ ] **[Success] Retrieve Answers**
   - **Arrange**: Participant `P1` has recorded 5 answers.
   - **Act**: Call `getAnswers('P1')`.
   - **Assert**: Returns array of 5 answers.
@@ -195,12 +195,12 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Session Statistics**
+- [ ] **[Success] Session Statistics**
   - **Arrange**: Session `S1` has 10 participants. 8 passed, 2 failed (mocked answer data).
   - **Act**: Call `calculateStatistics` (scoped to ID or generic).
   - **Assert**: Returns correct pass rate, avg score, etc.
 
-- **[Success] Question Statistics**
+- [ ] **[Success] Question Statistics**
   - **Arrange**: Question `Q1` answered by 50 participants.
   - **Act**: Request stats.
   - **Assert**: Returns correct distribution of options selected.
@@ -211,7 +211,7 @@ This document outlines the detailed unit test plan for the Assessment Module use
 
 **Test Cases**:
 
-- **[Success] Generate Session Report**
+- [ ] **[Success] Generate Session Report**
   - **Arrange**: Completed session with participants and answers.
   - **Act**: Call `generateReport('S1')`.
   - **Assert**: Returns aggregations, charts data (structure), list of top performers, etc.
