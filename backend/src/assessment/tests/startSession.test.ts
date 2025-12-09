@@ -22,14 +22,7 @@ describe('startSession Use Case', () => {
   it('Successfully Create Session', async () => {
     // Arrange
     const templateId = 'template-1';
-    const mockPackage: TestContentPackage = {
-      id: 'package-1',
-      templateId: templateId,
-      sections: [],
-      createdAt: new Date('2025-01-01T09:00:00Z'),
-    };
-
-    mockMaterializeTemplate.mockResolvedValue(ok(mockPackage));
+    const mockPackage = givenTemplateCanBeMaterialized(templateId);
 
     // Act
     const result = await module.startSession(templateId);
@@ -51,7 +44,7 @@ describe('startSession Use Case', () => {
   it('Failure: Template Not Found', async () => {
     // Arrange
     const templateId = 'invalid-id';
-    mockMaterializeTemplate.mockResolvedValue(err({ type: 'TemplateNotFound', templateId }));
+    givenTemplateMaterializationFails({ type: 'TemplateNotFound', templateId });
 
     // Act
     const result = await module.startSession(templateId);
@@ -66,14 +59,7 @@ describe('startSession Use Case', () => {
   it('Failure: Repository Error', async () => {
     // Arrange
     const templateId = 'template-1';
-    const mockPackage: TestContentPackage = {
-      id: 'package-1',
-      templateId: templateId,
-      sections: [],
-      createdAt: new Date(),
-    };
-
-    mockMaterializeTemplate.mockResolvedValue(ok(mockPackage));
+    givenTemplateCanBeMaterialized(templateId);
 
     // Act
     const result = await module.startSession(templateId);
@@ -95,7 +81,7 @@ describe('startSession Use Case', () => {
       available: 3
     };
 
-    mockMaterializeTemplate.mockResolvedValue(err(errorDetails));
+    givenTemplateMaterializationFails(errorDetails);
 
     // Act
     const result = await module.startSession(templateId);
@@ -106,4 +92,21 @@ describe('startSession Use Case', () => {
       expect(result.error).toMatchObject(errorDetails); // Should propagate error
     }
   });
+
+  // Helper functions for domain-oriented test setup
+  const givenTemplateCanBeMaterialized = (templateId: string, packageOverrides?: Partial<TestContentPackage>) => {
+    const mockPackage: TestContentPackage = {
+      id: 'package-1',
+      templateId: templateId,
+      sections: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      ...packageOverrides,
+    };
+    mockMaterializeTemplate.mockResolvedValue(ok(mockPackage));
+    return mockPackage;
+  };
+
+  const givenTemplateMaterializationFails = (error: DesignError) => {
+    mockMaterializeTemplate.mockResolvedValue(err(error));
+  };
 });
