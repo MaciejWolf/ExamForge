@@ -1,7 +1,14 @@
 import { v4 as uuidv4 } from 'uuid';
 import { SupabaseClient } from '@supabase/supabase-js';
 import * as useCases from './useCases';
-import { SessionRepository, createInMemorySessionRepository, createInMemoryTestInstanceRepository } from './repository';
+import {
+  SessionRepository,
+  TestInstanceRepository,
+  createInMemorySessionRepository,
+  createInMemoryTestInstanceRepository,
+  createSupabaseSessionRepository,
+  createSupabaseTestInstanceRepository
+} from './repository';
 import { Result } from '../shared/result';
 import { TestContentPackage } from '../design/types/testContentPackage';
 import { DesignError } from '../design/types/designError';
@@ -14,7 +21,9 @@ export type AssessmentModuleConfig = {
   accessCodeGenerator?: () => string;
   now?: () => Date;
   materializeTemplate: MaterializeTemplateFn;
+  // Allow overriding repositories generic interface (for testing or specific needs)
   sessionRepo?: SessionRepository;
+  testInstanceRepo?: TestInstanceRepository;
 };
 
 // Default Access Code Generator
@@ -25,8 +34,24 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
   const accessCodeGenerator = config.accessCodeGenerator ?? defaultAccessCodeGenerator;
   const now = config.now ?? (() => new Date());
 
-  const sessionRepo = config.sessionRepo ?? createInMemorySessionRepository();
-  const testInstanceRepo = createInMemoryTestInstanceRepository();
+  let sessionRepo: SessionRepository;
+  let testInstanceRepo: TestInstanceRepository;
+
+  if (config.sessionRepo) {
+    sessionRepo = config.sessionRepo;
+  } else if (config.supabaseClient) {
+    sessionRepo = createSupabaseSessionRepository(config.supabaseClient);
+  } else {
+    sessionRepo = createInMemorySessionRepository();
+  }
+
+  if (config.testInstanceRepo) {
+    testInstanceRepo = config.testInstanceRepo;
+  } else if (config.supabaseClient) {
+    testInstanceRepo = createSupabaseTestInstanceRepository(config.supabaseClient);
+  } else {
+    testInstanceRepo = createInMemoryTestInstanceRepository();
+  }
 
   return {
     startSession: useCases.startSession({
