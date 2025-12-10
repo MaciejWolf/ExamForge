@@ -118,6 +118,3 @@ const aValidTemplate = (overrides: Partial<CreateTemplateCommand> = {}): CreateT
   ],
   ...overrides,
 });
-
-
-
