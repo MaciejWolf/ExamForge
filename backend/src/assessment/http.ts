@@ -1,28 +1,6 @@
-# Phase 1: Mock Implementation (GET /sessions)
+import { Router, Request, Response } from 'express';
+import { TestSession } from './types/testSession';
 
-Goal: Implement the HTTP adapter layer for the Assessment module with a mock implementation for listing sessions.
-
-## Tasks
-- [x] create-http-adapter
-  - Create `backend/src/assessment/http.ts`
-  - Define basic router structure
-- [x] implement-mock-list-sessions
-  - Define `GET /sessions` endpoint
-  - Adapt mock data from `backend_old` to match new `TestSession` domain model
-  - Return hardcoded mock list of sessions
-- [x] wire-router-to-app
-  - Mount assessment router in `backend/src/index.ts`
-  - Verify endpoint accessibility
-
-## Context
-- **Target file:** `backend/src/assessment/http.ts`
-- **Reference:** `backend/src/design/http.ts`
-- **Mock Data Source:** `backend_old/src/services/mockData.ts` (needs adaptation)
-- **Domain Model:** `backend/src/assessment/types/testSession.ts`
-
-## Mock Data
-
-```typescript
 // Hardcoded mock data adapted from backend_old
 const mockSessions: TestSession[] = [
   {
@@ -80,4 +58,4 @@ export const createAssessmentRouter = (): Router => {
 
   return router;
 };
-```
+

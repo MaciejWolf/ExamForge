@@ -310,26 +310,49 @@ export const testTemplatesApi = {
 
 export const testSessionsApi = {
   async create(data: CreateSessionRequest): Promise<CreateSessionResponse> {
-    return apiRequest<CreateSessionResponse>('/test-sessions', {
+    return apiRequest<CreateSessionResponse>('/assessment/sessions', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   async getAll(): Promise<{ sessions: TestSessionDetail[] }> {
-    return apiRequest<{ sessions: TestSessionDetail[] }>('/test-sessions');
+    // Backend returns array directly with camelCase fields, wrap it to match frontend expectation
+    const sessions = await apiRequest<Array<{
+      id: string;
+      templateId: string;
+      examinerId: string;
+      timeLimitMinutes: number;
+      startTime: string;
+      endTime: string;
+      status: 'open' | 'completed' | 'aborted';
+      createdAt: string;
+      updatedAt: string;
+    }>>('/assessment/sessions');
+    // Map backend TestSession format (camelCase) to frontend TestSessionDetail format (snake_case)
+    const mappedSessions: TestSessionDetail[] = sessions.map((session) => ({
+      id: session.id,
+      template_id: session.templateId,
+      template_name: 'Unknown Template', // Backend doesn't provide template name yet
+      examiner_id: session.examinerId,
+      time_limit_minutes: session.timeLimitMinutes,
+      status: session.status === 'open' ? 'active' : session.status === 'aborted' ? 'cancelled' : session.status,
+      createdAt: session.createdAt,
+      participant_count: 0, // Backend doesn't provide participant count yet
+    }));
+    return { sessions: mappedSessions };
   },
 
   async getById(id: string): Promise<{ session: TestSession; participants: Participant[] }> {
-    return apiRequest<{ session: TestSession; participants: Participant[] }>(`/test-sessions/${id}`);
+    return apiRequest<{ session: TestSession; participants: Participant[] }>(`/assessment/sessions/${id}`);
   },
 
   async getReport(sessionId: string): Promise<TestSessionReport> {
-    return apiRequest<TestSessionReport>(`/test-sessions/${sessionId}/report`);
+    return apiRequest<TestSessionReport>(`/assessment/sessions/${sessionId}/report`);
   },
 
   async getParticipantDetails(sessionId: string, participantId: string): Promise<ParticipantDetail> {
-    return apiRequest<ParticipantDetail>(`/test-sessions/${sessionId}/participants/${participantId}`);
+    return apiRequest<ParticipantDetail>(`/assessment/sessions/${sessionId}/participants/${participantId}`);
   },
 };
 

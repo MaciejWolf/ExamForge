@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { configureDesignModule, DesignModuleConfig } from './design/index';
 import { createDesignRouter } from './design/http';
+import { createAssessmentRouter } from './assessment/http';
 import { createSupabaseClient } from './lib/supabase';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
@@ -69,6 +70,7 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
   });
 
   app.use('/api/design', createDesignRouter(configureDesignModule(config.designModuleConfig)));
+  app.use('/api/assessment', createAssessmentRouter());
 
   return app;
 };
