@@ -1,0 +1,75 @@
+# Plan.md Format Rules
+
+This document defines the format and conventions for `plan.md` files used in task planning.
+
+## Basic Structure
+
+Keep it minimal and focused:
+
+```md
+# Feature: reporting
+
+Goal:
+Short summary of what this feature should achieve.
+
+Tasks:
+- [ ] data-upload
+- [ ] report-view
+- [ ] export
+```
+
+## Subtask Plans
+
+Subtasks can have their own `plan.md` in subdirectories:
+
+```md
+# data-upload
+
+Goal:
+Short summary of what data-upload should do.
+
+Tasks:
+- [ ] backend-endpoint
+- [ ] ui-uploader
+- [ ] basic-validation
+```
+
+## Optional Sections
+
+Add these sections when useful (not required by default):
+
+* `Context:` – links, quick notes, background information
+* `Open questions:` – uncertainties that need to be resolved
+* `Risks:` – potential issues or blockers
+* `Dependencies:` – other tasks or external dependencies
+
+## Detailed Task Files
+
+Leaf tasks that need more detail can get their own `.md` file, linked like:
+
+```md
+Tasks:
+- [ ] [validate-file-format](./validate-file-format.md)
+```
+
+## Task Status
+
+* Tasks are tracked with markdown checkboxes: `- [ ]` for incomplete, `- [x]` for complete
+* Parent tasks can link to sub-plans:
+
+  ```md
+  - [ ] [data-upload](./data-upload/plan.md)
+  ```
+
+* Plain leaf tasks:
+
+  ```md
+  - [ ] handle-empty-files
+  ```
+
+## Principles
+
+* **Start shallow**: Don't expand deeply upfront—only add detail where needed
+* **Stay flexible**: Plans should be easy to modify as understanding evolves
+* **Be concise**: Keep descriptions short and actionable
+* **Use clear names**: Task names should be descriptive and use `kebab-case`
