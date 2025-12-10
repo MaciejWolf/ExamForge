@@ -45,28 +45,11 @@ describe('startSession Use Case', () => {
 
     expect(result.ok).toBe(true);
     if (result.ok) {
-      const { session, instances } = result.value;
-      const sessionId = session.id;
+      const sessionId = result.value;
 
-      // Verify Session
-      expect(session.templateId).toBe(templateId);
-      expect(session.examinerId).toBe('examiner-1');
-      expect(session.status).toBe('open');
-      expect(session.timeLimitMinutes).toBe(60);
-
-      // Verify Instances
-      expect(instances).toHaveLength(2);
-      expect(instances.map(i => i.identifier)).toEqual(['Alice', 'Bob']);
-      expect(instances[0].sessionId).toBe(session.id);
-      expect(instances[1].sessionId).toBe(session.id);
-
-      // Verify Unique IDs and Access Codes
-      expect(instances[0].id).not.toBe(instances[1].id);
-      expect(instances[0].accessCode).not.toBe(instances[1].accessCode);
-
-      // Verify Content is present
-      expect(instances[0].testContent).toBeDefined();
-      expect(instances[1].testContent).toBeDefined();
+      // Verify that session ID is returned
+      expect(sessionId).toBeDefined();
+      expect(typeof sessionId).toBe('string');
 
       // Verify session and instances can be fetched by ID
       const getResult = await module.getSessionById(sessionId);
@@ -75,7 +58,7 @@ describe('startSession Use Case', () => {
         const { session: fetchedSession, instances: fetchedInstances } = getResult.value;
 
         // Verify fetched session matches created session
-        expect(fetchedSession.id).toBe(session.id);
+        expect(fetchedSession.id).toBe(sessionId);
         expect(fetchedSession.templateId).toBe(templateId);
         expect(fetchedSession.examinerId).toBe('examiner-1');
         expect(fetchedSession.status).toBe('open');
@@ -86,10 +69,12 @@ describe('startSession Use Case', () => {
         expect(fetchedInstances.map(i => i.identifier)).toEqual(['Alice', 'Bob']);
         expect(fetchedInstances[0].sessionId).toBe(sessionId);
         expect(fetchedInstances[1].sessionId).toBe(sessionId);
-        expect(fetchedInstances[0].id).toBe(instances[0].id);
-        expect(fetchedInstances[1].id).toBe(instances[1].id);
-        expect(fetchedInstances[0].accessCode).toBe(instances[0].accessCode);
-        expect(fetchedInstances[1].accessCode).toBe(instances[1].accessCode);
+
+        // Verify Unique IDs and Access Codes
+        expect(fetchedInstances[0].id).not.toBe(fetchedInstances[1].id);
+        expect(fetchedInstances[0].accessCode).not.toBe(fetchedInstances[1].accessCode);
+
+        // Verify Content is present
         expect(fetchedInstances[0].testContent).toBeDefined();
         expect(fetchedInstances[1].testContent).toBeDefined();
       }

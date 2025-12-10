@@ -26,12 +26,7 @@ type StartSessionRequest = {
   participantIdentifiers: string[];
 };
 
-type StartSessionResponse = {
-  session: TestSession;
-  instances: TestInstance[];
-};
-
-export const startSession = (deps: StartSessionDeps) => async (request: StartSessionRequest): Promise<Result<StartSessionResponse, AssessmentError>> => {
+export const startSession = (deps: StartSessionDeps) => async (request: StartSessionRequest): Promise<Result<string, AssessmentError>> => {
   const { templateId, examinerId, timeLimitMinutes, startTime, endTime, participantIdentifiers } = request;
 
   // Step 1: Materialize content for EACH participant to ensure uniqueness
@@ -92,8 +87,5 @@ export const startSession = (deps: StartSessionDeps) => async (request: StartSes
   await deps.sessionRepo.save(session);
   await deps.testInstanceRepo.saveMany(testInstances);
 
-  return ok({
-    session,
-    instances: testInstances
-  });
+  return ok(sessionId);
 };
