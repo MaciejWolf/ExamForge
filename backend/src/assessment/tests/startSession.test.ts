@@ -46,6 +46,7 @@ describe('startSession Use Case', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       const { session, instances } = result.value;
+      const sessionId = session.id;
 
       // Verify Session
       expect(session.templateId).toBe(templateId);
@@ -66,6 +67,32 @@ describe('startSession Use Case', () => {
       // Verify Content is present
       expect(instances[0].testContent).toBeDefined();
       expect(instances[1].testContent).toBeDefined();
+
+      // Verify session and instances can be fetched by ID
+      const getResult = await module.getSessionById(sessionId);
+      expect(getResult.ok).toBe(true);
+      if (getResult.ok) {
+        const { session: fetchedSession, instances: fetchedInstances } = getResult.value;
+
+        // Verify fetched session matches created session
+        expect(fetchedSession.id).toBe(session.id);
+        expect(fetchedSession.templateId).toBe(templateId);
+        expect(fetchedSession.examinerId).toBe('examiner-1');
+        expect(fetchedSession.status).toBe('open');
+        expect(fetchedSession.timeLimitMinutes).toBe(60);
+
+        // Verify fetched instances match created instances
+        expect(fetchedInstances).toHaveLength(2);
+        expect(fetchedInstances.map(i => i.identifier)).toEqual(['Alice', 'Bob']);
+        expect(fetchedInstances[0].sessionId).toBe(sessionId);
+        expect(fetchedInstances[1].sessionId).toBe(sessionId);
+        expect(fetchedInstances[0].id).toBe(instances[0].id);
+        expect(fetchedInstances[1].id).toBe(instances[1].id);
+        expect(fetchedInstances[0].accessCode).toBe(instances[0].accessCode);
+        expect(fetchedInstances[1].accessCode).toBe(instances[1].accessCode);
+        expect(fetchedInstances[0].testContent).toBeDefined();
+        expect(fetchedInstances[1].testContent).toBeDefined();
+      }
     }
   });
 
