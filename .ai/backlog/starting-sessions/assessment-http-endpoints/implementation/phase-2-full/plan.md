@@ -39,7 +39,7 @@ Goal: Move from mock implementation to full database integration for the Assessm
     
     // Fetch full session details since create only returns ID
     // Note: Assuming backend returns { sessionId: string }
-    // Ideally we should implement a fetch here or update backend to return full session
+    // Ideally we should implement a fetch here
     ```
   - Implement "fetch after create" pattern in `TestSessionLaunchPage` (call `getById` after `create` returns ID) if backend response remains minimal.
 

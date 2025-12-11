@@ -171,15 +171,15 @@ export interface TestSessionDetail {
 
 export interface CreateSessionRequest {
   templateId: string;
+  examinerId: string;
   timeLimitMinutes: number;
-  participants: string[];
+  participantIdentifiers: string[];
   startTime: Date; // ISO 8601 datetime string
   endTime: Date; // ISO 8601 datetime string
 }
 
 export interface CreateSessionResponse {
-  session: TestSession;
-  participants: Participant[];
+  sessionId: string;
 }
 
 type ApiErrorData = {
@@ -344,7 +344,64 @@ export const testSessionsApi = {
   },
 
   async getById(id: string): Promise<{ session: TestSession; participants: Participant[] }> {
-    return apiRequest<{ session: TestSession; participants: Participant[] }>(`/assessment/sessions/${id}`);
+    // Backend returns { session: TestSession, instances: TestInstance[] }
+    // Map backend camelCase format to frontend snake_case format
+    const backendResponse = await apiRequest<{
+      session: {
+        id: string;
+        templateId: string;
+        examinerId: string;
+        timeLimitMinutes: number;
+        startTime: string;
+        endTime: string;
+        status: 'open' | 'completed' | 'aborted';
+        createdAt: string;
+        updatedAt: string;
+      };
+      instances: Array<{
+        id: string;
+        sessionId: string;
+        identifier: string;
+        accessCode: string;
+        testContent: unknown;
+        startedAt?: string;
+        completedAt?: string;
+        totalScore?: number;
+        createdAt: string;
+      }>;
+    }>(`/assessment/sessions/${id}`);
+
+    // Map backend session (camelCase) to frontend TestSession (snake_case)
+    const mappedSession: TestSession = {
+      id: backendResponse.session.id,
+      template_id: backendResponse.session.templateId,
+      examiner_id: backendResponse.session.examinerId,
+      time_limit_minutes: backendResponse.session.timeLimitMinutes,
+      status: backendResponse.session.status === 'open' ? 'active' : backendResponse.session.status === 'aborted' ? 'cancelled' : backendResponse.session.status,
+      createdAt: backendResponse.session.createdAt,
+    };
+
+    // Map backend instances to frontend participants
+    const mappedParticipants: Participant[] = backendResponse.instances.map((instance) => ({
+      id: instance.id,
+      session_id: instance.sessionId,
+      identifier: instance.identifier,
+      access_code: instance.accessCode,
+      status: instance.startedAt ? (instance.completedAt ? 'completed' : 'in_progress') : 'not_started',
+      started_at: instance.startedAt,
+      completed_at: instance.completedAt,
+      time_taken_minutes: instance.startedAt && instance.completedAt
+        ? Math.round((new Date(instance.completedAt).getTime() - new Date(instance.startedAt).getTime()) / (1000 * 60))
+        : undefined,
+      total_score: instance.totalScore,
+      max_score: undefined, // Not provided by backend
+      createdAt: instance.createdAt,
+    }));
+
+    return {
+      session: mappedSession,
+      participants: mappedParticipants,
+    };
   },
 
   async getReport(sessionId: string): Promise<TestSessionReport> {

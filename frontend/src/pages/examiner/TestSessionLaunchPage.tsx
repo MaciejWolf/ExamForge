@@ -163,19 +163,32 @@ const TestSessionLaunchPage = () => {
       const startDateTime = new Date(`${startTimeDate}T${startTimeTime}`);
       const endDateTime = new Date(`${endTimeDate}T${endTimeTime}`);
 
-      const response = await testSessionsApi.create({
+      // Create session - backend returns only { sessionId: string }
+      const createResponse = await testSessionsApi.create({
         templateId: selectedTemplateId,
+        examinerId: 'test-examiner', // Hardcoded for now
         timeLimitMinutes,
-        participants: parsedParticipants,
+        participantIdentifiers: parsedParticipants,
         startTime: startDateTime,
         endTime: endDateTime,
       });
 
-      setSessionId(response.session.id);
-      setParticipants(response.participants);
+      // Backend returns { sessionId: string } from create endpoint
+      // We need to fetch the full session details to get participants and access codes
+      const sessionId = createResponse.sessionId;
+      
+      if (!sessionId) {
+        throw new Error('Session ID not returned from server');
+      }
+
+      // Fetch full session details including participants with access codes
+      const sessionDetails = await testSessionsApi.getById(sessionId);
+
+      setSessionId(sessionDetails.session.id);
+      setParticipants(sessionDetails.participants);
 
       toast.success('Test session launched successfully!', {
-        description: `${response.participants.length} participants added, ${response.participants.length} access codes generated.`,
+        description: `${sessionDetails.participants.length} participants added, ${sessionDetails.participants.length} access codes generated.`,
       });
     } catch (error) {
       toast.error('Failed to launch test session', {
