@@ -3,14 +3,37 @@ import { useNavigate } from "react-router-dom"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card"
+import { assessmentService } from "@/services/assessment"
+import { toast } from "sonner"
+import { ApiError } from "@/services/core"
 
 export const StartPage = () => {
   const [accessCode, setAccessCode] = useState("")
+  const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
-    // No API call - button does nothing
+    
+    if (!accessCode.trim()) {
+      toast.error("Please enter an access code")
+      return
+    }
+
+    setLoading(true)
+    try {
+      const testInstance = await assessmentService.startTestInstance(accessCode.trim())
+      toast.success("Test started successfully")
+      navigate("/test", { state: { testInstance } })
+    } catch (error) {
+      if (error instanceof ApiError) {
+        toast.error(error.message)
+      } else {
+        toast.error("Failed to start test. Please check your access code.")
+      }
+    } finally {
+      setLoading(false)
+    }
   }
 
   return (
@@ -33,16 +56,18 @@ export const StartPage = () => {
                 placeholder="Access Code"
                 className="text-center text-lg tracking-wider uppercase"
                 autoFocus
+                disabled={loading}
               />
             </div>
-            <Button type="submit" className="w-full" size="lg">
-              Start Test
+            <Button type="submit" className="w-full" size="lg" disabled={loading}>
+              {loading ? "Starting..." : "Start Test"}
             </Button>
             <div className="pt-4 text-center">
               <button
                 type="button"
                 onClick={() => navigate("/login")}
                 className="text-sm text-muted-foreground hover:text-primary transition-colors cursor-pointer"
+                disabled={loading}
               >
                 Are you an examiner? Log in here
               </button>

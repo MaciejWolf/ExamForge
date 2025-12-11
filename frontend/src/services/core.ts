@@ -39,23 +39,37 @@ async function getAuthToken(): Promise<string | null> {
   return session?.access_token || null;
 }
 
+export interface ApiRequestOptions extends RequestInit {
+  skipAuth?: boolean;
+}
+
 export async function apiRequest<T>(
   endpoint: string,
-  options: RequestInit = {}
+  options: ApiRequestOptions = {}
 ): Promise<T> {
-  const token = await getAuthToken();
-  
-  if (!token) {
-    throw new Error('Not authenticated');
+  const { skipAuth, ...fetchOptions } = options;
+  let token = null;
+
+  if (!skipAuth) {
+    token = await getAuthToken();
+    
+    if (!token) {
+      throw new Error('Not authenticated');
+    }
+  }
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    ...(fetchOptions.headers as Record<string, string>),
+  };
+
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
   }
 
   const response = await fetch(`${API_BASE_URL}${endpoint}`, {
-    ...options,
-    headers: {
-      'Content-Type': 'application/json',
-      Authorization: `Bearer ${token}`,
-      ...options.headers,
-    },
+    ...fetchOptions,
+    headers,
   });
 
   if (!response.ok) {
