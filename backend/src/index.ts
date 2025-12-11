@@ -2,6 +2,7 @@ import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
 import { configureDesignModule, DesignModuleConfig } from './design/index';
 import { createDesignRouter } from './design/http';
+import { configureAssessmentModule } from './assessment/index';
 import { createAssessmentRouter } from './assessment/http';
 import { createSupabaseClient } from './lib/supabase';
 import dotenv from 'dotenv';
@@ -12,6 +13,15 @@ dotenv.config();
 
 export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = {}): Express => {
   const app = express();
+  
+  // Configure design module first (needed for assessment module)
+  const designModule = configureDesignModule(config.designModuleConfig);
+  
+  // Configure assessment module with materializeTemplate from design module
+  const assessmentModule = configureAssessmentModule({
+    materializeTemplate: designModule.materializeTemplate,
+    supabaseClient: config.designModuleConfig?.supabaseClient,
+  });
 
   app.use(cors({
     origin: (origin, callback) => {
@@ -69,8 +79,8 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
     res.status(200).json({ received: req.body });
   });
 
-  app.use('/api/design', createDesignRouter(configureDesignModule(config.designModuleConfig)));
-  app.use('/api/assessment', createAssessmentRouter());
+  app.use('/api/design', createDesignRouter(designModule));
+  app.use('/api/assessment', createAssessmentRouter(assessmentModule));
 
   return app;
 };

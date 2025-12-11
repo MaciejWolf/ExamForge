@@ -1,59 +1,192 @@
 import { Router, Request, Response } from 'express';
-import { TestSession } from './types/testSession';
+import { AssessmentModule } from './index';
+import { AssessmentError } from './types/assessmentError';
 
-// Hardcoded mock data adapted from backend_old
-const mockSessions: TestSession[] = [
-  {
-    id: "1",
-    templateId: "template-1", // "Math & Physics Combined Test"
-    examinerId: "examiner-1",
-    timeLimitMinutes: 60,
-    startTime: new Date('2025-11-15T09:00:00Z'),
-    endTime: new Date('2025-11-15T10:00:00Z'),
-    status: 'completed',
-    createdAt: new Date('2025-11-15T08:00:00Z'),
-    updatedAt: new Date('2025-11-15T10:00:00Z'),
-  },
-  {
-    id: "2",
-    templateId: "template-2", // "Science Comprehensive Exam"
-    examinerId: "examiner-1",
-    timeLimitMinutes: 45,
-    startTime: new Date('2025-11-14T10:00:00Z'),
-    endTime: new Date('2025-11-14T10:45:00Z'),
-    status: 'open', // Was 'active'
-    createdAt: new Date('2025-11-14T09:00:00Z'),
-    updatedAt: new Date('2025-11-14T09:00:00Z'),
-  },
-  {
-    id: "3",
-    templateId: "template-3", // "Computer Science Basics"
-    examinerId: "examiner-1",
-    timeLimitMinutes: 90,
-    startTime: new Date('2025-11-13T14:00:00Z'),
-    endTime: new Date('2025-11-13T15:30:00Z'),
-    status: 'completed',
-    createdAt: new Date('2025-11-13T13:00:00Z'),
-    updatedAt: new Date('2025-11-13T15:30:00Z'),
-  },
-  {
-    id: "4",
-    templateId: "template-4", // "General Knowledge Test"
-    examinerId: "examiner-1",
-    timeLimitMinutes: 30,
-    startTime: new Date('2025-11-12T11:00:00Z'),
-    endTime: new Date('2025-11-12T11:30:00Z'),
-    status: 'open', // Was 'active'
-    createdAt: new Date('2025-11-12T10:00:00Z'),
-    updatedAt: new Date('2025-11-12T10:00:00Z'),
-  },
-];
+type StartSessionRequestBody = {
+  templateId: string;
+  examinerId: string;
+  timeLimitMinutes: number;
+  startTime: string; // ISO date string
+  endTime: string; // ISO date string
+  participantIdentifiers: string[];
+};
 
-export const createAssessmentRouter = (): Router => {
+const validateStartSessionRequest = (body: any): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!body.templateId || typeof body.templateId !== 'string' || body.templateId.trim() === '') {
+    errors.push('templateId is required and must be a non-empty string');
+  }
+
+  if (!body.examinerId || typeof body.examinerId !== 'string' || body.examinerId.trim() === '') {
+    errors.push('examinerId is required and must be a non-empty string');
+  }
+
+  if (typeof body.timeLimitMinutes !== 'number' || body.timeLimitMinutes <= 0) {
+    errors.push('timeLimitMinutes is required and must be a positive number');
+  }
+
+  if (!body.startTime || typeof body.startTime !== 'string') {
+    errors.push('startTime is required and must be an ISO date string');
+  } else {
+    const startDate = new Date(body.startTime);
+    if (isNaN(startDate.getTime())) {
+      errors.push('startTime must be a valid ISO date string');
+    }
+  }
+
+  if (!body.endTime || typeof body.endTime !== 'string') {
+    errors.push('endTime is required and must be an ISO date string');
+  } else {
+    const endDate = new Date(body.endTime);
+    if (isNaN(endDate.getTime())) {
+      errors.push('endTime must be a valid ISO date string');
+    } else if (body.startTime) {
+      const startDate = new Date(body.startTime);
+      if (endDate <= startDate) {
+        errors.push('endTime must be after startTime');
+      }
+    }
+  }
+
+  if (!Array.isArray(body.participantIdentifiers) || body.participantIdentifiers.length === 0) {
+    errors.push('participantIdentifiers is required and must be a non-empty array');
+  } else {
+    const invalidIdentifiers = body.participantIdentifiers.filter(
+      (id: any) => typeof id !== 'string' || id.trim() === ''
+    );
+    if (invalidIdentifiers.length > 0) {
+      errors.push('All participantIdentifiers must be non-empty strings');
+    }
+  }
+
+  return { valid: errors.length === 0, errors };
+};
+
+const handleError = (error: AssessmentError, res: Response): Response => {
+  switch (error.type) {
+    case 'TemplateNotFound':
+      return res.status(404).json({
+        error: {
+          type: error.type,
+          templateId: error.templateId,
+        },
+      });
+    case 'SessionNotFound':
+      return res.status(404).json({
+        error: {
+          type: error.type,
+          sessionId: error.sessionId,
+        },
+      });
+    case 'InsufficientQuestions':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          poolId: error.poolId,
+          required: error.required,
+          available: error.available,
+        },
+      });
+    case 'RepositoryError':
+      return res.status(500).json({
+        error: {
+          type: error.type,
+          message: error.message,
+        },
+      });
+    case 'DesignError':
+      // Handle nested DesignError - map common ones
+      const designError = error.error;
+      if (designError.type === 'TemplateNotFound') {
+        return res.status(404).json({
+          error: {
+            type: 'TemplateNotFound',
+            templateId: designError.templateId,
+          },
+        });
+      }
+      if (designError.type === 'InsufficientQuestions') {
+        return res.status(400).json({
+          error: {
+            type: 'InsufficientQuestions',
+            poolId: designError.poolId,
+            required: designError.required,
+            available: designError.available,
+          },
+        });
+      }
+      return res.status(500).json({
+        error: {
+          type: 'DesignError',
+          message: 'A design error occurred',
+        },
+      });
+    default:
+      return res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'An unexpected error occurred',
+        },
+      });
+  }
+};
+
+export const createAssessmentRouter = (module: AssessmentModule): Router => {
   const router = Router();
 
-  router.get('/sessions', (req: Request, res: Response) => {
-    res.status(200).json(mockSessions);
+  router.get('/sessions', async (req: Request, res: Response) => {
+    try {
+      const sessions = await module.listSessions();
+      res.status(200).json(sessions);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'Failed to list sessions',
+        },
+      });
+    }
+  });
+
+  router.post('/sessions', async (req: Request, res: Response) => {
+    // Validate request body
+    const validation = validateStartSessionRequest(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: {
+          type: 'ValidationError',
+          message: 'Invalid request body',
+          errors: validation.errors,
+        },
+      });
+    }
+
+    try {
+      const body: StartSessionRequestBody = req.body;
+      const result = await module.startSession({
+        templateId: body.templateId,
+        examinerId: body.examinerId,
+        timeLimitMinutes: body.timeLimitMinutes,
+        startTime: new Date(body.startTime),
+        endTime: new Date(body.endTime),
+        participantIdentifiers: body.participantIdentifiers,
+      });
+
+      if (!result.ok) {
+        return handleError(result.error, res);
+      }
+
+      res.status(201).json({ sessionId: result.value });
+    } catch (error) {
+      res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'Failed to start session',
+        },
+      });
+    }
   });
 
   return router;

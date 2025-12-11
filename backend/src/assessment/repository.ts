@@ -46,7 +46,7 @@ export const createSupabaseSessionRepository = (supabase: SupabaseClient): Sessi
     save: async (session: TestSession) => {
       const doc = mapSessionToDocument(session);
       const { error } = await supabase
-        .from('test-sessions')
+        .from('test_sessions')
         .upsert(doc);
 
       if (error) {
@@ -56,7 +56,7 @@ export const createSupabaseSessionRepository = (supabase: SupabaseClient): Sessi
     },
     findById: async (id: string) => {
       const { data, error } = await supabase
-        .from('test-sessions')
+        .from('test_sessions')
         .select('*')
         .eq('id', id)
         .single();
@@ -71,7 +71,7 @@ export const createSupabaseSessionRepository = (supabase: SupabaseClient): Sessi
     },
     listAll: async () => {
       const { data, error } = await supabase
-        .from('test-sessions')
+        .from('test_sessions')
         .select('*');
 
       if (error) {
@@ -89,7 +89,7 @@ export const createSupabaseTestInstanceRepository = (supabase: SupabaseClient): 
     save: async (instance: TestInstance) => {
       const doc = mapInstanceToDocument(instance);
       const { error } = await supabase
-        .from('test-instances')
+        .from('test_instances')
         .upsert(doc);
 
       if (error) {
@@ -100,7 +100,7 @@ export const createSupabaseTestInstanceRepository = (supabase: SupabaseClient): 
     saveMany: async (instances: TestInstance[]) => {
       const docs = instances.map(mapInstanceToDocument);
       const { error } = await supabase
-        .from('test-instances')
+        .from('test_instances')
         .upsert(docs);
 
       if (error) {
@@ -110,7 +110,7 @@ export const createSupabaseTestInstanceRepository = (supabase: SupabaseClient): 
     },
     findBySessionId: async (sessionId: string) => {
       const { data, error } = await supabase
-        .from('test-instances')
+        .from('test_instances')
         .select('*')
         // We need to filter by the session ID inside the JSON data
         .eq('data->>sessionId', sessionId);
