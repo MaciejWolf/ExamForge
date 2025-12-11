@@ -4,9 +4,10 @@ import { configureDesignModule } from '../design/index';
 import { CreateQuestionCommand, CreateTemplateCommand } from '../design/useCases';
 import { v4 as uuidv4 } from 'uuid';
 import { allQuestions, testTemplates } from './seeds/index';
-// When creating test sessions, import deterministic helpers:
-// import { createSeededRandomSelector, createSeededAnswerShuffler } from '../design/useCases/shared/deterministicHelpers';
-// import { hashString } from '../shared/seededRandom';
+import { activeSessions } from './seeds/sessions/activeSessions';
+import { configureAssessmentModule } from '../assessment/index';
+import { createSeededRandomSelector, createSeededAnswerShuffler } from '../design/useCases/shared/deterministicHelpers';
+import { hashString } from '../shared/seededRandom';
 
 dotenv.config();
 
@@ -37,6 +38,54 @@ const cleanDatabase = async (supabaseClient: ReturnType<typeof createSupabaseCli
     console.log(`   🗑️  Deleted ${templateIds.length} template(s)`);
   }
 
+  // Delete test instances first (they reference sessions)
+  const { data: testInstances, error: fetchInstancesError } = await supabaseClient
+    .from('test_instances')
+    .select('id');
+
+  if (fetchInstancesError) {
+    console.error('❌ Error fetching test instances:', fetchInstancesError);
+    throw new Error('Could not fetch test instances for cleanup');
+  }
+
+  if (testInstances && testInstances.length > 0) {
+    const instanceIds = testInstances.map(i => i.id);
+    const { error: instanceError } = await supabaseClient
+      .from('test_instances')
+      .delete()
+      .in('id', instanceIds);
+
+    if (instanceError) {
+      console.error('❌ Error cleaning test instances:', instanceError);
+      throw new Error('Could not clean test instances');
+    }
+    console.log(`   🗑️  Deleted ${instanceIds.length} test instance(s)`);
+  }
+
+  // Delete test sessions (they reference templates)
+  const { data: sessions, error: fetchSessionsError } = await supabaseClient
+    .from('test_sessions')
+    .select('id');
+
+  if (fetchSessionsError) {
+    console.error('❌ Error fetching test sessions:', fetchSessionsError);
+    throw new Error('Could not fetch test sessions for cleanup');
+  }
+
+  if (sessions && sessions.length > 0) {
+    const sessionIds = sessions.map(s => s.id);
+    const { error: sessionError } = await supabaseClient
+      .from('test_sessions')
+      .delete()
+      .in('id', sessionIds);
+
+    if (sessionError) {
+      console.error('❌ Error cleaning test sessions:', sessionError);
+      throw new Error('Could not clean test sessions');
+    }
+    console.log(`   🗑️  Deleted ${sessionIds.length} test session(s)`);
+  }
+
   // Delete all questions
   const { data: questions, error: fetchQuestionsError } = await supabaseClient
     .from('questions')
@@ -64,24 +113,8 @@ const cleanDatabase = async (supabaseClient: ReturnType<typeof createSupabaseCli
   console.log('✅ Database cleaned successfully\n');
 };
 
-const seedQuestions = async () => {
+const seedQuestions = async (supabaseClient: ReturnType<typeof createSupabaseClient>) => {
   console.log('🌱 Starting seed process...\n');
-
-  const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
-
-  if (!supabaseUrl || !supabaseAnonKey) {
-    console.error('❌ Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables');
-    process.exit(1);
-  }
-
-  const supabaseClient = createSupabaseClient({
-    supabaseUrl,
-    supabaseAnonKey,
-  });
-
-  // Clean database before seeding
-  await cleanDatabase(supabaseClient);
 
   const designModule = configureDesignModule({
     supabaseClient,
@@ -171,12 +204,14 @@ const seedQuestions = async () => {
 };
 
 const seedTestTemplates = async (
+  supabaseClient: ReturnType<typeof createSupabaseClient>,
   seedIdToDbIdMap: Map<string, string>,
   designModule: ReturnType<typeof configureDesignModule>
-) => {
+): Promise<Map<string, string>> => {
   console.log(`\n📄 Seeding ${testTemplates.length} test templates...`);
   let templateSuccessCount = 0;
   let templateErrorCount = 0;
+  const templateNameToIdMap = new Map<string, string>();
 
   for (const template of testTemplates) {
     try {
@@ -196,6 +231,7 @@ const seedTestTemplates = async (
       const result = await designModule.createTemplate(command);
 
       if (result.ok) {
+        templateNameToIdMap.set(template.name, result.value.id);
         console.log(`✅ Created template: "${template.name}"`);
         templateSuccessCount++;
       } else {
@@ -217,24 +253,169 @@ const seedTestTemplates = async (
   console.log(`\n📊 Template Seed Summary:`);
   console.log(`   ✅ Successfully created: ${templateSuccessCount} templates`);
   console.log(`   ❌ Failed: ${templateErrorCount} templates`);
+  
+  return templateNameToIdMap;
+};
+
+const seedActiveSessions = async (
+  supabaseClient: ReturnType<typeof createSupabaseClient>,
+  templateNameToIdMap: Map<string, string>
+) => {
+  console.log(`\n🎯 Seeding ${activeSessions.length} active test sessions...`);
+  
+  let sessionSuccessCount = 0;
+  let sessionErrorCount = 0;
+  const sessionSummaries: Array<{ 
+    sessionId: string; 
+    templateName: string; 
+    participantCount: number; 
+    accessCodes: Map<string, string> 
+  }> = [];
+
+  for (const sessionSeed of activeSessions) {
+    try {
+      const templateId = templateNameToIdMap.get(sessionSeed.templateName);
+      if (!templateId) {
+        console.error(`❌ Template not found: "${sessionSeed.templateName}"`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      // Prepare participant identifiers and seed mapping
+      const participantIdentifiers = sessionSeed.participants.map(p => p.name);
+      const participantSeedMap = new Map<string, string>();
+      sessionSeed.participants.forEach(p => {
+        participantSeedMap.set(p.name, p.seed);
+      });
+
+      // Create materializeTemplate function that uses participant-specific seeds
+      // Since startSession calls materializeTemplate in a loop, we need to track
+      // which participant we're on. We'll create a closure that tracks the call order.
+      let participantIndex = 0;
+      const materializeTemplate = async (templateId: string): Promise<import('../shared/result').Result<import('../design/types/testContentPackage').TestContentPackage, import('../design/types/designError').DesignError>> => {
+        const participantName = participantIdentifiers[participantIndex];
+        const participantSeed = participantSeedMap.get(participantName);
+        
+        if (!participantSeed) {
+          throw new Error(`No seed found for participant: ${participantName}`);
+        }
+
+        // Create deterministic design module for this specific participant
+        const participantBaseSeed = hashString(participantSeed);
+        const participantDesignModule = configureDesignModule({
+          supabaseClient,
+          randomSelector: createSeededRandomSelector(participantBaseSeed),
+          answerShuffler: createSeededAnswerShuffler(participantBaseSeed),
+        });
+
+        participantIndex++;
+        return await participantDesignModule.materializeTemplate(templateId);
+      };
+
+      // Configure assessment module with deterministic materializeTemplate
+      const assessmentModule = configureAssessmentModule({
+        supabaseClient,
+        materializeTemplate,
+        templateProvider: {
+          getTemplateNames: async (templateIds: string[]) => {
+            const nameMap = new Map<string, string>();
+            for (const id of templateIds) {
+              for (const [name, mappedId] of templateNameToIdMap.entries()) {
+                if (mappedId === id) {
+                  nameMap.set(id, name);
+                  break;
+                }
+              }
+            }
+            return nameMap;
+          },
+        },
+      });
+
+      // Start the session
+      const result = await assessmentModule.startSession({
+        templateId,
+        examinerId: sessionSeed.examinerId,
+        timeLimitMinutes: sessionSeed.timeLimitMinutes,
+        startTime: sessionSeed.startTime,
+        endTime: sessionSeed.endTime,
+        participantIdentifiers,
+      });
+
+      if (result.ok) {
+        // Get access codes for logging by fetching the session
+        const sessionResult = await assessmentModule.getSessionById(result.value);
+        const accessCodes = new Map<string, string>();
+        
+        if (sessionResult.ok && sessionResult.value.instances) {
+          sessionResult.value.instances.forEach(instance => {
+            accessCodes.set(instance.identifier, instance.accessCode);
+          });
+        }
+
+        sessionSummaries.push({
+          sessionId: result.value,
+          templateName: sessionSeed.templateName,
+          participantCount: participantIdentifiers.length,
+          accessCodes,
+        });
+
+        console.log(`✅ Created session: "${sessionSeed.templateName}" (${participantIdentifiers.length} participants)`);
+        sessionSuccessCount++;
+      } else {
+        console.error(`❌ Failed to create session: "${sessionSeed.templateName}"`);
+        console.error(`   Error: ${result.error.type}`);
+        sessionErrorCount++;
+      }
+    } catch (error) {
+      console.error(`❌ Exception creating session: "${sessionSeed.templateName}"`);
+      console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+      sessionErrorCount++;
+    }
+  }
+
+  console.log(`\n📊 Active Sessions Seed Summary:`);
+  console.log(`   ✅ Successfully created: ${sessionSuccessCount} sessions`);
+  console.log(`   ❌ Failed: ${sessionErrorCount} sessions`);
+  
+  if (sessionSummaries.length > 0) {
+    console.log(`\n📋 Seeded Active Sessions:`);
+    for (const summary of sessionSummaries) {
+      console.log(`   • ${summary.templateName}`);
+      console.log(`     Session ID: ${summary.sessionId}`);
+      console.log(`     Participants: ${summary.participantCount}`);
+      if (summary.accessCodes.size > 0) {
+        console.log(`     Access Codes:`);
+        for (const [participant, code] of summary.accessCodes.entries()) {
+          console.log(`       - ${participant}: ${code}`);
+        }
+      }
+    }
+  }
 };
 
 const seed = async () => {
-  const { seedIdToDbIdMap, designModule } = await seedQuestions();
-  await seedTestTemplates(seedIdToDbIdMap, designModule);
+  const supabaseUrl = process.env.SUPABASE_URL;
+  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
+  if (!supabaseUrl || !supabaseAnonKey) {
+    console.error('❌ Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables');
+    process.exit(1);
+  }
+
+  const supabaseClient = createSupabaseClient({
+    supabaseUrl,
+    supabaseAnonKey,
+  });
+
+  // Clean database before seeding
+  await cleanDatabase(supabaseClient);
+
+  const { seedIdToDbIdMap, designModule } = await seedQuestions(supabaseClient);
+  const templateNameToIdMap = await seedTestTemplates(supabaseClient, seedIdToDbIdMap, designModule);
   
-  // TODO: When creating test sessions (seed-active-sessions, seed-completed-sessions plans):
-  // Use deterministic helpers to ensure repeatable question selection and answer shuffling:
-  // 
-  // const sessionId = 'some-session-id';
-  // const seed = hashString(sessionId);
-  // const deterministicDesignModule = configureDesignModule({
-  //   supabaseClient,
-  //   randomSelector: createSeededRandomSelector(seed),
-  //   answerShuffler: createSeededAnswerShuffler(seed),
-  // });
-  // 
-  // Then use deterministicDesignModule.materializeTemplate() when creating test instances
+  // Seed active sessions
+  await seedActiveSessions(supabaseClient, templateNameToIdMap);
   
   console.log(`\n✨ Seed process completed!`);
 };

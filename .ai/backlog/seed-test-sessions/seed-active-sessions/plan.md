@@ -50,18 +50,18 @@ Notes:
 - Access codes are auto-generated per participant instance
 
 Tasks:
-- [ ] create-session-seed-data
-    - [ ] Create `backend/src/scripts/seeds/sessions/activeSessions.ts`
-    - [ ] Define 2-3 active session seeds with metadata (dates, template refs, participants)
-    - [ ] Use existing seeded templates as references
-- [ ] implement-session-seeding
-    - [ ] Update `backend/src/scripts/seed.ts` to seed sessions after templates
-    - [ ] Configure assessment module with deterministic materializeTemplate
-    - [ ] Call startSession for each session seed
-    - [ ] Map participant identifiers to deterministic seeds
-- [ ] add-logging
-    - [ ] Log session creation with IDs and access codes
-    - [ ] Display summary of seeded active sessions
+- [X] create-session-seed-data
+    - [X] Create `backend/src/scripts/seeds/sessions/activeSessions.ts`
+    - [X] Define 2-3 active session seeds with metadata (dates, template refs, participants)
+    - [X] Use existing seeded templates as references
+- [X] implement-session-seeding
+    - [X] Update `backend/src/scripts/seed.ts` to seed sessions after templates
+    - [X] Configure assessment module with deterministic materializeTemplate
+    - [X] Call startSession for each session seed
+    - [X] Map participant identifiers to deterministic seeds
+- [X] add-logging
+    - [X] Log session creation with IDs and access codes
+    - [X] Display summary of seeded active sessions
 
 Dependencies:
 - Depends on: [../deterministic-randomization/plan.md](../deterministic-randomization/plan.md)
