@@ -26,6 +26,15 @@ describe('Start Test Instance Use Case', () => {
 
     thenTestAlreadyStartedErrorShouldBeReturned(result, accessCode);
   });
+
+  it('Given session startTime in future, when startTestInstance is called, then TestNotOpenYet error is returned', async () => {
+    const module = givenAssessmentModule();
+    const accessCode = await givenSessionWithFutureStartTime(module);
+
+    const result = await module.startTestInstance(accessCode);
+
+    thenTestNotOpenYetErrorShouldBeReturned(result, accessCode);
+  });
 });
 
 // --- Test Helpers ---
@@ -99,6 +108,37 @@ const thenTestAlreadyStartedErrorShouldBeReturned = (
     expect(result.error.type).toBe('TestAlreadyStarted');
     if (result.error.type === 'TestAlreadyStarted') {
       expect(result.error.accessCode).toBe(accessCode);
+    }
+  }
+};
+
+const givenSessionWithFutureStartTime = async (module: AssessmentModule): Promise<string> => {
+  const sessionResult = await module.startSession({
+    templateId: 'template-1',
+    examinerId: 'examiner-1',
+    timeLimitMinutes: 60,
+    startTime: new Date('2024-01-01T11:00:00Z'), // Future time (current time is 10:00:00Z)
+    endTime: new Date('2024-01-01T13:00:00Z'),
+    participantIdentifiers: ['student-1']
+  });
+
+  if (!sessionResult.ok) {
+    throw new Error(`Failed to create test session: ${JSON.stringify(sessionResult.error)}`);
+  }
+
+  return 'TEST-001';
+};
+
+const thenTestNotOpenYetErrorShouldBeReturned = (
+  result: Awaited<ReturnType<AssessmentModule['startTestInstance']>>,
+  accessCode: string
+) => {
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.error.type).toBe('TestNotOpenYet');
+    if (result.error.type === 'TestNotOpenYet') {
+      expect(result.error.accessCode).toBe(accessCode);
+      expect(result.error.startTime).toEqual(new Date('2024-01-01T11:00:00Z'));
     }
   }
 };

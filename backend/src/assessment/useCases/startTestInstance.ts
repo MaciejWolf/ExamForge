@@ -24,6 +24,11 @@ export const startTestInstance = (deps: StartTestInstanceDeps) => async (accessC
     return err({ type: 'SessionNotOpen', sessionId: session.id, status: session.status });
   }
 
+  const now = deps.now();
+  if (now < session.startTime) {
+    return err({ type: 'TestNotOpenYet', accessCode, startTime: session.startTime });
+  }
+
   if (instance.startedAt) {
     return err({ type: 'TestAlreadyStarted', accessCode });
   }

@@ -8,4 +8,5 @@ export type AssessmentError =
   | { type: 'TestInstanceNotFound'; accessCode: string }
   | { type: 'SessionNotOpen'; sessionId: string; status: string }
   | { type: 'TestAlreadyStarted'; accessCode: string }
+  | { type: 'TestNotOpenYet'; accessCode: string; startTime: Date }
   | { type: 'DesignError'; error: DesignError };
