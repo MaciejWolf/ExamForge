@@ -26,7 +26,6 @@ TestSessionReport {
 
 **Create:**
 - `backend/src/assessment/handlers/getSessionReport.ts` - Handler function
-- `backend/src/assessment/handlers/getSessionReport.test.ts` - Unit tests
 - `backend/src/assessment/types/sessionReport.ts` - TypeScript types
 
 **Modify:**
@@ -62,16 +61,6 @@ Dependencies:
   - Aggregate statistics that match participant data
   - Use the incoming `sessionId` in the response
 
-**Tests file:** `backend/src/assessment/handlers/getSessionReport.test.ts`
-- Test successful report retrieval (200)
-- Test with different sessionIds (should return same structure)
-- Verify response matches `TestSessionReport` shape
-
-Dependencies:
-- Depends on: create-types
-
----
-
 ### Task: add-route
 **File:** `backend/src/assessment/routes.ts`
 
@@ -84,12 +73,12 @@ Dependencies:
 ---
 
 ## Tasks
-- [ ] create-types
-- [ ] create-handler-with-hardcoded-data
-- [ ] add-route
+- [x] create-types
+- [x] create-handler-with-hardcoded-data
+- [x] add-route
 
 ## Acceptance Criteria
-- [ ] Endpoint responds with 200 and hardcoded report data
-- [ ] Response matches `TestSessionReport` TypeScript interface
-- [ ] All tests pass
-- [ ] Follows vertical slice architecture pattern
+- [x] Endpoint responds with 200 and hardcoded report data
+- [x] Response matches `TestSessionReport` TypeScript interface
+- [x] All tests pass
+- [x] Follows vertical slice architecture pattern

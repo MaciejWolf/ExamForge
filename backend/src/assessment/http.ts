@@ -213,6 +213,27 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
     }
   });
 
+  router.get('/sessions/:sessionId/report', async (req: Request, res: Response) => {
+    try {
+      const { sessionId } = req.params;
+      const result = await module.getSessionReport(sessionId);
+
+      if (!result.ok) {
+        return handleError(result.error, res);
+      }
+
+      res.status(200).json(result.value);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'Failed to get session report',
+        },
+      });
+    }
+  });
+
   return router;
 };
 

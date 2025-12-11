@@ -73,7 +73,8 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
     getSessionById: useCases.getSessionById({
       sessionRepo,
       testInstanceRepo
-    })
+    }),
+    getSessionReport: useCases.getSessionReport({})
   };
 };
 
