@@ -1,59 +1,49 @@
-# start-test-session
+# start-test-session (Participant Start)
 
-Goal:
-Implement endpoint for participants to start their test session, recording the start timestamp and preventing invalid starts.
+Goal: Implement logic for participants to start their test instance (using `accessCode`), recording the start timestamp and enforcing validation rules.
+
+## Approach
+- **Pattern**: Test-First / TDD (Red-Green-Refactor)
+- **Component**: `startTestInstance` use case (distinct from `startSession` which creates the session)
+- **Scope**: Domain logic first, API endpoint last.
 
 ## Tasks
-- [ ] implement-endpoint
-- [ ] unit-tests
+
+### Phase 1: TDD Domain Logic
+- [ ] **tdd-setup**
+    - Create empty `useCases/startTestInstance.ts`
+    - Create `tests/startTestInstance.test.ts`
+    - Setup mock dependencies (`TestInstanceRepository`, `SessionRepository`, `Clock`)
+- [ ] **test-case-1-successful-start**
+    - *Test*: Given valid access code and open session, when `startTestInstance` is called, then `startedAt` is updated to current time.
+    - *Implement*: Basic fetch instance -> update timestamp -> save logic.
+- [ ] **test-case-2-already-started**
+    - *Test*: Given instance with existing `startedAt`, when called, return `TestAlreadyStarted` error.
+    - *Implement*: Add check for `instance.startedAt`.
+- [ ] **test-case-3-not-open-yet**
+    - *Test*: Given session `startTime` in future, when called, return `TestNotOpenYet` error.
+    - *Implement*: Fetch session -> check `now < startTime`.
+- [ ] **test-case-4-expired**
+    - *Test*: Given session `endTime` in past, when called, return `TestExpired` error.
+    - *Implement*: Check `now > endTime`.
+- [ ] **test-case-5-invalid-code**
+    - *Test*: Given non-existent access code, return `InvalidAccessCode` error.
+    - *Implement*: Handle null/undefined from repository lookup.
+- [ ] **test-case-6-session-closed**
+    - *Test*: Given session status is `completed` or `aborted`, return `SessionClosed` error.
+    - *Implement*: Check `session.status !== 'open'`.
+
+### Phase 2: Integration
+- [ ] **implement-endpoint**
+    - Create controller/route (e.g., `POST /api/assessment/start`)
+    - Extract `accessCode` from request body
+    - Invoke `startTestInstance` use case
+    - Return success or map errors to HTTP status codes
 
 ## Context
 
-**implement-endpoint:**
-- Records startDate timestamp on test instance
+**Use Case:** `startTestInstance`
+- Records `startedAt` timestamp on test instance
 - Called when participant begins taking the test
-- Should prevent starting if already started or expired
+- Should prevent starting if already started, expired, or session is closed
 - Follow vertical slice architecture pattern
-
-**unit-tests:**
-- Unit tests for start session endpoint using Vertical Slice patterns.
-
-**Test Cases (Given/When/Then):**
-
-1.  **Successful Start**
-    *   **Given** a valid test session exists with an `open` status
-    *   **And** the current time is within the session's `startTime` and `endTime` window
-    *   **And** the participant's test instance has **not** been started yet (`startedAt` is undefined)
-    *   **When** the participant requests to start the session with a valid `accessCode`
-    *   **Then** the test instance should be updated with the current server timestamp as `startedAt`
-    *   **And** the result should be successful (returning the test content or instance details)
-
-2.  **Validation: Already Started**
-    *   **Given** a test instance that has already been started (has a `startedAt` timestamp)
-    *   **When** the participant requests to start the session again with the same `accessCode`
-    *   **Then** the operation should fail
-    *   **And** the error should indicate `TestAlreadyStarted`
-
-3.  **Validation: Test Not Open Yet (Future)**
-    *   **Given** a test session is scheduled for the future (current time < `startTime`)
-    *   **When** the participant requests to start the session
-    *   **Then** the operation should fail
-    *   **And** the error should indicate `TestNotOpenYet`
-
-4.  **Validation: Test Expired**
-    *   **Given** a test session has ended (current time > `endTime`)
-    *   **When** the participant requests to start the session
-    *   **Then** the operation should fail
-    *   **And** the error should indicate `TestExpired`
-
-5.  **Validation: Invalid Access Code**
-    *   **Given** no test instance exists for the provided `accessCode`
-    *   **When** the participant requests to start a session with this code
-    *   **Then** the operation should fail
-    *   **And** the error should indicate `InvalidAccessCode` or `TestNotFound`
-
-6.  **Validation: Session Cancelled/Closed**
-    *   **Given** a test session exists but its status is `cancelled` or `closed`
-    *   **When** the participant requests to start the session
-    *   **Then** the operation should fail
-    *   **And** the error should indicate `SessionClosed`
