@@ -17,6 +17,22 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
   const assessmentModule = configureAssessmentModule({
     materializeTemplate: designModule.materializeTemplate,
     supabaseClient: config.designModuleConfig?.supabaseClient,
+    templateProvider: {
+      getTemplateNames: async (ids: string[]) => {
+        const uniqueIds = Array.from(new Set(ids));
+        const names = new Map<string, string>();
+
+        const result = await designModule.getTemplatesByIds(uniqueIds);
+
+        if (result.ok) {
+          result.value.forEach(template => {
+            names.set(template.id, template.name);
+          });
+        }
+
+        return names;
+      }
+    }
   });
 
   app.use(cors({

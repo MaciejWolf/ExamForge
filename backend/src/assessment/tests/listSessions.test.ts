@@ -13,6 +13,13 @@ describe('listSessions Use Case', () => {
       materializeTemplate: async () => ok({} as TestContentPackage),
       idGenerator: () => `session-${++idCounter}`,
       now: () => new Date('2025-01-01T10:00:00Z'),
+      templateProvider: {
+        getTemplateNames: async (ids) => {
+          const names = new Map<string, string>();
+          ids.forEach(id => names.set(id, `Template ${id}`));
+          return names;
+        }
+      }
     });
   });
 
@@ -28,7 +35,10 @@ describe('listSessions Use Case', () => {
     // Assert
     expect(sessions).toHaveLength(3);
     expect(sessions[0].templateId).toBe('template-1');
+    expect(sessions[0].templateName).toBe('Template template-1');
+    expect(sessions[0].participantCount).toBe(2);
     expect(sessions[1].templateId).toBe('template-2');
+    expect(sessions[1].templateName).toBe('Template template-2');
     expect(sessions[2].templateId).toBe('template-3');
   });
 

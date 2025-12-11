@@ -159,6 +159,7 @@ export const createInMemoryQuestionRepository = () => {
 export type TemplateRepository = {
   save: (template: TestTemplate) => Promise<TestTemplate>;
   findById: (id: string) => Promise<TestTemplate | null>;
+  findByIds: (ids: string[]) => Promise<TestTemplate[]>;
   findAll: () => Promise<TestTemplate[]>;
   findByName: (name: string) => Promise<TestTemplate | null>;
   findByQuestionId: (questionId: string) => Promise<TestTemplate[]>;
@@ -213,6 +214,25 @@ export const createSupabaseTemplateRepository = (supabase: SupabaseClient): Temp
       const templateDoc = data as Document<TestTemplate>;
       return mapDocumentToTemplate(templateDoc);
     },
+
+    findByIds: async (ids: string[]) => {
+      if (ids.length === 0) {
+        return [];
+      }
+
+      const { data, error } = await supabase
+        .from('templates')
+        .select('*')
+        .in('id', ids);
+
+      if (error) {
+        console.error('Error finding templates by ids:', error);
+        throw new Error('Could not find templates by ids');
+      }
+
+      return (data as Document<TestTemplate>[]).map(mapDocumentToTemplate);
+    },
+
     findAll: async () => {
       const { data, error } = await supabase
         .from('templates')
@@ -286,6 +306,12 @@ export const createInMemoryTemplateRepository = () => {
 
     findById: async (id: string) => {
       return templates.get(id) || null;
+    },
+
+    findByIds: async (ids: string[]) => {
+      return ids
+        .map(id => templates.get(id))
+        .filter((t): t is TestTemplate => !!t);
     },
 
     findAll: async () => {

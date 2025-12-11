@@ -15,12 +15,15 @@ import { DesignError } from '../design/types/designError';
 
 type MaterializeTemplateFn = (templateId: string) => Promise<Result<TestContentPackage, DesignError>>;
 
+import { TemplateProvider } from './useCases/listSessions';
+
 export type AssessmentModuleConfig = {
   supabaseClient?: SupabaseClient;
   idGenerator?: () => string;
   accessCodeGenerator?: () => string;
   now?: () => Date;
   materializeTemplate: MaterializeTemplateFn;
+  templateProvider: TemplateProvider;
   // Allow overriding repositories generic interface (for testing or specific needs)
   sessionRepo?: SessionRepository;
   testInstanceRepo?: TestInstanceRepository;
@@ -63,7 +66,9 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
       now
     }),
     listSessions: useCases.listSessions({
-      sessionRepo
+      sessionRepo,
+      testInstanceRepo,
+      templateProvider: config.templateProvider
     }),
     getSessionById: useCases.getSessionById({
       sessionRepo,

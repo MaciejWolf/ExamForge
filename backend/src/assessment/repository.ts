@@ -17,6 +17,7 @@ export interface TestInstanceRepository {
   save(instance: TestInstance): Promise<void>;
   saveMany(instances: TestInstance[]): Promise<void>;
   findBySessionId(sessionId: string): Promise<TestInstance[]>;
+  getParticipantCounts(sessionIds: string[]): Promise<Map<string, number>>;
 }
 
 const mapDocumentToSession = (doc: Document<TestSession>): TestSession => {
@@ -121,6 +122,28 @@ export const createSupabaseTestInstanceRepository = (supabase: SupabaseClient): 
       }
 
       return (data as Document<TestInstance>[]).map(mapDocumentToInstance);
+    },
+    getParticipantCounts: async (sessionIds: string[]) => {
+      // Note: This is a naive implementation using multiple queries.
+      // In a production environment with high volume, this should be optimized
+      // using a Postgres View or a raw SQL query with aggregation.
+      const counts = new Map<string, number>();
+
+      await Promise.all(sessionIds.map(async (sessionId) => {
+        const { count, error } = await supabase
+          .from('test_instances')
+          .select('*', { count: 'exact', head: true })
+          .eq('data->>sessionId', sessionId);
+
+        if (error) {
+          console.error(`Error counting instances for session ${sessionId}:`, error);
+          counts.set(sessionId, 0);
+        } else {
+          counts.set(sessionId, count || 0);
+        }
+      }));
+
+      return counts;
     }
   };
 };
@@ -153,6 +176,18 @@ export const createInMemoryTestInstanceRepository = (): TestInstanceRepository =
     },
     findBySessionId: async (sessionId: string) => {
       return Array.from(instances.values()).filter(i => i.sessionId === sessionId);
+    },
+    getParticipantCounts: async (sessionIds: string[]) => {
+      const counts = new Map<string, number>();
+      sessionIds.forEach(id => counts.set(id, 0));
+
+      for (const instance of instances.values()) {
+        if (counts.has(instance.sessionId)) {
+          counts.set(instance.sessionId, (counts.get(instance.sessionId) || 0) + 1);
+        }
+      }
+
+      return counts;
     }
   };
 };

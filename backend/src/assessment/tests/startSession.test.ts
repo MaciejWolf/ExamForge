@@ -29,6 +29,13 @@ describe('startSession Use Case', () => {
       idGenerator: mockIdGenerator,
       accessCodeGenerator: mockAccessCodeGenerator,
       now: () => new Date('2025-01-01T10:00:00Z'),
+      templateProvider: {
+        getTemplateNames: async (ids) => {
+            const names = new Map<string, string>();
+            ids.forEach(id => names.set(id, `Template ${id}`));
+            return names;
+        }
+      }
     });
   });
 

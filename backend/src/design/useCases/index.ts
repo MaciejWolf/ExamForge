@@ -10,5 +10,6 @@ export { createTemplate, CreateTemplateCommand } from './createTemplate';
 export { updateTemplate, UpdateTemplateCommand } from './updateTemplate';
 export { deleteTemplate } from './deleteTemplate';
 export { getTemplate } from './getTemplate';
+export { getTemplatesByIds } from './getTemplatesByIds';
 export { listTemplates } from './listTemplates';
 export { materializeTemplate } from './materializeTemplate';
