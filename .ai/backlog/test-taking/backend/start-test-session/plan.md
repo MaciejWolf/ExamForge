@@ -10,11 +10,11 @@ Goal: Implement logic for participants to start their test instance (using `acce
 ## Tasks
 
 ### Phase 1: TDD Domain Logic
-- [ ] **tdd-setup**
+- [x] **tdd-setup**
     - Create empty `useCases/startTestInstance.ts`
     - Create `tests/startTestInstance.test.ts`
     - Setup mock dependencies (`TestInstanceRepository`, `SessionRepository`, `Clock`)
-- [ ] **test-case-1-successful-start**
+- [x] **test-case-1-successful-start**
     - *Test*: Given valid access code and open session, when `startTestInstance` is called, then `startedAt` is updated to current time.
     - *Implement*: Basic fetch instance -> update timestamp -> save logic.
 - [ ] **test-case-2-already-started**

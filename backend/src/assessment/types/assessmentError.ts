@@ -5,4 +5,6 @@ export type AssessmentError =
   | { type: 'RepositoryError'; message: string; internalError?: any }
   | { type: 'InsufficientQuestions'; poolId: string; required: number; available: number }
   | { type: 'SessionNotFound'; sessionId: string }
+  | { type: 'TestInstanceNotFound'; accessCode: string }
+  | { type: 'SessionNotOpen'; sessionId: string; status: string }
   | { type: 'DesignError'; error: DesignError };

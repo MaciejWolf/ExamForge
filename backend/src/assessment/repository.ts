@@ -17,6 +17,7 @@ export interface TestInstanceRepository {
   save(instance: TestInstance): Promise<void>;
   saveMany(instances: TestInstance[]): Promise<void>;
   findBySessionId(sessionId: string): Promise<TestInstance[]>;
+  findByAccessCode(accessCode: string): Promise<TestInstance | null>;
   getParticipantCounts(sessionIds: string[]): Promise<Map<string, number>>;
 }
 
@@ -123,6 +124,20 @@ export const createSupabaseTestInstanceRepository = (supabase: SupabaseClient): 
 
       return (data as Document<TestInstance>[]).map(mapDocumentToInstance);
     },
+    findByAccessCode: async (accessCode: string) => {
+      const { data, error } = await supabase
+        .from('test_instances')
+        .select('*')
+        .eq('data->>accessCode', accessCode)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error finding instance by access code:', error);
+        throw new Error('Could not find instance');
+      }
+
+      return data ? mapDocumentToInstance(data as Document<TestInstance>) : null;
+    },
     getParticipantCounts: async (sessionIds: string[]) => {
       // Note: This is a naive implementation using multiple queries.
       // In a production environment with high volume, this should be optimized
@@ -176,6 +191,9 @@ export const createInMemoryTestInstanceRepository = (): TestInstanceRepository =
     },
     findBySessionId: async (sessionId: string) => {
       return Array.from(instances.values()).filter(i => i.sessionId === sessionId);
+    },
+    findByAccessCode: async (accessCode: string) => {
+      return Array.from(instances.values()).find(i => i.accessCode === accessCode) || null;
     },
     getParticipantCounts: async (sessionIds: string[]) => {
       const counts = new Map<string, number>();
