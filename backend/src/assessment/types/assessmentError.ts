@@ -7,4 +7,5 @@ export type AssessmentError =
   | { type: 'SessionNotFound'; sessionId: string }
   | { type: 'TestInstanceNotFound'; accessCode: string }
   | { type: 'SessionNotOpen'; sessionId: string; status: string }
+  | { type: 'TestAlreadyStarted'; accessCode: string }
   | { type: 'DesignError'; error: DesignError };

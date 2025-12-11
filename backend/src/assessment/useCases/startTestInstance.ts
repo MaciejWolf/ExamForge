@@ -24,10 +24,12 @@ export const startTestInstance = (deps: StartTestInstanceDeps) => async (accessC
     return err({ type: 'SessionNotOpen', sessionId: session.id, status: session.status });
   }
 
-  if (!instance.startedAt) {
-    instance.startedAt = deps.now();
-    await deps.testInstanceRepo.save(instance);
+  if (instance.startedAt) {
+    return err({ type: 'TestAlreadyStarted', accessCode });
   }
+
+  instance.startedAt = deps.now();
+  await deps.testInstanceRepo.save(instance);
 
   return ok(instance);
 };

@@ -13,6 +13,19 @@ describe('Start Test Instance Use Case', () => {
 
     thenTestInstanceShouldBeStarted(result, accessCode);
   });
+
+  it('Given instance with existing startedAt, when startTestInstance is called, then TestAlreadyStarted error is returned', async () => {
+    const module = givenAssessmentModule();
+    const accessCode = await givenOpenSessionWithTestInstance(module);
+
+    // Start the test instance once
+    await module.startTestInstance(accessCode);
+
+    // Try to start it again
+    const result = await module.startTestInstance(accessCode);
+
+    thenTestAlreadyStartedErrorShouldBeReturned(result, accessCode);
+  });
 });
 
 // --- Test Helpers ---
@@ -74,5 +87,18 @@ const thenTestInstanceShouldBeStarted = (
     expect(result.value.accessCode).toBe(accessCode);
     expect(result.value.startedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
     expect(result.value.identifier).toBe('student-1');
+  }
+};
+
+const thenTestAlreadyStartedErrorShouldBeReturned = (
+  result: Awaited<ReturnType<AssessmentModule['startTestInstance']>>,
+  accessCode: string
+) => {
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.error.type).toBe('TestAlreadyStarted');
+    if (result.error.type === 'TestAlreadyStarted') {
+      expect(result.error.accessCode).toBe(accessCode);
+    }
   }
 };
