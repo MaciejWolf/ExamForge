@@ -1,6 +1,9 @@
 import { Router, Request, Response } from 'express';
 import { AssessmentModule } from './index';
 import { AssessmentError } from './types/assessmentError';
+import { ParticipantTestContent, ParticipantQuestion } from './types/participantQuestion';
+import { Question } from '../design/types/question';
+import { TestInstance } from './types/testInstance';
 
 type StartSessionRequestBody = {
   templateId: string;
@@ -9,6 +12,40 @@ type StartSessionRequestBody = {
   startTime: string; // ISO date string
   endTime: string; // ISO date string
   participantIdentifiers: string[];
+};
+
+type StartTestInstanceRequestBody = {
+  accessCode: string;
+};
+
+type ParticipantTestInstance = Omit<TestInstance, 'testContent'> & {
+  testContent: ParticipantTestContent;
+};
+
+const sanitizeQuestion = (question: Question): ParticipantQuestion => {
+  const { correctAnswerId, ...sanitized } = question;
+  return sanitized as ParticipantQuestion;
+};
+
+const toParticipantTestInstance = (instance: TestInstance): ParticipantTestInstance => {
+  const sanitizedSections = instance.testContent.sections.map(section => ({
+    poolId: section.poolId,
+    poolName: section.poolName,
+    points: section.points,
+    questions: section.questions.map(sanitizeQuestion)
+  }));
+
+  const sanitizedContent: ParticipantTestContent = {
+    id: instance.testContent.id,
+    templateId: instance.testContent.templateId,
+    sections: sanitizedSections,
+    createdAt: instance.testContent.createdAt
+  };
+
+  return {
+    ...instance,
+    testContent: sanitizedContent
+  };
 };
 
 const validateStartSessionRequest = (body: any): { valid: boolean; errors: string[] } => {
@@ -63,6 +100,16 @@ const validateStartSessionRequest = (body: any): { valid: boolean; errors: strin
   return { valid: errors.length === 0, errors };
 };
 
+const validateStartTestInstanceRequest = (body: any): { valid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+
+  if (!body.accessCode || typeof body.accessCode !== 'string' || body.accessCode.trim() === '') {
+    errors.push('accessCode is required and must be a non-empty string');
+  }
+
+  return { valid: errors.length === 0, errors };
+};
+
 const handleError = (error: AssessmentError, res: Response): Response => {
   switch (error.type) {
     case 'TemplateNotFound':
@@ -77,6 +124,51 @@ const handleError = (error: AssessmentError, res: Response): Response => {
         error: {
           type: error.type,
           sessionId: error.sessionId,
+        },
+      });
+    case 'TestInstanceNotFound':
+      return res.status(404).json({
+        error: {
+          type: error.type,
+          accessCode: error.accessCode,
+        },
+      });
+    case 'InvalidAccessCode':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          accessCode: error.accessCode,
+        },
+      });
+    case 'SessionClosed':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          sessionId: error.sessionId,
+          status: error.status,
+        },
+      });
+    case 'TestAlreadyStarted':
+      return res.status(409).json({
+        error: {
+          type: error.type,
+          accessCode: error.accessCode,
+        },
+      });
+    case 'TestNotOpenYet':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          accessCode: error.accessCode,
+          startTime: error.startTime.toISOString(),
+        },
+      });
+    case 'TestExpired':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          accessCode: error.accessCode,
+          endTime: error.endTime.toISOString(),
         },
       });
     case 'InsufficientQuestions':
@@ -229,6 +321,40 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
         error: {
           type: 'InternalServerError',
           message: 'Failed to get session report',
+        },
+      });
+    }
+  });
+
+  router.post('/start', async (req: Request, res: Response) => {
+    // Validate request body
+    const validation = validateStartTestInstanceRequest(req.body);
+    if (!validation.valid) {
+      return res.status(400).json({
+        error: {
+          type: 'ValidationError',
+          message: 'Invalid request body',
+          errors: validation.errors,
+        },
+      });
+    }
+
+    try {
+      const body: StartTestInstanceRequestBody = req.body;
+      const result = await module.startTestInstance(body.accessCode);
+
+      if (!result.ok) {
+        return handleError(result.error, res);
+      }
+
+      const participantInstance = toParticipantTestInstance(result.value);
+      res.status(200).json(participantInstance);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'Failed to start test instance',
         },
       });
     }

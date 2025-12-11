@@ -10,5 +10,6 @@ export type AssessmentError =
   | { type: 'TestAlreadyStarted'; accessCode: string }
   | { type: 'TestNotOpenYet'; accessCode: string; startTime: Date }
   | { type: 'TestExpired'; accessCode: string; endTime: Date }
+  | { type: 'TestNotStarted'; accessCode: string }
   | { type: 'DesignError'; error: DesignError }
   | { type: 'InvalidAccessCode'; accessCode: string };
