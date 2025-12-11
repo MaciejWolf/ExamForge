@@ -8,6 +8,9 @@ Context:
 - Need deterministic behavior without changing the existing API
 - `materializeTemplate` already accepts optional `randomSelector` and `answerShuffler` parameters
 
+**📌 NOTE:**
+This plan does NOT create test sessions. It only sets up the infrastructure for deterministic randomization. Actual test session creation happens in the `seed-active-sessions` and `seed-completed-sessions` plans, which depend on this implementation.
+
 Tasks:
 - [ ] add-seeded-rng-utility
     - [ ] Install `seedrandom` package
