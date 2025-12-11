@@ -5,9 +5,15 @@ import { CreateQuestionCommand, CreateTemplateCommand } from '../design/useCases
 import { v4 as uuidv4 } from 'uuid';
 import { allQuestions, testTemplates } from './seeds/index';
 import { activeSessions } from './seeds/sessions/activeSessions';
+import { completedSessions } from './seeds/sessions/completedSessions';
 import { configureAssessmentModule } from '../assessment/index';
 import { createSeededRandomSelector, createSeededAnswerShuffler } from '../design/useCases/shared/deterministicHelpers';
 import { hashString } from '../shared/seededRandom';
+import type { Result } from '../shared/result';
+import type { TestContentPackage } from '../design/types/testContentPackage';
+import type { DesignError } from '../design/types/designError';
+import type { TestSession } from '../assessment/types/testSession';
+import type { TestInstance } from '../assessment/types/testInstance';
 
 dotenv.config();
 
@@ -292,7 +298,7 @@ const seedActiveSessions = async (
       // Since startSession calls materializeTemplate in a loop, we need to track
       // which participant we're on. We'll create a closure that tracks the call order.
       let participantIndex = 0;
-      const materializeTemplate = async (templateId: string): Promise<import('../shared/result').Result<import('../design/types/testContentPackage').TestContentPackage, import('../design/types/designError').DesignError>> => {
+      const materializeTemplate = async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
         const participantName = participantIdentifiers[participantIndex];
         const participantSeed = participantSeedMap.get(participantName);
         
@@ -394,6 +400,237 @@ const seedActiveSessions = async (
   }
 };
 
+const seedCompletedSessions = async (
+  supabaseClient: ReturnType<typeof createSupabaseClient>,
+  templateNameToIdMap: Map<string, string>
+) => {
+  console.log(`\n📜 Seeding ${completedSessions.length} completed test sessions...`);
+  
+  let sessionSuccessCount = 0;
+  let sessionErrorCount = 0;
+  const sessionSummaries: Array<{ 
+    sessionId: string; 
+    templateName: string; 
+    status: 'completed' | 'aborted';
+    participantCount: number; 
+  }> = [];
+
+  for (const sessionSeed of completedSessions) {
+    try {
+      const templateId = templateNameToIdMap.get(sessionSeed.templateName);
+      if (!templateId) {
+        console.error(`❌ Template not found: "${sessionSeed.templateName}"`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      // Prepare participant identifiers and seed mapping
+      const participantIdentifiers = sessionSeed.participants.map(p => p.name);
+      const participantSeedMap = new Map<string, string>();
+      const participantCompletionMap = new Map<string, number>();
+      sessionSeed.participants.forEach(p => {
+        participantSeedMap.set(p.name, p.seed);
+        participantCompletionMap.set(p.name, p.completionPercentage);
+      });
+
+      // Create materializeTemplate function that uses participant-specific seeds
+      let participantIndex = 0;
+      const materializeTemplate = async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
+        const participantName = participantIdentifiers[participantIndex];
+        const participantSeed = participantSeedMap.get(participantName);
+        
+        if (!participantSeed) {
+          throw new Error(`No seed found for participant: ${participantName}`);
+        }
+
+        // Create deterministic design module for this specific participant
+        const participantBaseSeed = hashString(participantSeed);
+        const participantDesignModule = configureDesignModule({
+          supabaseClient,
+          randomSelector: createSeededRandomSelector(participantBaseSeed),
+          answerShuffler: createSeededAnswerShuffler(participantBaseSeed),
+        });
+
+        participantIndex++;
+        return await participantDesignModule.materializeTemplate(templateId);
+      };
+
+      // Configure assessment module with deterministic materializeTemplate
+      const assessmentModule = configureAssessmentModule({
+        supabaseClient,
+        materializeTemplate,
+        templateProvider: {
+          getTemplateNames: async (templateIds: string[]) => {
+            const nameMap = new Map<string, string>();
+            for (const id of templateIds) {
+              for (const [name, mappedId] of templateNameToIdMap.entries()) {
+                if (mappedId === id) {
+                  nameMap.set(id, name);
+                  break;
+                }
+              }
+            }
+            return nameMap;
+          },
+        },
+      });
+
+      // Start the session
+      const result = await assessmentModule.startSession({
+        templateId,
+        examinerId: sessionSeed.examinerId,
+        timeLimitMinutes: sessionSeed.timeLimitMinutes,
+        startTime: sessionSeed.startTime,
+        endTime: sessionSeed.endTime,
+        participantIdentifiers,
+      });
+
+      if (!result.ok) {
+        console.error(`❌ Failed to create session: "${sessionSeed.templateName}"`);
+        console.error(`   Error: ${result.error.type}`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      const sessionId = result.value;
+
+      // Update session status
+      const { data: sessionData, error: sessionFetchError } = await supabaseClient
+        .from('test_sessions')
+        .select('*')
+        .eq('id', sessionId)
+        .single();
+
+      if (sessionFetchError || !sessionData) {
+        console.error(`❌ Failed to fetch session for status update: "${sessionSeed.templateName}"`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      const sessionDoc = sessionData as { id: string; data: TestSession };
+      const updatedSession = {
+        ...sessionDoc.data,
+        status: sessionSeed.status,
+        updatedAt: new Date(),
+      };
+
+      const { error: sessionUpdateError } = await supabaseClient
+        .from('test_sessions')
+        .update({ data: updatedSession })
+        .eq('id', sessionId);
+
+      if (sessionUpdateError) {
+        console.error(`❌ Failed to update session status: "${sessionSeed.templateName}"`);
+        console.error(`   Error: ${sessionUpdateError.message}`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      // Get all instances for this session
+      const { data: instanceData, error: instanceFetchError } = await supabaseClient
+        .from('test_instances')
+        .select('*')
+        .eq('data->>sessionId', sessionId);
+
+      if (instanceFetchError) {
+        console.error(`❌ Failed to fetch instances: "${sessionSeed.templateName}"`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      // Update instances with startedAt and completedAt dates
+      const instanceUpdates: Array<{ id: string; data: TestInstance }> = [];
+      
+      for (const instanceDoc of instanceData as Array<{ id: string; data: TestInstance }>) {
+        const instance = instanceDoc.data;
+        const participant = sessionSeed.participants.find(p => p.name === instance.identifier);
+        
+        if (!participant) {
+          continue;
+        }
+
+        // Calculate actual start time (session start + offset)
+        const actualStartTime = new Date(sessionSeed.startTime);
+        actualStartTime.setMinutes(actualStartTime.getMinutes() + participant.startTimeOffsetMinutes);
+
+        // Calculate completion time
+        let completedAt: Date | undefined;
+        if (sessionSeed.status === 'completed') {
+          // For completed sessions, set completedAt to endTime (or slightly before for realism)
+          completedAt = new Date(sessionSeed.endTime);
+          // Subtract a few minutes to make it more realistic (participants finish before deadline)
+          completedAt.setMinutes(completedAt.getMinutes() - Math.floor(Math.random() * 10));
+        } else if (sessionSeed.status === 'aborted' && sessionSeed.abortTime) {
+          // For aborted sessions, only mark as completed if they reached 100%
+          // Otherwise, they were interrupted mid-test
+          if (participant.completionPercentage >= 100) {
+            completedAt = new Date(sessionSeed.abortTime);
+            completedAt.setMinutes(completedAt.getMinutes() - 5); // Finished just before abort
+          }
+          // If less than 100%, leave completedAt undefined (in progress when aborted)
+        }
+
+        const updatedInstance: TestInstance = {
+          ...instance,
+          startedAt: actualStartTime,
+          completedAt: completedAt,
+        };
+
+        instanceUpdates.push({
+          id: instanceDoc.id,
+          data: updatedInstance,
+        });
+      }
+
+      // Update all instances
+      for (const update of instanceUpdates) {
+        const { error: instanceUpdateError } = await supabaseClient
+          .from('test_instances')
+          .update({ data: update.data })
+          .eq('id', update.id);
+
+        if (instanceUpdateError) {
+          console.error(`❌ Failed to update instance ${update.id}: ${instanceUpdateError.message}`);
+        }
+      }
+
+      sessionSummaries.push({
+        sessionId,
+        templateName: sessionSeed.templateName,
+        status: sessionSeed.status,
+        participantCount: participantIdentifiers.length,
+      });
+
+      const statusEmoji = sessionSeed.status === 'completed' ? '✅' : '⚠️';
+      console.log(`${statusEmoji} Created ${sessionSeed.status} session: "${sessionSeed.templateName}" (${participantIdentifiers.length} participants)`);
+      sessionSuccessCount++;
+    } catch (error) {
+      console.error(`❌ Exception creating session: "${sessionSeed.templateName}"`);
+      console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+      sessionErrorCount++;
+    }
+  }
+
+  console.log(`\n📊 Completed Sessions Seed Summary:`);
+  console.log(`   ✅ Successfully created: ${sessionSuccessCount} sessions`);
+  console.log(`   ❌ Failed: ${sessionErrorCount} sessions`);
+  
+  if (sessionSummaries.length > 0) {
+    console.log(`\n📋 Seeded Completed Sessions:`);
+    // Sort by date (oldest first)
+    const sortedSummaries = sessionSummaries.sort((a, b) => {
+      // We'll sort by template name for now since we don't have dates in summary
+      return a.templateName.localeCompare(b.templateName);
+    });
+    for (const summary of sortedSummaries) {
+      const statusLabel = summary.status === 'completed' ? 'Completed' : 'Aborted';
+      console.log(`   • ${summary.templateName} [${statusLabel}]`);
+      console.log(`     Session ID: ${summary.sessionId}`);
+      console.log(`     Participants: ${summary.participantCount}`);
+    }
+  }
+};
+
 const seed = async () => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -416,6 +653,9 @@ const seed = async () => {
   
   // Seed active sessions
   await seedActiveSessions(supabaseClient, templateNameToIdMap);
+  
+  // Seed completed sessions (oldest first)
+  await seedCompletedSessions(supabaseClient, templateNameToIdMap);
   
   console.log(`\n✨ Seed process completed!`);
 };
