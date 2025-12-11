@@ -12,14 +12,14 @@ Context:
 This plan does NOT create test sessions. It only sets up the infrastructure for deterministic randomization. Actual test session creation happens in the `seed-active-sessions` and `seed-completed-sessions` plans, which depend on this implementation.
 
 Tasks:
-- [ ] add-seeded-rng-utility
-    - [ ] Install `seedrandom` package
-    - [ ] Create utility in `backend/src/shared/seededRandom.ts`
-    - [ ] Export seeded versions of array shuffle and selection functions
-- [ ] create-deterministic-helpers
-    - [ ] Create `backend/src/design/useCases/shared/deterministicHelpers.ts`
-    - [ ] Implement seeded randomSelector that takes a seed parameter
-    - [ ] Implement seeded answerShuffler that takes a seed parameter
-- [ ] update-seed-script
-    - [ ] Modify seed script to use deterministic helpers when creating test instances
-    - [ ] Use a hash of the session ID as the seed
+- [X] add-seeded-rng-utility
+    - [X] Install `seedrandom` package
+    - [X] Create utility in `backend/src/shared/seededRandom.ts`
+    - [X] Export seeded versions of array shuffle and selection functions
+- [X] create-deterministic-helpers
+    - [X] Create `backend/src/design/useCases/shared/deterministicHelpers.ts`
+    - [X] Implement seeded randomSelector that takes a seed parameter
+    - [X] Implement seeded answerShuffler that takes a seed parameter
+- [X] update-seed-script
+    - [X] Modify seed script to use deterministic helpers when creating test instances
+    - [X] Use a hash of the session ID as the seed

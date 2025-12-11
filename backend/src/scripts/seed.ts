@@ -4,6 +4,9 @@ import { configureDesignModule } from '../design/index';
 import { CreateQuestionCommand, CreateTemplateCommand } from '../design/useCases';
 import { v4 as uuidv4 } from 'uuid';
 import { allQuestions, testTemplates } from './seeds/index';
+// When creating test sessions, import deterministic helpers:
+// import { createSeededRandomSelector, createSeededAnswerShuffler } from '../design/useCases/shared/deterministicHelpers';
+// import { hashString } from '../shared/seededRandom';
 
 dotenv.config();
 
@@ -219,6 +222,20 @@ const seedTestTemplates = async (
 const seed = async () => {
   const { seedIdToDbIdMap, designModule } = await seedQuestions();
   await seedTestTemplates(seedIdToDbIdMap, designModule);
+  
+  // TODO: When creating test sessions (seed-active-sessions, seed-completed-sessions plans):
+  // Use deterministic helpers to ensure repeatable question selection and answer shuffling:
+  // 
+  // const sessionId = 'some-session-id';
+  // const seed = hashString(sessionId);
+  // const deterministicDesignModule = configureDesignModule({
+  //   supabaseClient,
+  //   randomSelector: createSeededRandomSelector(seed),
+  //   answerShuffler: createSeededAnswerShuffler(seed),
+  // });
+  // 
+  // Then use deterministicDesignModule.materializeTemplate() when creating test instances
+  
   console.log(`\n✨ Seed process completed!`);
 };
 

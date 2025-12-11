@@ -10,7 +10,7 @@ Context:
 - Future: will add completed test instances with specific scores
 
 Tasks:
-- [ ] [deterministic-randomization](./deterministic-randomization/plan.md)
+- [X] [deterministic-randomization](./deterministic-randomization/plan.md)
 - [ ] [seed-active-sessions](./seed-active-sessions/plan.md)
 - [ ] [seed-completed-sessions](./seed-completed-sessions/plan.md)
 - [ ] [seed-future-sessions](./seed-future-sessions/plan.md)
