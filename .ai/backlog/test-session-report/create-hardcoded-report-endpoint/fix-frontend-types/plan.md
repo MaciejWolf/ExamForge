@@ -52,7 +52,7 @@ Convert snake_case properties to camelCase in frontend types to match TypeScript
 - Any other components using these types
 
 ## Acceptance Criteria
-- [ ] All type definitions use camelCase
-- [ ] All code using these types is updated
-- [ ] No TypeScript errors
-- [ ] No linter warnings
+- [x] All type definitions use camelCase
+- [x] All code using these types is updated
+- [x] No TypeScript errors
+- [x] No linter warnings
