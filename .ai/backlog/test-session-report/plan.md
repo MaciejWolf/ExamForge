@@ -10,7 +10,7 @@ Context:
 - First step: return hardcoded data to verify frontend/backend compatibility
 
 Tasks:
-- [ ] [create-hardcoded-report-endpoint](./create-hardcoded-report-endpoint/plan.md)
+- [X] [create-hardcoded-report-endpoint](./create-hardcoded-report-endpoint/plan.md)
 - [ ] [implement-report-data-service](./implement-report-data-service/plan.md)
 - [ ] [integrate-real-data](./integrate-real-data/plan.md)
 
