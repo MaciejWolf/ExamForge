@@ -64,8 +64,8 @@ export const ParticipantDetailPage = () => {
   };
 
   const getAnswerText = (question: Question, answer: ParticipantAnswer | undefined): string => {
-    if (!answer || !answer.selected_answer_id) return 'Not answered';
-    const selectedAnswer = question.answers.find((a) => a.id === answer.selected_answer_id);
+    if (!answer || !answer.selectedAnswerId) return 'Not answered';
+    const selectedAnswer = question.answers.find((a) => a.id === answer.selectedAnswerId);
     return selectedAnswer?.text || 'Unknown';
   };
 
@@ -140,7 +140,7 @@ export const ParticipantDetailPage = () => {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Access Code</p>
                     <p className="text-base">
-                      {participant.access_code} <span className="text-red-600 text-sm">(unused)</span>
+                      {participant.accessCode} <span className="text-red-600 text-sm">(unused)</span>
                     </p>
                   </div>
                 </div>
@@ -161,22 +161,22 @@ export const ParticipantDetailPage = () => {
                   <div>
                     <p className="text-sm font-medium text-muted-foreground">Access Code</p>
                     <p className="text-base">
-                      {participant.access_code} <span className="text-green-600 text-sm">(used)</span>
+                      {participant.accessCode} <span className="text-green-600 text-sm">(used)</span>
                     </p>
                   </div>
                 </div>
 
                 {/* Time Tracking */}
-                {participant.started_at && (
+                {participant.startedAt && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Started</p>
-                      <p className="text-base">{formatDateTime(participant.started_at)}</p>
+                      <p className="text-base">{formatDateTime(participant.startedAt)}</p>
                     </div>
-                    {participant.completed_at ? (
+                    {participant.completedAt ? (
                       <div>
                         <p className="text-sm font-medium text-muted-foreground">Completed</p>
-                        <p className="text-base">{formatDateTime(participant.completed_at)}</p>
+                        <p className="text-base">{formatDateTime(participant.completedAt)}</p>
                       </div>
                     ) : (
                       <div>
@@ -188,20 +188,20 @@ export const ParticipantDetailPage = () => {
                 )}
 
                 {/* Final Score */}
-                {participant.time_taken_minutes !== undefined && participant.max_score && (
+                {participant.timeTakenMinutes !== undefined && participant.maxScore && (
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Time Taken</p>
                       <p className="text-base">
-                        {formatTimeTaken(participant.time_taken_minutes, timeLimitMinutes)}
+                        {formatTimeTaken(participant.timeTakenMinutes, timeLimitMinutes)}
                       </p>
                     </div>
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Final Score</p>
                       <p className="text-base font-semibold">
-                        {participant.total_score ?? 0}/{participant.max_score} (
-                        {participant.max_score > 0
-                          ? Math.round(((participant.total_score ?? 0) / participant.max_score) * 100)
+                        {participant.totalScore ?? 0}/{participant.maxScore} (
+                        {participant.maxScore > 0
+                          ? Math.round(((participant.totalScore ?? 0) / participant.maxScore) * 100)
                           : 0}
                         %)
                         {participant.status === 'in_progress' && (
@@ -235,9 +235,9 @@ export const ParticipantDetailPage = () => {
                   </TableHeader>
                   <TableBody>
                     {detail.questions.map((question, index) => {
-                      const answer = detail.answers.find((a) => a.question_id === question.id);
-                      const isCorrect = answer?.is_correct ?? false;
-                      const pointsEarned = answer?.points_earned ?? 0;
+                      const answer = detail.answers.find((a) => a.questionId === question.id);
+                      const isCorrect = answer?.isCorrect ?? false;
+                      const pointsEarned = answer?.pointsEarned ?? 0;
 
                       return (
                         <TableRow key={question.id}>

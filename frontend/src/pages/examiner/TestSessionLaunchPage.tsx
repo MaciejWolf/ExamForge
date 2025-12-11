@@ -213,7 +213,7 @@ const TestSessionLaunchPage = () => {
   const handleCopyAll = async () => {
     try {
       const text = participants
-        .map((p) => `${p.identifier}: ${p.access_code}`)
+        .map((p) => `${p.identifier}: ${p.accessCode}`)
         .join('\n');
       await navigator.clipboard.writeText(text);
       toast.success('All access codes copied to clipboard');
@@ -473,17 +473,17 @@ const TestSessionLaunchPage = () => {
                         </TableCell>
                         <TableCell>
                           <code className="px-2 py-1 bg-muted rounded text-sm font-mono">
-                            {participant.access_code}
+                            {participant.accessCode}
                           </code>
                         </TableCell>
                         <TableCell className="text-right">
                           <Button
                             variant="ghost"
                             size="sm"
-                            onClick={() => handleCopyCode(participant.access_code)}
+                            onClick={() => handleCopyCode(participant.accessCode)}
                             className="gap-2"
                           >
-                            {copiedCode === participant.access_code ? (
+                            {copiedCode === participant.accessCode ? (
                               <>
                                 <Check className="h-4 w-4" />
                                 Copied

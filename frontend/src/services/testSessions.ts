@@ -82,17 +82,17 @@ export const testSessionsApi = {
     // Map backend instances to frontend participants
     const mappedParticipants: Participant[] = backendResponse.instances.map((instance) => ({
       id: instance.id,
-      session_id: instance.sessionId,
+      sessionId: instance.sessionId,
       identifier: instance.identifier,
-      access_code: instance.accessCode,
+      accessCode: instance.accessCode,
       status: instance.startedAt ? (instance.completedAt ? 'completed' : 'in_progress') : 'not_started',
-      started_at: instance.startedAt,
-      completed_at: instance.completedAt,
-      time_taken_minutes: instance.startedAt && instance.completedAt
+      startedAt: instance.startedAt,
+      completedAt: instance.completedAt,
+      timeTakenMinutes: instance.startedAt && instance.completedAt
         ? Math.round((new Date(instance.completedAt).getTime() - new Date(instance.startedAt).getTime()) / (1000 * 60))
         : undefined,
-      total_score: instance.totalScore,
-      max_score: undefined, // Not provided by backend
+      totalScore: instance.totalScore,
+      maxScore: undefined, // Not provided by backend
       createdAt: instance.createdAt,
     }));
 

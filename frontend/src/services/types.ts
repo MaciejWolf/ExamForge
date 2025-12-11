@@ -88,39 +88,39 @@ export interface UpdateTemplateRequest {
 
 export interface Participant {
   id: string;
-  session_id: string;
+  sessionId: string;
   identifier: string;
-  access_code: string;
+  accessCode: string;
   status: 'not_started' | 'in_progress' | 'completed' | 'timed_out';
-  started_at?: string;
-  completed_at?: string;
-  time_taken_minutes?: number;
-  total_score?: number;
-  max_score?: number;
+  startedAt?: string;
+  completedAt?: string;
+  timeTakenMinutes?: number;
+  totalScore?: number;
+  maxScore?: number;
   createdAt: string;
 }
 
 export interface SessionStatistics {
-  average_score: number;
-  highest_score: number;
-  lowest_score: number;
-  completion_rate: number;
-  completed_count: number;
-  in_progress_count: number;
-  not_started_count: number;
-  total_participants: number;
+  averageScore: number;
+  highestScore: number;
+  lowestScore: number;
+  completionRate: number;
+  completedCount: number;
+  inProgressCount: number;
+  notStartedCount: number;
+  totalParticipants: number;
 }
 
 export interface QuestionAnalysis {
-  question_id: string;
-  question_number: number;
-  question_content: string;
-  correct_answer: string;
+  questionId: string;
+  questionNumber: number;
+  questionContent: string;
+  correctAnswer: string;
   points: number;
-  correct_responses: number;
-  total_responses: number;
-  correct_percentage: number;
-  participants_count: number;
+  correctResponses: number;
+  totalResponses: number;
+  correctPercentage: number;
+  participantsCount: number;
 }
 
 export interface TestSession {
@@ -151,11 +151,11 @@ export interface TestSessionReport {
 }
 
 export interface ParticipantAnswer {
-  question_id: string;
-  selected_answer_id: string | null;
-  is_correct: boolean;
-  points_earned: number;
-  points_possible: number;
+  questionId: string;
+  selectedAnswerId: string | null;
+  isCorrect: boolean;
+  pointsEarned: number;
+  pointsPossible: number;
 }
 
 export interface ParticipantDetail {

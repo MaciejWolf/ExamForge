@@ -109,14 +109,14 @@ const TestSessionReportPage = () => {
         bValue = b.identifier.toLowerCase();
         break;
       case 'score':
-        aValue = a.total_score ?? -1;
-        bValue = b.total_score ?? -1;
+        aValue = a.totalScore ?? -1;
+        bValue = b.totalScore ?? -1;
         break;
       case 'percentage':
-        const aMax = a.max_score ?? 1;
-        const bMax = b.max_score ?? 1;
-        aValue = a.total_score !== undefined ? (a.total_score / aMax) * 100 : -1;
-        bValue = b.total_score !== undefined ? (b.total_score / bMax) * 100 : -1;
+        const aMax = a.maxScore ?? 1;
+        const bMax = b.maxScore ?? 1;
+        aValue = a.totalScore !== undefined ? (a.totalScore / aMax) * 100 : -1;
+        bValue = b.totalScore !== undefined ? (b.totalScore / bMax) * 100 : -1;
         break;
       case 'status':
         const statusOrder = { completed: 1, in_progress: 2, not_started: 3, timed_out: 4 };
@@ -222,19 +222,19 @@ const TestSessionReportPage = () => {
               <div className="md:col-span-2">
                 <p className="text-sm font-medium text-muted-foreground">Participants</p>
                 <p className="text-base">
-                  {report.statistics.total_participants} total
+                  {report.statistics.totalParticipants} total
                   {' - '}
-                  <span className="text-green-600">{report.statistics.completed_count} completed</span>
-                  {report.statistics.in_progress_count > 0 && (
+                  <span className="text-green-600">{report.statistics.completedCount} completed</span>
+                  {report.statistics.inProgressCount > 0 && (
                     <>
                       {' - '}
-                      <span className="text-yellow-600">{report.statistics.in_progress_count} in progress</span>
+                      <span className="text-yellow-600">{report.statistics.inProgressCount} in progress</span>
                     </>
                   )}
-                  {report.statistics.not_started_count > 0 && (
+                  {report.statistics.notStartedCount > 0 && (
                     <>
                       {' - '}
-                      <span className="text-gray-600">{report.statistics.not_started_count} not started</span>
+                      <span className="text-gray-600">{report.statistics.notStartedCount} not started</span>
                     </>
                   )}
                 </p>
@@ -296,8 +296,8 @@ const TestSessionReportPage = () => {
                   </TableHeader>
                   <TableBody>
                     {sortedParticipants.map((participant) => {
-                      const maxScore = participant.max_score ?? 1;
-                      const score = participant.total_score ?? 0;
+                      const maxScore = participant.maxScore ?? 1;
+                      const score = participant.totalScore ?? 0;
                       const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
                       const isClickable = participant.status !== 'not_started';
 
@@ -309,12 +309,12 @@ const TestSessionReportPage = () => {
                         >
                           <TableCell className="font-medium">{participant.identifier}</TableCell>
                           <TableCell>
-                            {participant.total_score !== undefined && participant.max_score !== undefined
-                              ? `${participant.total_score}/${participant.max_score}`
-                              : '-/' + (participant.max_score ?? '?')}
+                            {participant.totalScore !== undefined && participant.maxScore !== undefined
+                              ? `${participant.totalScore}/${participant.maxScore}`
+                              : '-/' + (participant.maxScore ?? '?')}
                           </TableCell>
                           <TableCell>
-                            {participant.total_score !== undefined && participant.max_score !== undefined
+                            {participant.totalScore !== undefined && participant.maxScore !== undefined
                               ? `${percentage}%`
                               : '-'}
                           </TableCell>
@@ -333,10 +333,10 @@ const TestSessionReportPage = () => {
             )}
 
             {/* Aggregate Statistics */}
-            {report.statistics.completed_count > 0 && (() => {
+            {report.statistics.completedCount > 0 && (() => {
               const maxScore = report.questionAnalysis.reduce((sum, q) => sum + q.points, 0);
-              const participantWithScore = report.participants.find((p) => p.max_score !== undefined);
-              const actualMaxScore = participantWithScore?.max_score ?? maxScore;
+              const participantWithScore = report.participants.find((p) => p.maxScore !== undefined);
+              const actualMaxScore = participantWithScore?.maxScore ?? maxScore;
               
               return (
                 <div className="mt-6 space-y-2">
@@ -345,9 +345,9 @@ const TestSessionReportPage = () => {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Average Score</p>
                       <p className="text-xl font-semibold">
-                        {Math.round(report.statistics.average_score)}/{actualMaxScore} (
+                        {Math.round(report.statistics.averageScore)}/{actualMaxScore} (
                         {actualMaxScore > 0
-                          ? Math.round((report.statistics.average_score / actualMaxScore) * 100)
+                          ? Math.round((report.statistics.averageScore / actualMaxScore) * 100)
                           : 0}
                         %)
                       </p>
@@ -355,9 +355,9 @@ const TestSessionReportPage = () => {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Highest Score</p>
                       <p className="text-xl font-semibold">
-                        {report.statistics.highest_score}/{actualMaxScore} (
+                        {report.statistics.highestScore}/{actualMaxScore} (
                         {actualMaxScore > 0
-                          ? Math.round((report.statistics.highest_score / actualMaxScore) * 100)
+                          ? Math.round((report.statistics.highestScore / actualMaxScore) * 100)
                           : 0}
                         %)
                       </p>
@@ -365,9 +365,9 @@ const TestSessionReportPage = () => {
                     <div>
                       <p className="text-sm font-medium text-muted-foreground">Lowest Score</p>
                       <p className="text-xl font-semibold">
-                        {report.statistics.lowest_score}/{actualMaxScore} (
+                        {report.statistics.lowestScore}/{actualMaxScore} (
                         {actualMaxScore > 0
-                          ? Math.round((report.statistics.lowest_score / actualMaxScore) * 100)
+                          ? Math.round((report.statistics.lowestScore / actualMaxScore) * 100)
                           : 0}
                         %)
                       </p>
@@ -390,17 +390,17 @@ const TestSessionReportPage = () => {
             ) : (
               <div className="space-y-4">
                 {report.questionAnalysis.map((question) => (
-                  <Card key={question.question_id}>
+                  <Card key={question.questionId}>
                     <CardHeader>
                       <CardTitle className="text-base">
-                        Q{question.question_number}. {question.question_content}
+                        Q{question.questionNumber}. {question.questionContent}
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Correct Answer</p>
-                          <p className="text-base">{question.correct_answer}</p>
+                          <p className="text-base">{question.correctAnswer}</p>
                         </div>
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Points</p>
@@ -409,9 +409,9 @@ const TestSessionReportPage = () => {
                         <div>
                           <p className="text-sm font-medium text-muted-foreground">Correct Responses</p>
                           <p className="text-base">
-                            {question.correct_responses}/{question.total_responses} (
-                            {question.total_responses > 0
-                              ? Math.round((question.correct_responses / question.total_responses) * 100)
+                            {question.correctResponses}/{question.totalResponses} (
+                            {question.totalResponses > 0
+                              ? Math.round((question.correctResponses / question.totalResponses) * 100)
                               : 0}
                             %)
                           </p>
@@ -420,10 +420,10 @@ const TestSessionReportPage = () => {
                           <p className="text-sm font-medium text-muted-foreground">Performance</p>
                           <p
                             className={`text-base font-semibold ${getQuestionPerformanceColor(
-                              question.correct_percentage
+                              question.correctPercentage
                             )}`}
                           >
-                            {question.correct_percentage.toFixed(1)}% correct
+                            {question.correctPercentage.toFixed(1)}% correct
                           </p>
                         </div>
                       </div>
