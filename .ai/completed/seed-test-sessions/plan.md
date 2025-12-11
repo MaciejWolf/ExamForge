@@ -11,9 +11,9 @@ Context:
 
 Tasks:
 - [X] [deterministic-randomization](./deterministic-randomization/plan.md)
-- [ ] [seed-active-sessions](./seed-active-sessions/plan.md)
-- [ ] [seed-completed-sessions](./seed-completed-sessions/plan.md)
-- [ ] [seed-future-sessions](./seed-future-sessions/plan.md)
+- [X] [seed-active-sessions](./seed-active-sessions/plan.md)
+- [X] [seed-completed-sessions](./seed-completed-sessions/plan.md)
+- [X] [seed-future-sessions](./seed-future-sessions/plan.md)
 
 Dependencies:
 - Requires existing question and template seeds

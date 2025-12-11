@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from 'uuid';
 import { allQuestions, testTemplates } from './seeds/index';
 import { activeSessions } from './seeds/sessions/activeSessions';
 import { completedSessions } from './seeds/sessions/completedSessions';
+import { futureSessions } from './seeds/sessions/futureSessions';
 import { configureAssessmentModule } from '../assessment/index';
 import { createSeededRandomSelector, createSeededAnswerShuffler } from '../design/useCases/shared/deterministicHelpers';
 import { hashString } from '../shared/seededRandom';
@@ -631,6 +632,147 @@ const seedCompletedSessions = async (
   }
 };
 
+const seedFutureSessions = async (
+  supabaseClient: ReturnType<typeof createSupabaseClient>,
+  templateNameToIdMap: Map<string, string>
+) => {
+  console.log(`\n📅 Seeding ${futureSessions.length} future test sessions...`);
+  
+  let sessionSuccessCount = 0;
+  let sessionErrorCount = 0;
+  const sessionSummaries: Array<{ 
+    sessionId: string; 
+    templateName: string; 
+    scheduledTime: string;
+    participantCount: number; 
+    accessCodes: Map<string, string> 
+  }> = [];
+
+  for (const sessionSeed of futureSessions) {
+    try {
+      const templateId = templateNameToIdMap.get(sessionSeed.templateName);
+      if (!templateId) {
+        console.error(`❌ Template not found: "${sessionSeed.templateName}"`);
+        sessionErrorCount++;
+        continue;
+      }
+
+      // Prepare participant identifiers and seed mapping
+      const participantIdentifiers = sessionSeed.participants.map(p => p.name);
+      const participantSeedMap = new Map<string, string>();
+      sessionSeed.participants.forEach(p => {
+        participantSeedMap.set(p.name, p.seed);
+      });
+
+      // Create materializeTemplate function that uses participant-specific seeds
+      let participantIndex = 0;
+      const materializeTemplate = async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
+        const participantName = participantIdentifiers[participantIndex];
+        const participantSeed = participantSeedMap.get(participantName);
+        
+        if (!participantSeed) {
+          throw new Error(`No seed found for participant: ${participantName}`);
+        }
+
+        // Create deterministic design module for this specific participant
+        const participantBaseSeed = hashString(participantSeed);
+        const participantDesignModule = configureDesignModule({
+          supabaseClient,
+          randomSelector: createSeededRandomSelector(participantBaseSeed),
+          answerShuffler: createSeededAnswerShuffler(participantBaseSeed),
+        });
+
+        participantIndex++;
+        return await participantDesignModule.materializeTemplate(templateId);
+      };
+
+      // Configure assessment module with deterministic materializeTemplate
+      const assessmentModule = configureAssessmentModule({
+        supabaseClient,
+        materializeTemplate,
+        templateProvider: {
+          getTemplateNames: async (templateIds: string[]) => {
+            const nameMap = new Map<string, string>();
+            for (const id of templateIds) {
+              for (const [name, mappedId] of templateNameToIdMap.entries()) {
+                if (mappedId === id) {
+                  nameMap.set(id, name);
+                  break;
+                }
+              }
+            }
+            return nameMap;
+          },
+        },
+      });
+
+      // Start the session (status will be 'open' automatically since dates are in future)
+      const result = await assessmentModule.startSession({
+        templateId,
+        examinerId: sessionSeed.examinerId,
+        timeLimitMinutes: sessionSeed.timeLimitMinutes,
+        startTime: sessionSeed.startTime,
+        endTime: sessionSeed.endTime,
+        participantIdentifiers,
+      });
+
+      if (result.ok) {
+        // Get access codes for logging by fetching the session
+        const sessionResult = await assessmentModule.getSessionById(result.value);
+        const accessCodes = new Map<string, string>();
+        
+        if (sessionResult.ok && sessionResult.value.instances) {
+          sessionResult.value.instances.forEach(instance => {
+            accessCodes.set(instance.identifier, instance.accessCode);
+          });
+        }
+
+        // Format scheduled time for display
+        const scheduledTime = `${sessionSeed.startTime.toLocaleDateString()} ${sessionSeed.startTime.toLocaleTimeString()} - ${sessionSeed.endTime.toLocaleTimeString()}`;
+
+        sessionSummaries.push({
+          sessionId: result.value,
+          templateName: sessionSeed.templateName,
+          scheduledTime,
+          participantCount: participantIdentifiers.length,
+          accessCodes,
+        });
+
+        console.log(`✅ Created future session: "${sessionSeed.templateName}" (${participantIdentifiers.length} participants)`);
+        sessionSuccessCount++;
+      } else {
+        console.error(`❌ Failed to create future session: "${sessionSeed.templateName}"`);
+        console.error(`   Error: ${result.error.type}`);
+        sessionErrorCount++;
+      }
+    } catch (error) {
+      console.error(`❌ Exception creating future session: "${sessionSeed.templateName}"`);
+      console.error(`   Error: ${error instanceof Error ? error.message : String(error)}`);
+      sessionErrorCount++;
+    }
+  }
+
+  console.log(`\n📊 Future Sessions Seed Summary:`);
+  console.log(`   ✅ Successfully created: ${sessionSuccessCount} sessions`);
+  console.log(`   ❌ Failed: ${sessionErrorCount} sessions`);
+  
+  if (sessionSummaries.length > 0) {
+    console.log(`\n📋 Seeded Future Sessions:`);
+    for (const summary of sessionSummaries) {
+      console.log(`   • ${summary.templateName}`);
+      console.log(`     Session ID: ${summary.sessionId}`);
+      console.log(`     Scheduled: ${summary.scheduledTime}`);
+      console.log(`     Participants: ${summary.participantCount}`);
+      if (summary.accessCodes.size > 0) {
+        console.log(`     Access Codes:`);
+        for (const [participant, code] of summary.accessCodes.entries()) {
+          console.log(`       - ${participant}: ${code}`);
+        }
+      }
+    }
+  }
+};
+
 const seed = async () => {
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
@@ -656,6 +798,9 @@ const seed = async () => {
   
   // Seed completed sessions (oldest first)
   await seedCompletedSessions(supabaseClient, templateNameToIdMap);
+  
+  // Seed future sessions (scheduled but not started)
+  await seedFutureSessions(supabaseClient, templateNameToIdMap);
   
   console.log(`\n✨ Seed process completed!`);
 };
