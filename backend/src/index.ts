@@ -13,11 +13,7 @@ dotenv.config();
 
 export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = {}): Express => {
   const app = express();
-  
-  // Configure design module first (needed for assessment module)
   const designModule = configureDesignModule(config.designModuleConfig);
-  
-  // Configure assessment module with materializeTemplate from design module
   const assessmentModule = configureAssessmentModule({
     materializeTemplate: designModule.materializeTemplate,
     supabaseClient: config.designModuleConfig?.supabaseClient,
