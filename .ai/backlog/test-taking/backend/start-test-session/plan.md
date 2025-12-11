@@ -29,7 +29,7 @@ Goal: Implement logic for participants to start their test instance (using `acce
 - [ ] **test-case-5-invalid-code**
     - *Test*: Given non-existent access code, return `InvalidAccessCode` error.
     - *Implement*: Handle null/undefined from repository lookup.
-- [ ] **test-case-6-session-closed**
+- [X] **test-case-6-session-closed**
     - *Test*: Given session status is `completed` or `aborted`, return `SessionClosed` error.
     - *Implement*: Check `session.status !== 'open'`.
 

@@ -21,7 +21,7 @@ export const startTestInstance = (deps: StartTestInstanceDeps) => async (accessC
   }
 
   if (session.status !== 'open') {
-    return err({ type: 'SessionNotOpen', sessionId: session.id, status: session.status });
+    return err({ type: 'SessionClosed', sessionId: session.id, status: session.status });
   }
 
   const now = deps.now();
