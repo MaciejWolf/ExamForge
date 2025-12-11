@@ -129,7 +129,7 @@ export interface QuestionAnalysis {
 }
 
 export interface TestSessionReport {
-  session: TestSession & { template_name: string };
+  session: TestSession & { templateName?: string };
   participants: Participant[];
   statistics: SessionStatistics;
   questionAnalysis: QuestionAnalysis[];
@@ -151,22 +151,22 @@ export interface ParticipantDetail {
 
 export interface TestSession {
   id: string;
-  template_id: string;
-  examiner_id: string;
-  time_limit_minutes: number;
+  templateId: string;
+  examinerId: string;
+  timeLimitMinutes: number;
   status: 'active' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
   createdAt: string;
 }
 
 export interface TestSessionDetail {
   id: string;
-  template_id: string;
-  template_name: string;
-  examiner_id: string;
-  time_limit_minutes: number;
+  templateId: string;
+  templateName?: string;
+  examinerId: string;
+  timeLimitMinutes: number;
   status: 'active' | 'completed' | 'cancelled' | 'in_progress' | 'expired';
   createdAt: string;
-  participant_count: number;
+  participantCount?: number;
 }
 
 export interface CreateSessionRequest {
@@ -317,10 +317,10 @@ export const testSessionsApi = {
   },
 
   async getAll(): Promise<{ sessions: TestSessionDetail[] }> {
-    // Backend returns array directly with camelCase fields, wrap it to match frontend expectation
     const sessions = await apiRequest<Array<{
       id: string;
       templateId: string;
+      templateName?: string;
       examinerId: string;
       timeLimitMinutes: number;
       startTime: string;
@@ -328,18 +328,17 @@ export const testSessionsApi = {
       status: 'open' | 'completed' | 'aborted';
       createdAt: string;
       updatedAt: string;
+      participantCount?: number;
     }>>('/assessment/sessions');
-    // Map backend TestSession format (camelCase) to frontend TestSessionDetail format (snake_case)
+    
+    // Map backend status to frontend status
     const mappedSessions: TestSessionDetail[] = sessions.map((session) => ({
-      id: session.id,
-      template_id: session.templateId,
-      template_name: 'Unknown Template', // Backend doesn't provide template name yet
-      examiner_id: session.examinerId,
-      time_limit_minutes: session.timeLimitMinutes,
-      status: session.status === 'open' ? 'active' : session.status === 'aborted' ? 'cancelled' : session.status,
-      createdAt: session.createdAt,
-      participant_count: 0, // Backend doesn't provide participant count yet
+      ...session,
+      status: session.status === 'open' ? 'active' : 
+              session.status === 'aborted' ? 'cancelled' : 
+              session.status,
     }));
+    
     return { sessions: mappedSessions };
   },
 
@@ -371,14 +370,12 @@ export const testSessionsApi = {
       }>;
     }>(`/assessment/sessions/${id}`);
 
-    // Map backend session (camelCase) to frontend TestSession (snake_case)
+    // Map backend status to frontend status
     const mappedSession: TestSession = {
-      id: backendResponse.session.id,
-      template_id: backendResponse.session.templateId,
-      examiner_id: backendResponse.session.examinerId,
-      time_limit_minutes: backendResponse.session.timeLimitMinutes,
-      status: backendResponse.session.status === 'open' ? 'active' : backendResponse.session.status === 'aborted' ? 'cancelled' : backendResponse.session.status,
-      createdAt: backendResponse.session.createdAt,
+      ...backendResponse.session,
+      status: backendResponse.session.status === 'open' ? 'active' : 
+              backendResponse.session.status === 'aborted' ? 'cancelled' : 
+              backendResponse.session.status,
     };
 
     // Map backend instances to frontend participants

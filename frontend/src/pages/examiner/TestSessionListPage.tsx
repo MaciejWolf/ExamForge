@@ -154,7 +154,7 @@ const TestSessionListPage = () => {
                     {sessions.map((session) => (
                       <TableRow key={session.id}>
                         <TableCell className="font-medium">
-                          {session.template_name}
+                          {session.templateName || 'Unknown Template'}
                         </TableCell>
                         <TableCell>
                           <div className="flex flex-col">
@@ -164,8 +164,8 @@ const TestSessionListPage = () => {
                             </span>
                           </div>
                         </TableCell>
-                        <TableCell>{session.participant_count}</TableCell>
-                        <TableCell>{session.time_limit_minutes} min</TableCell>
+                        <TableCell>{session.participantCount ?? 0}</TableCell>
+                        <TableCell>{session.timeLimitMinutes} min</TableCell>
                         <TableCell>
                           <span className={getStatusColor(session.status)}>
                             {getStatusDisplay(session.status)}

@@ -205,7 +205,7 @@ const TestSessionReportPage = () => {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Template</p>
-                <p className="text-base">{report.session.template_name}</p>
+                <p className="text-base">{report.session.templateName || 'Unknown Template'}</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Launched</p>
@@ -213,7 +213,7 @@ const TestSessionReportPage = () => {
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Time Limit</p>
-                <p className="text-base">{report.session.time_limit_minutes} minutes</p>
+                <p className="text-base">{report.session.timeLimitMinutes} minutes</p>
               </div>
               <div>
                 <p className="text-sm font-medium text-muted-foreground">Status</p>
