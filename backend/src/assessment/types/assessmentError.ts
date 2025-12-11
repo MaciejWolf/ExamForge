@@ -9,4 +9,5 @@ export type AssessmentError =
   | { type: 'SessionNotOpen'; sessionId: string; status: string }
   | { type: 'TestAlreadyStarted'; accessCode: string }
   | { type: 'TestNotOpenYet'; accessCode: string; startTime: Date }
+  | { type: 'TestExpired'; accessCode: string; endTime: Date }
   | { type: 'DesignError'; error: DesignError };

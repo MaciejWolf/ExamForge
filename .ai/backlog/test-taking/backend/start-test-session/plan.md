@@ -20,10 +20,10 @@ Goal: Implement logic for participants to start their test instance (using `acce
 - [X] **test-case-2-already-started**
     - *Test*: Given instance with existing `startedAt`, when called, return `TestAlreadyStarted` error.
     - *Implement*: Add check for `instance.startedAt`.
-- [ ] **test-case-3-not-open-yet**
+- [X] **test-case-3-not-open-yet**
     - *Test*: Given session `startTime` in future, when called, return `TestNotOpenYet` error.
     - *Implement*: Fetch session -> check `now < startTime`.
-- [ ] **test-case-4-expired**
+- [X] **test-case-4-expired**
     - *Test*: Given session `endTime` in past, when called, return `TestExpired` error.
     - *Implement*: Check `now > endTime`.
 - [ ] **test-case-5-invalid-code**

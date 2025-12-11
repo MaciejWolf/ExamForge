@@ -35,6 +35,15 @@ describe('Start Test Instance Use Case', () => {
 
     thenTestNotOpenYetErrorShouldBeReturned(result, accessCode);
   });
+
+  it('Given session endTime in past, when startTestInstance is called, then TestExpired error is returned', async () => {
+    const module = givenAssessmentModule();
+    const accessCode = await givenSessionWithExpiredEndTime(module);
+
+    const result = await module.startTestInstance(accessCode);
+
+    thenTestExpiredErrorShouldBeReturned(result, accessCode);
+  });
 });
 
 // --- Test Helpers ---
@@ -139,6 +148,37 @@ const thenTestNotOpenYetErrorShouldBeReturned = (
     if (result.error.type === 'TestNotOpenYet') {
       expect(result.error.accessCode).toBe(accessCode);
       expect(result.error.startTime).toEqual(new Date('2024-01-01T11:00:00Z'));
+    }
+  }
+};
+
+const givenSessionWithExpiredEndTime = async (module: AssessmentModule): Promise<string> => {
+  const sessionResult = await module.startSession({
+    templateId: 'template-1',
+    examinerId: 'examiner-1',
+    timeLimitMinutes: 60,
+    startTime: new Date('2024-01-01T08:00:00Z'),
+    endTime: new Date('2024-01-01T09:00:00Z'), // Past time (current time is 10:00:00Z)
+    participantIdentifiers: ['student-1']
+  });
+
+  if (!sessionResult.ok) {
+    throw new Error(`Failed to create test session: ${JSON.stringify(sessionResult.error)}`);
+  }
+
+  return 'TEST-001';
+};
+
+const thenTestExpiredErrorShouldBeReturned = (
+  result: Awaited<ReturnType<AssessmentModule['startTestInstance']>>,
+  accessCode: string
+) => {
+  expect(result.ok).toBe(false);
+  if (!result.ok) {
+    expect(result.error.type).toBe('TestExpired');
+    if (result.error.type === 'TestExpired') {
+      expect(result.error.accessCode).toBe(accessCode);
+      expect(result.error.endTime).toEqual(new Date('2024-01-01T09:00:00Z'));
     }
   }
 };
