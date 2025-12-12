@@ -23,12 +23,12 @@ Status derivation logic:
 - `timed_out`: has startedAt, no completedAt, and time limit exceeded
 
 Tasks:
-- [ ] Add TestInstanceRepository.findBySessionId call
-- [ ] Map TestInstance fields to Participant type
-- [ ] Implement status derivation logic from timestamps
-- [ ] Handle time limit check for timed_out status
-- [ ] Update tests to verify participant list fetching
-- [ ] Keep statistics and question analysis hardcoded
+- [x] Add TestInstanceRepository.findBySessionId call
+- [x] Map TestInstance fields to Participant type
+- [x] Implement status derivation logic from timestamps
+- [x] Handle time limit check for timed_out status
+- [x] Update tests to verify participant list fetching
+- [x] Keep statistics and question analysis hardcoded
 
 Testing considerations:
 - Test with sessions having 0, 1, and multiple participants

@@ -91,7 +91,9 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
     }),
     getSessionReport: useCases.getSessionReport({
       sessionRepo,
-      templateRepo
+      templateRepo,
+      testInstanceRepo,
+      now
     }),
     startTestInstance: useCases.startTestInstance({
       testInstanceRepo,

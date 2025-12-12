@@ -1,13 +1,16 @@
 import { Result, ok, err } from '../../shared/result';
-import { TestSessionReport } from '../types/sessionReport';
+import { TestSessionReport, Participant } from '../types/sessionReport';
 import { AssessmentError } from '../types/assessmentError';
-import { SessionRepository } from '../repository';
+import { SessionRepository, TestInstanceRepository } from '../repository';
 import { TemplateRepository } from '../../design/repository';
 import { TestSession } from '../types/testSession';
+import { TestInstance } from '../types/testInstance';
 
 type GetSessionReportDeps = {
   sessionRepo: SessionRepository;
   templateRepo: TemplateRepository;
+  testInstanceRepo: TestInstanceRepository;
+  now: () => Date;
 };
 
 const mapSessionStatus = (status: TestSession['status']): TestSessionReport['session']['status'] => {
@@ -25,7 +28,55 @@ const toISOString = (date: Date | string): string => {
   return date.toISOString();
 };
 
-export const getSessionReport = ({ sessionRepo, templateRepo }: GetSessionReportDeps) => {
+const deriveParticipantStatus = (
+  instance: TestInstance,
+  session: TestSession,
+  now: Date
+): Participant['status'] => {
+  // If completed, status is always completed
+  if (instance.completedAt) {
+    return 'completed';
+  }
+
+  // If not started, status is not_started
+  if (!instance.startedAt) {
+    return 'not_started';
+  }
+
+  // Started but not completed - check if timed out
+  const timeElapsedMinutes = (now.getTime() - instance.startedAt.getTime()) / (1000 * 60);
+  if (timeElapsedMinutes > session.timeLimitMinutes) {
+    return 'timed_out';
+  }
+
+  // Started, not completed, and within time limit
+  return 'in_progress';
+};
+
+const mapTestInstanceToParticipant = (
+  instance: TestInstance,
+  session: TestSession,
+  now: Date
+): Participant => {
+  const status = deriveParticipantStatus(instance, session, now);
+
+  return {
+    id: instance.id,
+    sessionId: instance.sessionId,
+    identifier: instance.identifier,
+    accessCode: instance.accessCode,
+    status,
+    startedAt: instance.startedAt ? toISOString(instance.startedAt) : undefined,
+    completedAt: instance.completedAt ? toISOString(instance.completedAt) : undefined,
+    createdAt: toISOString(instance.createdAt),
+    // Leave these undefined for now (next task)
+    totalScore: undefined,
+    maxScore: undefined,
+    timeTakenMinutes: undefined,
+  };
+};
+
+export const getSessionReport = ({ sessionRepo, templateRepo, testInstanceRepo, now }: GetSessionReportDeps) => {
   return async (sessionId: string): Promise<Result<TestSessionReport, AssessmentError>> => {
     try {
       // Fetch session from database
@@ -44,6 +95,13 @@ export const getSessionReport = ({ sessionRepo, templateRepo }: GetSessionReport
         console.error('Error fetching template:', error);
       }
 
+      // Fetch participants from test instances
+      const testInstances = await testInstanceRepo.findBySessionId(sessionId);
+      const currentTime = now();
+      const participants = testInstances.map(instance =>
+        mapTestInstanceToParticipant(instance, session, currentTime)
+      );
+
       // Build report with real session data
     const report: TestSessionReport = {
       session: {
@@ -55,69 +113,7 @@ export const getSessionReport = ({ sessionRepo, templateRepo }: GetSessionReport
         status: mapSessionStatus(session.status),
         createdAt: toISOString(session.createdAt),
       },
-      participants: [
-        {
-          id: 'participant-1',
-          sessionId: sessionId,
-          identifier: 'John Doe',
-          accessCode: 'ABC123',
-          status: 'completed',
-          startedAt: '2024-01-15T10:05:00Z',
-          completedAt: '2024-01-15T10:45:00Z',
-          timeTakenMinutes: 40,
-          totalScore: 85,
-          maxScore: 100,
-          createdAt: '2024-01-15T10:00:00Z',
-        },
-        {
-          id: 'participant-2',
-          sessionId: sessionId,
-          identifier: 'Jane Smith',
-          accessCode: 'DEF456',
-          status: 'completed',
-          startedAt: '2024-01-15T10:10:00Z',
-          completedAt: '2024-01-15T10:50:00Z',
-          timeTakenMinutes: 40,
-          totalScore: 92,
-          maxScore: 100,
-          createdAt: '2024-01-15T10:00:00Z',
-        },
-        {
-          id: 'participant-3',
-          sessionId: sessionId,
-          identifier: 'Bob Johnson',
-          accessCode: 'GHI789',
-          status: 'in_progress',
-          startedAt: '2024-01-15T10:15:00Z',
-          timeTakenMinutes: 25,
-          totalScore: undefined,
-          maxScore: 100,
-          createdAt: '2024-01-15T10:00:00Z',
-        },
-        {
-          id: 'participant-4',
-          sessionId: sessionId,
-          identifier: 'Alice Williams',
-          accessCode: 'JKL012',
-          status: 'not_started',
-          totalScore: undefined,
-          maxScore: 100,
-          createdAt: '2024-01-15T10:00:00Z',
-        },
-        {
-          id: 'participant-5',
-          sessionId: sessionId,
-          identifier: 'Charlie Brown',
-          accessCode: 'MNO345',
-          status: 'completed',
-          startedAt: '2024-01-15T10:08:00Z',
-          completedAt: '2024-01-15T10:42:00Z',
-          timeTakenMinutes: 34,
-          totalScore: 78,
-          maxScore: 100,
-          createdAt: '2024-01-15T10:00:00Z',
-        },
-      ],
+      participants,
       statistics: {
         averageScore: 85.0, // (85 + 92 + 78) / 3
         highestScore: 92,

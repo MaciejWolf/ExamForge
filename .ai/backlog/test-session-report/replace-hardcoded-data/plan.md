@@ -10,8 +10,8 @@ Context:
 - Frontend expects `TestSessionReport` type from `frontend/src/services/types.ts`
 
 Tasks:
-- [ ] [fetch-basic-session-data](./fetch-basic-session-data/plan.md)
-- [ ] [fetch-participants-data](./fetch-participants-data/plan.md)
+- [X] [fetch-basic-session-data](./fetch-basic-session-data/plan.md)
+- [X] [fetch-participants-data](./fetch-participants-data/plan.md)
 - [ ] [calculate-participant-scores](./calculate-participant-scores/plan.md)
 - [ ] [calculate-session-statistics](./calculate-session-statistics/plan.md)
 - [ ] [generate-question-analysis](./generate-question-analysis/plan.md)
