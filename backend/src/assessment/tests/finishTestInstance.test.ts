@@ -40,6 +40,48 @@ describe('finishTestInstance Use Case', () => {
     }
   });
 
+
+//   2.  **Validation: Not Started**
+//     *   **Given** a test instance that has **not** been started (`startedAt` is undefined)
+//     *   **When** the participant requests to finish the test
+//     *   **Then** the operation should fail
+//     *   **And** the error should indicate `TestNotStarted`
+
+  it('should return TestNotStarted error if test instance has not been started', async () => {
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const testInstance = await givenNotStartedTestInstance(sessionId);
+
+    // When: Participant requests to finish the test
+    now = new Date('2024-01-01T10:00:00Z');
+    const result = await module.finishTestInstance(testInstance.id);
+
+    // Then: Operation should fail
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toEqual({
+        type: 'TestNotStarted',
+        testInstanceId: testInstance.id
+      });
+    }
+  });
+
+// 3.  **Validation: Already Finished**
+//     *   **Given** a test instance that has already been completed (`completedAt` is present)
+//     *   **When** the participant requests to finish the test again
+//     *   **Then** the operation should fail
+//     *   **And** the error should indicate `TestAlreadyFinished`
+
+//     4.  **Validation: Test Instance Not Found**
+//         *   **Given** there is no test instance for the provided test ID
+//         *   **When** the participant requests to finish the test
+//         *   **Then** the operation should fail
+//         *   **And** the error should indicate `TestInstanceNotFound`
+
   // --- Test Helpers ---
 
   const givenAssessmentModule = (): AssessmentModule => {
@@ -87,6 +129,11 @@ describe('finishTestInstance Use Case', () => {
       throw new Error(`Failed to create session: ${JSON.stringify(result.error)}`);
     }
 
+    const session = await module.getSessionById(result.value);
+    if (!session.ok) {
+      throw new Error(`Failed to get session: ${JSON.stringify(session.error)}`);
+    }
+
     return result.value;
   };
 
@@ -108,5 +155,13 @@ describe('finishTestInstance Use Case', () => {
     }
 
     return startResult.value;
+  };
+
+  const givenNotStartedTestInstance = async (sessionId: string): Promise<TestInstance> => {
+    const sessionResult = await module.getSessionById(sessionId);
+    if (!sessionResult.ok) {
+      throw new Error(`Failed to get session: ${JSON.stringify(sessionResult.error)}`);
+    }
+    return sessionResult.value.instances[0];
   };
 });
