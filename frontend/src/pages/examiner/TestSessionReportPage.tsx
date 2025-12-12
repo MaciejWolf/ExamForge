@@ -186,9 +186,9 @@ const TestSessionReportPage = () => {
     <DashboardLayout>
       <div className="space-y-6">
         {/* Back Button */}
-        <Button variant="ghost" size="sm" onClick={() => navigate('/dashboard')}>
+        <Button variant="ghost" size="sm" onClick={() => navigate('/test-sessions')}>
           <ArrowLeft className="mr-2 h-4 w-4" />
-          Back to Dashboard
+          Back to Sessions
         </Button>
 
         {/* Page Title */}
