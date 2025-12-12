@@ -13,7 +13,7 @@ Tasks:
 - [X] [fetch-basic-session-data](./fetch-basic-session-data/plan.md)
 - [X] [fetch-participants-data](./fetch-participants-data/plan.md)
 - [X] [calculate-participant-scores](./calculate-participant-scores/plan.md)
-- [ ] [calculate-session-statistics](./calculate-session-statistics/plan.md)
+- [X] [calculate-session-statistics](./calculate-session-statistics/plan.md)
 - [ ] [generate-question-analysis](./generate-question-analysis/plan.md)
 
 Dependencies:

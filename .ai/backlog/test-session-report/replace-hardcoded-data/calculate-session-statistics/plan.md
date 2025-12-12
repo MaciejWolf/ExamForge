@@ -16,16 +16,16 @@ Fields to populate:
 - `statistics.highestScore`, `lowestScore` (min/max of completed scores)
 
 Tasks:
-- [ ] Count participants by status
-- [ ] Calculate totalParticipants count
-- [ ] Calculate completionRate as completedCount / totalParticipants
-- [ ] Filter completed participants for score calculations
-- [ ] Calculate averageScore from completed participants only
-- [ ] Find highestScore and lowestScore from completed participants
-- [ ] Handle edge case: no participants
-- [ ] Handle edge case: no completed participants
-- [ ] Update tests to verify statistics calculations
-- [ ] Keep question analysis hardcoded
+- [x] Count participants by status
+- [x] Calculate totalParticipants count
+- [x] Calculate completionRate as completedCount / totalParticipants
+- [x] Filter completed participants for score calculations
+- [x] Calculate averageScore from completed participants only
+- [x] Find highestScore and lowestScore from completed participants
+- [x] Handle edge case: no participants
+- [x] Handle edge case: no completed participants
+- [x] Update tests to verify statistics calculations
+- [x] Keep question analysis hardcoded
 
 Edge cases to handle:
 - Empty participant list: all counts should be 0
