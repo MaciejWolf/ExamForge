@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/table';
 import { ArrowLeft, CheckCircle2, Clock, Circle } from 'lucide-react';
 import { testSessionsApi, type TestSessionReport, type Participant } from '@/services/api';
+import { ApiError } from '@/services/core';
 import { toast } from 'sonner';
 
 type SortField = 'name' | 'score' | 'percentage' | 'status';
@@ -23,6 +24,7 @@ const TestSessionReportPage = () => {
   const { sessionId } = useParams<{ sessionId: string }>();
   const [report, setReport] = useState<TestSessionReport | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<{ type: 'not_found' | 'generic'; message: string } | null>(null);
   const [sortField, setSortField] = useState<SortField>('name');
   const [sortDirection, setSortDirection] = useState<SortDirection>('asc');
 
@@ -37,13 +39,27 @@ const TestSessionReportPage = () => {
 
     try {
       setLoading(true);
+      setError(null);
       const data = await testSessionsApi.getReport(sessionId);
       setReport(data);
-    } catch (error) {
-      toast.error('Failed to load test session report', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-      });
-      navigate('/test-sessions');
+    } catch (err) {
+      // Handle session not found specifically
+      if (err instanceof ApiError && err.status === 404 && err.errorData?.type === 'SessionNotFound') {
+        setError({
+          type: 'not_found',
+          message: 'Test session not found',
+        });
+      } else {
+        // Generic error handling
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
+        setError({
+          type: 'generic',
+          message: errorMessage,
+        });
+        toast.error('Failed to load test session report', {
+          description: errorMessage,
+        });
+      }
     } finally {
       setLoading(false);
     }
@@ -167,6 +183,42 @@ const TestSessionReportPage = () => {
       <DashboardLayout>
         <div className="flex items-center justify-center min-h-[400px]">
           <p className="text-muted-foreground">Loading test results...</p>
+        </div>
+      </DashboardLayout>
+    );
+  }
+
+  if (error) {
+    return (
+      <DashboardLayout>
+        <div className="space-y-6">
+          <Button variant="ghost" size="sm" onClick={() => navigate('/test-sessions')}>
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Back to Sessions
+          </Button>
+          
+          <Card className="max-w-2xl mx-auto">
+            <CardHeader>
+              <CardTitle className="text-destructive">
+                {error.type === 'not_found' ? 'Session Not Found' : 'Error Loading Report'}
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <p className="text-muted-foreground">
+                {error.type === 'not_found' 
+                  ? 'The test session you are looking for does not exist or may have been deleted.'
+                  : error.message}
+              </p>
+              <div className="flex gap-3">
+                <Button onClick={() => navigate('/test-sessions')}>
+                  Go to Sessions List
+                </Button>
+                <Button variant="outline" onClick={fetchReport}>
+                  Try Again
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </DashboardLayout>
     );

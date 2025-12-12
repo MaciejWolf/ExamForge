@@ -19,10 +19,10 @@ Fields to populate:
 - `session.createdAt` (from test_sessions)
 
 Tasks:
-- [ ] Add SessionRepository dependency to getSessionReport
-- [ ] Add TemplateRepository dependency for template name lookup
-- [ ] Fetch session by ID and handle not found case
-- [ ] Fetch template name by templateId
-- [ ] Update tests to verify session data fetching
-- [ ] Keep rest of report hardcoded for now
+- [X] Add SessionRepository dependency to getSessionReport
+- [X] Add TemplateRepository dependency for template name lookup
+- [X] Fetch session by ID and handle not found case
+- [X] Fetch template name by templateId
+- [X] Update tests to verify session data fetching
+- [X] Keep rest of report hardcoded for now
 
