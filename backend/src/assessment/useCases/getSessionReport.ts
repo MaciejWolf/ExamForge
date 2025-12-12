@@ -1,5 +1,5 @@
 import { Result, ok, err } from '../../shared/result';
-import { TestSessionReport, Participant } from '../types/sessionReport';
+import { TestSessionReport, Participant, SessionStatistics } from '../types/sessionReport';
 import { AssessmentError } from '../types/assessmentError';
 import { SessionRepository, TestInstanceRepository } from '../repository';
 import { TemplateRepository } from '../../design/repository';
@@ -69,10 +69,58 @@ const mapTestInstanceToParticipant = (
     startedAt: instance.startedAt ? toISOString(instance.startedAt) : undefined,
     completedAt: instance.completedAt ? toISOString(instance.completedAt) : undefined,
     createdAt: toISOString(instance.createdAt),
-    // Leave these undefined for now (next task)
-    totalScore: undefined,
-    maxScore: undefined,
-    timeTakenMinutes: undefined,
+    totalScore: instance.totalScore,
+    maxScore: instance.maxScore,
+    timeTakenMinutes: instance.timeTakenMinutes,
+  };
+};
+
+const calculateStatistics = (participants: Participant[]): SessionStatistics => {
+  const totalParticipants = participants.length;
+
+  // Count participants by status
+  const completedCount = participants.filter(p => p.status === 'completed').length;
+  const inProgressCount = participants.filter(p => p.status === 'in_progress').length;
+  const notStartedCount = participants.filter(p =>
+    p.status === 'not_started' || p.status === 'timed_out'
+  ).length;
+
+  // Calculate completion rate (handle division by zero)
+  const completionRate = totalParticipants > 0
+    ? completedCount / totalParticipants
+    : 0;
+
+  // Filter completed participants for score calculations
+  const completedParticipants = participants.filter(p => p.status === 'completed');
+
+  // Calculate score statistics (only from completed participants)
+  let averageScore = 0;
+  let highestScore = 0;
+  let lowestScore = 0;
+
+  if (completedParticipants.length > 0) {
+    // Filter out participants without scores
+    const participantsWithScores = completedParticipants.filter(
+      p => p.totalScore !== undefined && p.totalScore !== null
+    );
+
+    if (participantsWithScores.length > 0) {
+      const scores = participantsWithScores.map(p => p.totalScore!);
+      averageScore = scores.reduce((sum, score) => sum + score, 0) / scores.length;
+      highestScore = Math.max(...scores);
+      lowestScore = Math.min(...scores);
+    }
+  }
+
+  return {
+    totalParticipants,
+    completedCount,
+    inProgressCount,
+    notStartedCount,
+    completionRate,
+    averageScore,
+    highestScore,
+    lowestScore,
   };
 };
 
@@ -102,6 +150,9 @@ export const getSessionReport = ({ sessionRepo, templateRepo, testInstanceRepo, 
         mapTestInstanceToParticipant(instance, session, currentTime)
       );
 
+      // Calculate statistics from participant data
+      const statistics = calculateStatistics(participants);
+
       // Build report with real session data
     const report: TestSessionReport = {
       session: {
@@ -114,16 +165,7 @@ export const getSessionReport = ({ sessionRepo, templateRepo, testInstanceRepo, 
         createdAt: toISOString(session.createdAt),
       },
       participants,
-      statistics: {
-        averageScore: 85.0, // (85 + 92 + 78) / 3
-        highestScore: 92,
-        lowestScore: 78,
-        completionRate: 0.6, // 3 out of 5 completed
-        completedCount: 3,
-        inProgressCount: 1,
-        notStartedCount: 1,
-        totalParticipants: 5,
-      },
+      statistics,
       questionAnalysis: [
         {
           questionId: 'question-1',

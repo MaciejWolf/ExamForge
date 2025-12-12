@@ -23,7 +23,14 @@ export interface TestInstanceRepository {
 }
 
 const mapDocumentToSession = (doc: Document<TestSession>): TestSession => {
-  return doc.data;
+  const session = doc.data as any;
+  return {
+    ...session,
+    startTime: new Date(session.startTime),
+    endTime: new Date(session.endTime),
+    createdAt: new Date(session.createdAt),
+    updatedAt: new Date(session.updatedAt),
+  };
 };
 
 const mapSessionToDocument = (session: TestSession): Document<TestSession> => {
@@ -34,7 +41,17 @@ const mapSessionToDocument = (session: TestSession): Document<TestSession> => {
 };
 
 const mapDocumentToInstance = (doc: Document<TestInstance>): TestInstance => {
-  return doc.data;
+  const instance = doc.data as any;
+  return {
+    ...instance,
+    createdAt: new Date(instance.createdAt),
+    startedAt: instance.startedAt ? new Date(instance.startedAt) : undefined,
+    completedAt: instance.completedAt ? new Date(instance.completedAt) : undefined,
+    testContent: {
+      ...instance.testContent,
+      createdAt: new Date(instance.testContent.createdAt)
+    }
+  };
 };
 
 const mapInstanceToDocument = (instance: TestInstance): Document<TestInstance> => {

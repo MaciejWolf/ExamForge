@@ -81,8 +81,15 @@ describe('getSessionReport Use Case', () => {
       // Verify participants are fetched from database
       expect(result.value.participants).toBeDefined();
       expect(result.value.participants.length).toBeGreaterThanOrEqual(0);
-      // Statistics and questionAnalysis remain hardcoded for now
+      // Verify statistics are calculated from participant data
       expect(result.value.statistics).toBeDefined();
+      expect(result.value.statistics.totalParticipants).toBe(result.value.participants.length);
+      expect(result.value.statistics.completedCount).toBeGreaterThanOrEqual(0);
+      expect(result.value.statistics.inProgressCount).toBeGreaterThanOrEqual(0);
+      expect(result.value.statistics.notStartedCount).toBeGreaterThanOrEqual(0);
+      expect(result.value.statistics.completionRate).toBeGreaterThanOrEqual(0);
+      expect(result.value.statistics.completionRate).toBeLessThanOrEqual(1);
+      // Statistics and questionAnalysis remain hardcoded for now
       expect(result.value.questionAnalysis).toBeDefined();
     }
   });
@@ -536,6 +543,286 @@ describe('getSessionReport Use Case', () => {
       expect(result.value.participants.find(p => p.id === 'participant-3')?.status).toBe('completed');
     }
   });
+
+  it('Calculate statistics with empty participant list', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: no participants exist
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: all statistics should be 0
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics).toEqual({
+        totalParticipants: 0,
+        completedCount: 0,
+        inProgressCount: 0,
+        notStartedCount: 0,
+        completionRate: 0,
+        averageScore: 0,
+        highestScore: 0,
+        lowestScore: 0,
+      });
+    }
+  });
+
+  it('Calculate statistics with no completed participants', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: participants exist but none are completed
+    await givenParticipantsExist(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: score statistics should be 0, completion rate should be 0
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics.totalParticipants).toBe(2);
+      expect(result.value.statistics.completedCount).toBe(0);
+      expect(result.value.statistics.inProgressCount).toBe(1);
+      expect(result.value.statistics.notStartedCount).toBe(1);
+      expect(result.value.statistics.completionRate).toBe(0);
+      expect(result.value.statistics.averageScore).toBe(0);
+      expect(result.value.statistics.highestScore).toBe(0);
+      expect(result.value.statistics.lowestScore).toBe(0);
+    }
+  });
+
+  it('Calculate statistics with mixed statuses and scores', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: participants exist with different statuses and scores
+    await givenParticipantsExist(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-3',
+        identifier: 'Participant 3',
+        accessCode: 'CODE3',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        totalScore: 85,
+        maxScore: 100,
+        timeTakenMinutes: 30,
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-4',
+        identifier: 'Participant 4',
+        accessCode: 'CODE4',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:25:00Z'),
+        totalScore: 92,
+        maxScore: 100,
+        timeTakenMinutes: 25,
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-5',
+        identifier: 'Participant 5',
+        accessCode: 'CODE5',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:35:00Z'),
+        totalScore: 78,
+        maxScore: 100,
+        timeTakenMinutes: 35,
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: statistics should be calculated correctly
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics.totalParticipants).toBe(5);
+      expect(result.value.statistics.completedCount).toBe(3);
+      expect(result.value.statistics.inProgressCount).toBe(1);
+      expect(result.value.statistics.notStartedCount).toBe(1);
+      expect(result.value.statistics.completionRate).toBe(0.6); // 3/5
+      expect(result.value.statistics.averageScore).toBe(85); // (85 + 92 + 78) / 3
+      expect(result.value.statistics.highestScore).toBe(92);
+      expect(result.value.statistics.lowestScore).toBe(78);
+    }
+  });
+
+  it('Calculate statistics with single completed participant', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: a single completed participant exists
+    await givenParticipantsExist(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        totalScore: 90,
+        maxScore: 100,
+        timeTakenMinutes: 30,
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: statistics should match the single participant
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics.totalParticipants).toBe(1);
+      expect(result.value.statistics.completedCount).toBe(1);
+      expect(result.value.statistics.inProgressCount).toBe(0);
+      expect(result.value.statistics.notStartedCount).toBe(0);
+      expect(result.value.statistics.completionRate).toBe(1); // 1/1
+      expect(result.value.statistics.averageScore).toBe(90);
+      expect(result.value.statistics.highestScore).toBe(90);
+      expect(result.value.statistics.lowestScore).toBe(90);
+    }
+  });
+
+  it('Calculate statistics excluding participants without scores', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: completed participants exist, but one without a score
+    await givenParticipantsExist(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        totalScore: 80,
+        maxScore: 100,
+        timeTakenMinutes: 30,
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:25:00Z'),
+        // No totalScore provided
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-3',
+        identifier: 'Participant 3',
+        accessCode: 'CODE3',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:35:00Z'),
+        totalScore: 95,
+        maxScore: 100,
+        timeTakenMinutes: 35,
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: statistics should only include participants with scores
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.statistics.totalParticipants).toBe(3);
+      expect(result.value.statistics.completedCount).toBe(3);
+      expect(result.value.statistics.completionRate).toBe(1); // 3/3
+      // Average should only include participants with scores: (80 + 95) / 2 = 87.5
+      expect(result.value.statistics.averageScore).toBe(87.5);
+      expect(result.value.statistics.highestScore).toBe(95);
+      expect(result.value.statistics.lowestScore).toBe(80);
+    }
+  });
 });
 
 // --- Test Helpers ---
@@ -627,6 +914,9 @@ const givenParticipantsExist = async (
     startedAt?: Date;
     completedAt?: Date;
     createdAt?: Date;
+    totalScore?: number;
+    maxScore?: number;
+    timeTakenMinutes?: number;
   }>
 ): Promise<void> => {
   const baseDate = new Date('2025-01-01T10:00:00Z');
@@ -646,7 +936,10 @@ const givenParticipantsExist = async (
       testContent: defaultTestContent,
       startedAt: participant.startedAt,
       completedAt: participant.completedAt,
-      createdAt: participant.createdAt ?? baseDate
+      createdAt: participant.createdAt ?? baseDate,
+      totalScore: participant.totalScore,
+      maxScore: participant.maxScore,
+      timeTakenMinutes: participant.timeTakenMinutes
     };
     await testInstanceRepo.save(instance);
   }
