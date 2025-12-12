@@ -5,12 +5,12 @@ export type AssessmentError =
   | { type: 'RepositoryError'; message: string; internalError?: any }
   | { type: 'InsufficientQuestions'; poolId: string; required: number; available: number }
   | { type: 'SessionNotFound'; sessionId: string }
-  | { type: 'TestInstanceNotFound'; accessCode: string }
+  | { type: 'TestInstanceNotFound'; testInstanceId: string }
   | { type: 'SessionClosed'; sessionId: string; status: string }
-  | { type: 'TestAlreadyStarted'; accessCode: string }
-  | { type: 'TestNotOpenYet'; accessCode: string; startTime: Date }
-  | { type: 'TestExpired'; accessCode: string; endTime: Date }
-  | { type: 'TestNotStarted'; accessCode: string }
-  | { type: 'TestAlreadyFinished'; accessCode: string }
+  | { type: 'TestAlreadyStarted'; testInstanceId: string }
+  | { type: 'TestNotOpenYet'; testInstanceId: string; startTime: Date }
+  | { type: 'TestExpired'; testInstanceId: string; endTime: Date }
+  | { type: 'TestNotStarted'; testInstanceId: string }
+  | { type: 'TestAlreadyFinished'; testInstanceId: string }
   | { type: 'DesignError'; error: DesignError }
-  | { type: 'InvalidAccessCode'; accessCode: string };
+  | { type: 'InvalidAccessCode'; testInstanceId: string };

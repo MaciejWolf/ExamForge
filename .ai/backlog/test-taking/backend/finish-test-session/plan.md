@@ -1,4 +1,4 @@
-# finish-test-session
+# finish-test-instance
 
 Goal:
 Implement endpoint for participants to finish their test session, recording completion timestamp and finalizing submission.
@@ -44,7 +44,7 @@ Implement endpoint for participants to finish their test session, recording comp
     *   **When** the participant requests to finish the test again
     *   **Then** the operation should fail
     *   **And** the error should indicate `TestAlreadyFinished`
-    
+
     4.  **Validation: Test Instance Not Found**
         *   **Given** there is no test instance for the provided test ID
         *   **When** the participant requests to finish the test

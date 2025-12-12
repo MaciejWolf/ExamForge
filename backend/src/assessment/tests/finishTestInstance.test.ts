@@ -3,6 +3,7 @@ import { configureAssessmentModule, AssessmentModule } from "..";
 import { ok } from '../../shared/result';
 import { TestContentPackage } from '../../design/types/testContentPackage';
 import { TemplateProvider } from '../useCases/listSessions';
+import { TestInstance } from "../types/testInstance";
 
 describe('finishTestInstance Use Case', () => {
   let module: AssessmentModule;
@@ -18,17 +19,18 @@ describe('finishTestInstance Use Case', () => {
     const sessionId = await givenSession({
       startTime: new Date('2024-01-01T09:00:00Z'),
       endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
     });
 
     // And: Test instance started at 9:30
-    const accessCode = await givenTestInstance({
+    const { id: testInstanceId } = await givenTestInstance({
       sessionId,
       startedAt: new Date('2024-01-01T09:30:00Z')
     });
 
     // When: Current time is 10:00 and we finish the test
     now = new Date('2024-01-01T10:00:00Z');
-    const result = await module.finishTestSession(accessCode);
+    const result = await module.finishTestInstance(testInstanceId);
 
     // Then: Test should be finished at 10:00
     expect(result.ok).toBe(true);
@@ -70,11 +72,12 @@ describe('finishTestInstance Use Case', () => {
   const givenSession = async (params: {
     startTime: Date;
     endTime: Date;
+    testDurationMinutes: number;
   }): Promise<string> => {
     const result = await module.startSession({
       templateId: 'template-1',
       examinerId: 'examiner-1',
-      timeLimitMinutes: 60,
+      timeLimitMinutes: params.testDurationMinutes,
       startTime: params.startTime,
       endTime: params.endTime,
       participantIdentifiers: ['student-1']
@@ -90,7 +93,7 @@ describe('finishTestInstance Use Case', () => {
   const givenTestInstance = async (params: {
     sessionId: string;
     startedAt?: Date;
-  }): Promise<string> => {
+  }): Promise<TestInstance> => {
     // Set clock to startedAt time if provided
     if (params.startedAt) {
       now = params.startedAt;
@@ -104,6 +107,6 @@ describe('finishTestInstance Use Case', () => {
       throw new Error(`Failed to start test instance: ${JSON.stringify(startResult.error)}`);
     }
 
-    return accessCode;
+    return startResult.value;
   };
 });
