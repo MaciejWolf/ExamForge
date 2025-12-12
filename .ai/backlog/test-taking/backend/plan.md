@@ -4,9 +4,9 @@ Goal:
 Implement backend API endpoints for test participants to validate access codes, start test sessions, and finish test sessions. Focus on tracking test instance lifecycle with startDate and endDate.
 
 ## Tasks
-- [ ] validate-access-code
-- [ ] [start-test-session](start-test-session/plan.md)
-- [ ] [finish-test-session](finish-test-session/plan.md)
+- [X] validate-access-code
+- [X] [start-test-session](start-test-session/plan.md)
+- [X] [finish-test-session](finish-test-session/plan.md)
 
 ## Context
 
