@@ -343,6 +343,27 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
     }
   });
 
+  router.get('/sessions/:sessionId/participants/:participantId', async (req: Request, res: Response) => {
+    try {
+      const { sessionId, participantId } = req.params;
+      const result = await module.getParticipantDetails(sessionId, participantId);
+
+      if (!result.ok) {
+        return handleError(result.error, res);
+      }
+
+      res.status(200).json(result.value);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'Failed to get participant details',
+        },
+      });
+    }
+  });
+
   router.post('/start', async (req: Request, res: Response) => {
     // Validate request body
     const validation = validateStartTestInstanceRequest(req.body);

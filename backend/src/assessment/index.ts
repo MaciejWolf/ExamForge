@@ -109,6 +109,11 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
       testInstanceRepo,
       sessionRepo,
       now
+    }),
+    getParticipantDetails: useCases.getParticipantDetails({
+      testInstanceRepo,
+      sessionRepo,
+      now
     })
   };
 };

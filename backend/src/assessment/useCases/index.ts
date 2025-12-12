@@ -5,3 +5,4 @@ export * from './getSessionReport';
 export * from './startTestInstance';
 export * from './getTestQuestions';
 export * from './finishTestSession';
+export * from './getParticipantDetails';
