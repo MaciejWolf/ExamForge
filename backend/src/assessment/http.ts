@@ -325,16 +325,17 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
       const result = await module.getSessionReport(sessionId);
 
       if (!result.ok) {
+        console.error('getSessionReport error:', result.error);
         return handleError(result.error, res);
       }
 
       res.status(200).json(result.value);
     } catch (error) {
-      console.error(error);
+      console.error('Unexpected error in getSessionReport endpoint:', error);
       res.status(500).json({
         error: {
           type: 'InternalServerError',
-          message: 'Failed to get session report',
+          message: error instanceof Error ? error.message : 'Failed to get session report',
         },
       });
     }

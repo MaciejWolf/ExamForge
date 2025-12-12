@@ -1,23 +1,59 @@
-import { Result, ok } from '../../shared/result';
+import { Result, ok, err } from '../../shared/result';
 import { TestSessionReport } from '../types/sessionReport';
 import { AssessmentError } from '../types/assessmentError';
+import { SessionRepository } from '../repository';
+import { TemplateRepository } from '../../design/repository';
+import { TestSession } from '../types/testSession';
 
 type GetSessionReportDeps = {
-  // No dependencies needed for hardcoded data
+  sessionRepo: SessionRepository;
+  templateRepo: TemplateRepository;
 };
 
-export const getSessionReport = (_deps: GetSessionReportDeps) => {
+const mapSessionStatus = (status: TestSession['status']): TestSessionReport['session']['status'] => {
+  switch (status) {
+    case 'open': return 'active';
+    case 'completed': return 'completed';
+    case 'aborted': return 'cancelled';
+  }
+};
+
+const toISOString = (date: Date | string): string => {
+  if (typeof date === 'string') {
+    return date;
+  }
+  return date.toISOString();
+};
+
+export const getSessionReport = ({ sessionRepo, templateRepo }: GetSessionReportDeps) => {
   return async (sessionId: string): Promise<Result<TestSessionReport, AssessmentError>> => {
-    // Hardcoded report data with realistic sample data
+    try {
+      // Fetch session from database
+      const session = await sessionRepo.findById(sessionId);
+      if (!session) {
+        return err({ type: 'SessionNotFound', sessionId });
+      }
+
+      // Fetch template name
+      let templateName = 'Unknown Template';
+      try {
+        const template = await templateRepo.findById(session.templateId);
+        templateName = template?.name ?? 'Unknown Template';
+      } catch (error) {
+        // If template lookup fails, log but continue with 'Unknown Template'
+        console.error('Error fetching template:', error);
+      }
+
+      // Build report with real session data
     const report: TestSessionReport = {
       session: {
-        id: sessionId,
-        templateId: 'template-123',
-        templateName: 'Mathematics Assessment - Advanced',
-        examinerId: 'examiner-456',
-        timeLimitMinutes: 60,
-        status: 'completed',
-        createdAt: '2024-01-15T10:00:00Z',
+        id: session.id,
+        templateId: session.templateId,
+        templateName: templateName,
+        examinerId: session.examinerId,
+        timeLimitMinutes: session.timeLimitMinutes,
+        status: mapSessionStatus(session.status),
+        createdAt: toISOString(session.createdAt),
       },
       participants: [
         {
@@ -140,6 +176,14 @@ export const getSessionReport = (_deps: GetSessionReportDeps) => {
       ],
     };
 
-    return ok(report);
+      return ok(report);
+    } catch (error) {
+      console.error('Error in getSessionReport:', error);
+      return err({
+        type: 'RepositoryError',
+        message: error instanceof Error ? error.message : 'Failed to fetch session report',
+        internalError: error
+      });
+    }
   };
 };

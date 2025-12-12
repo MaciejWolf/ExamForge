@@ -12,6 +12,11 @@ import {
 import { Result } from '../shared/result';
 import { TestContentPackage } from '../design/types/testContentPackage';
 import { DesignError } from '../design/types/designError';
+import {
+  TemplateRepository,
+  createInMemoryTemplateRepository,
+  createSupabaseTemplateRepository
+} from '../design/repository';
 
 type MaterializeTemplateFn = (templateId: string) => Promise<Result<TestContentPackage, DesignError>>;
 
@@ -27,6 +32,7 @@ export type AssessmentModuleConfig = {
   // Allow overriding repositories generic interface (for testing or specific needs)
   sessionRepo?: SessionRepository;
   testInstanceRepo?: TestInstanceRepository;
+  templateRepo?: TemplateRepository;
 };
 
 // Default Access Code Generator
@@ -56,6 +62,15 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
     testInstanceRepo = createInMemoryTestInstanceRepository();
   }
 
+  let templateRepo: TemplateRepository;
+  if (config.templateRepo) {
+    templateRepo = config.templateRepo;
+  } else if (config.supabaseClient) {
+    templateRepo = createSupabaseTemplateRepository(config.supabaseClient);
+  } else {
+    templateRepo = createInMemoryTemplateRepository();
+  }
+
   return {
     startSession: useCases.startSession({
       sessionRepo,
@@ -74,7 +89,10 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
       sessionRepo,
       testInstanceRepo
     }),
-    getSessionReport: useCases.getSessionReport({}),
+    getSessionReport: useCases.getSessionReport({
+      sessionRepo,
+      templateRepo
+    }),
     startTestInstance: useCases.startTestInstance({
       testInstanceRepo,
       sessionRepo,
