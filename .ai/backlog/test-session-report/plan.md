@@ -11,8 +11,7 @@ Context:
 
 Tasks:
 - [X] [create-hardcoded-report-endpoint](./create-hardcoded-report-endpoint/plan.md)
-- [ ] [implement-report-data-service](./implement-report-data-service/plan.md)
-- [ ] [integrate-real-data](./integrate-real-data/plan.md)
+- [ ] [replace-hardcoded-data](./replace-hardcoded-data/plan.md)
 
 Dependencies:
 - Requires existing test session data (seeded or real)
