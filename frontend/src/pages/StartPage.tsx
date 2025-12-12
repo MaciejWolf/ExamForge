@@ -12,6 +12,22 @@ export const StartPage = () => {
   const [loading, setLoading] = useState(false)
   const navigate = useNavigate()
 
+  const formatDateTime = (dateString: string): string => {
+    try {
+      const date = new Date(dateString)
+      return new Intl.DateTimeFormat('en-US', {
+        month: 'short',
+        day: 'numeric',
+        year: 'numeric',
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true,
+      }).format(date)
+    } catch {
+      return dateString
+    }
+  }
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
     
@@ -27,7 +43,49 @@ export const StartPage = () => {
       navigate("/test", { state: { testInstance } })
     } catch (error) {
       if (error instanceof ApiError) {
-        toast.error(error.message)
+        const errorType = error.errorData?.type
+        let errorMessage = error.message
+
+        switch (errorType) {
+          case 'InvalidAccessCode':
+            errorMessage = "Invalid access code. Please check and try again."
+            break
+          case 'SessionClosed':
+            errorMessage = "The test session is closed."
+            break
+          case 'TestAlreadyStarted':
+            errorMessage = "You have already started this test."
+            break
+          case 'TestNotOpenYet': {
+            const startTime = error.errorData?.startTime
+            if (startTime && typeof startTime === 'string') {
+              errorMessage = `The test is not open yet. It starts at ${formatDateTime(startTime)}.`
+            } else {
+              errorMessage = "The test is not open yet."
+            }
+            break
+          }
+          case 'TestExpired': {
+            const endTime = error.errorData?.endTime
+            if (endTime && typeof endTime === 'string') {
+              errorMessage = `The test ended at ${formatDateTime(endTime)}.`
+            } else {
+              errorMessage = "The test has expired."
+            }
+            break
+          }
+          case 'TestAlreadyFinished':
+            errorMessage = "You have already submitted this test."
+            break
+          case 'ValidationError':
+            errorMessage = error.errorData?.message || "Invalid request. Please check your input."
+            break
+          default:
+            // Use the error message from the API, or fallback to generic message
+            errorMessage = error.message || "Failed to start test. Please try again."
+        }
+
+        toast.error(errorMessage)
       } else {
         toast.error("Failed to start test. Please check your access code.")
       }
