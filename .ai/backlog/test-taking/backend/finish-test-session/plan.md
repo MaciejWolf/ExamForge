@@ -5,7 +5,7 @@ Implement endpoint for participants to finish their test session, recording comp
 
 ## Tasks
 - [ ] implement-endpoint
-- [ ] unit-tests
+- [X] unit-tests
 
 ## Context
 
