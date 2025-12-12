@@ -76,6 +76,37 @@ describe('finishTestInstance Use Case', () => {
 //     *   **Then** the operation should fail
 //     *   **And** the error should indicate `TestAlreadyFinished`
 
+  it('should return TestAlreadyFinished error if test instance has already been finished', async () => {
+    // Given: Session and test instance
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:30:00Z')
+    });
+
+    // And: Test instance is already finished
+    now = new Date('2024-01-01T10:00:00Z');
+    await module.finishTestInstance(testInstanceId);
+
+    // When: Participant requests to finish the test again
+    now = new Date('2024-01-01T10:05:00Z');
+    const result = await module.finishTestInstance(testInstanceId);
+
+    // Then: Operation should fail
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toEqual({
+        type: 'TestAlreadyFinished',
+        testInstanceId
+      });
+    }
+  });
+
 //     4.  **Validation: Test Instance Not Found**
 //         *   **Given** there is no test instance for the provided test ID
 //         *   **When** the participant requests to finish the test
