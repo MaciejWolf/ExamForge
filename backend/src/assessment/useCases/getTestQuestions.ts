@@ -29,7 +29,7 @@ export const getTestQuestions = (deps: GetTestQuestionsDeps) => async (accessCod
 
   // Check if test has been started
   if (!instance.startedAt) {
-    return err({ type: 'TestNotStarted', accessCode });
+    return err({ type: 'TestNotStarted', testInstanceId: instance.id });
   }
 
   // Check if session is still open
@@ -40,11 +40,11 @@ export const getTestQuestions = (deps: GetTestQuestionsDeps) => async (accessCod
   // Check if test is still within time window
   const now = deps.now();
   if (now < session.startTime) {
-    return err({ type: 'TestNotOpenYet', accessCode, startTime: session.startTime });
+    return err({ type: 'TestNotOpenYet', testInstanceId: instance.id, startTime: session.startTime });
   }
 
   if (now > session.endTime) {
-    return err({ type: 'TestExpired', accessCode, endTime: session.endTime });
+    return err({ type: 'TestExpired', testInstanceId: instance.id, endTime: session.endTime });
   }
 
   // Sanitize the test content by removing correctAnswerId from all questions

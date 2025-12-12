@@ -5,7 +5,7 @@ export type AssessmentError =
   | { type: 'RepositoryError'; message: string; internalError?: any }
   | { type: 'InsufficientQuestions'; poolId: string; required: number; available: number }
   | { type: 'SessionNotFound'; sessionId: string }
-  | { type: 'TestInstanceNotFound'; testInstanceId: string }
+  | { type: 'TestInstanceNotFound'; testInstanceId?: string, accessCode?: string }
   | { type: 'SessionClosed'; sessionId: string; status: string }
   | { type: 'TestAlreadyStarted'; testInstanceId: string }
   | { type: 'TestNotOpenYet'; testInstanceId: string; startTime: Date }

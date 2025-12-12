@@ -26,15 +26,15 @@ export const startTestInstance = (deps: StartTestInstanceDeps) => async (accessC
 
   const now = deps.now();
   if (now < session.startTime) {
-    return err({ type: 'TestNotOpenYet', accessCode, startTime: session.startTime });
+    return err({ type: 'TestNotOpenYet', testInstanceId: instance.id, startTime: session.startTime });
   }
 
   if (now > session.endTime) {
-    return err({ type: 'TestExpired', accessCode, endTime: session.endTime });
+    return err({ type: 'TestExpired', testInstanceId: instance.id, endTime: session.endTime });
   }
 
   if (instance.startedAt) {
-    return err({ type: 'TestAlreadyStarted', accessCode });
+    return err({ type: 'TestAlreadyStarted', testInstanceId: instance.id });
   }
 
   instance.startedAt = deps.now();
