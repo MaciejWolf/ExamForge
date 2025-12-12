@@ -80,6 +80,11 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
       sessionRepo,
       now
     }),
+    finishTestSession: useCases.finishTestSession({
+      testInstanceRepo,
+      sessionRepo,
+      now
+    }),
     getTestQuestions: useCases.getTestQuestions({
       testInstanceRepo,
       sessionRepo,

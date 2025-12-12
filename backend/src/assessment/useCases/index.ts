@@ -4,3 +4,4 @@ export * from './getSessionById';
 export * from './getSessionReport';
 export * from './startTestInstance';
 export * from './getTestQuestions';
+export * from './finishTestSession';
