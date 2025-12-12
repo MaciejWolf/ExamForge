@@ -580,11 +580,11 @@ const seedCompletedSessions = async (
         const allQuestionsWithPoints = instance.testContent.sections.flatMap(section => {
           const questionsInSection = section.questions.length;
           if (questionsInSection === 0) return [];
-          
+
           const pointsPerQuestion = section.points / questionsInSection;
-          return section.questions.map(q => ({ 
-            question: q, 
-            points: pointsPerQuestion 
+          return section.questions.map(q => ({
+            question: q,
+            points: pointsPerQuestion
           }));
         });
 
