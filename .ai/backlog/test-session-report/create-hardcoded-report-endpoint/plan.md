@@ -107,8 +107,8 @@ Tasks:
 - [ ] verify-with-frontend
 
 ## Acceptance Criteria
-- [ ] Endpoint responds with 200 and hardcoded report data
-- [ ] Response matches `TestSessionReport` TypeScript interface
-- [ ] Frontend page successfully displays the hardcoded data
-- [ ] All tests pass
-- [ ] Follows vertical slice architecture pattern
+- [X] Endpoint responds with 200 and hardcoded report data
+- [X] Response matches `TestSessionReport` TypeScript interface
+- [X] Frontend page successfully displays the hardcoded data
+- [X] All tests pass
+- [X] Follows vertical slice architecture pattern
