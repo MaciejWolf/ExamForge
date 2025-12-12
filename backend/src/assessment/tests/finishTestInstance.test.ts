@@ -40,13 +40,6 @@ describe('finishTestInstance Use Case', () => {
     }
   });
 
-
-//   2.  **Validation: Not Started**
-//     *   **Given** a test instance that has **not** been started (`startedAt` is undefined)
-//     *   **When** the participant requests to finish the test
-//     *   **Then** the operation should fail
-//     *   **And** the error should indicate `TestNotStarted`
-
   it('should return TestNotStarted error if test instance has not been started', async () => {
     const sessionId = await givenSession({
       startTime: new Date('2024-01-01T09:00:00Z'),
@@ -69,12 +62,6 @@ describe('finishTestInstance Use Case', () => {
       });
     }
   });
-
-// 3.  **Validation: Already Finished**
-//     *   **Given** a test instance that has already been completed (`completedAt` is present)
-//     *   **When** the participant requests to finish the test again
-//     *   **Then** the operation should fail
-//     *   **And** the error should indicate `TestAlreadyFinished`
 
   it('should return TestAlreadyFinished error if test instance has already been finished', async () => {
     // Given: Session and test instance
@@ -107,11 +94,39 @@ describe('finishTestInstance Use Case', () => {
     }
   });
 
-//     4.  **Validation: Test Instance Not Found**
-//         *   **Given** there is no test instance for the provided test ID
-//         *   **When** the participant requests to finish the test
-//         *   **Then** the operation should fail
-//         *   **And** the error should indicate `TestInstanceNotFound`
+  it('should return TestInstanceNotFound error if test instance does not exist', async () => {
+    // Given: No test instance with this ID
+    const testInstanceId = 'non-existent-id';
+
+    // When: Participant requests to finish the test
+    const result = await module.finishTestInstance(testInstanceId);
+
+    // Then: Operation should fail
+    expect(result.ok).toBe(false);
+    if (!result.ok) {
+      expect(result.error).toEqual({
+        type: 'TestInstanceNotFound',
+        testInstanceId
+      });
+    }
+  });
+
+  it('should succeed if test instance is started before session ends and finished after session ends', async () => {
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:10:59Z')
+    });
+
+    now = new Date('2024-01-01T11:30:00Z');
+    const result = await module.finishTestInstance(testInstanceId);
+    expect(result.ok).toBe(true);
+  });
 
   // --- Test Helpers ---
 
