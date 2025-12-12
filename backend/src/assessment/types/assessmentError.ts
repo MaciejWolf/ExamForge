@@ -7,8 +7,8 @@ export type AssessmentError =
   | { type: 'SessionNotFound'; sessionId: string }
   | { type: 'TestInstanceNotFound'; testInstanceId?: string, accessCode?: string }
   | { type: 'SessionClosed'; sessionId: string; status: string }
-  | { type: 'TestAlreadyStarted'; testInstanceId: string }
-  | { type: 'TestNotOpenYet'; testInstanceId: string; startTime: Date }
+  | { type: 'TestAlreadyStarted'; testInstanceId: string; accessCode: string }
+  | { type: 'TestNotOpenYet'; testInstanceId: string; accessCode: string; startTime: Date }
   | { type: 'TestExpired'; testInstanceId: string; endTime: Date }
   | { type: 'TestNotStarted'; testInstanceId: string }
   | { type: 'TestAlreadyFinished'; testInstanceId: string }

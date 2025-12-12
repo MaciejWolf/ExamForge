@@ -153,6 +153,7 @@ const handleError = (error: AssessmentError, res: Response): Response => {
         error: {
           type: error.type,
           testInstanceId: error.testInstanceId,
+          accessCode: error.accessCode,
         },
       });
     case 'TestNotOpenYet':
@@ -160,6 +161,7 @@ const handleError = (error: AssessmentError, res: Response): Response => {
         error: {
           type: error.type,
           testInstanceId: error.testInstanceId,
+          accessCode: error.accessCode,
           startTime: error.startTime.toISOString(),
         },
       });

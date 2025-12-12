@@ -205,7 +205,7 @@ describe('getSessionReport Use Case', () => {
       name: 'Science Assessment'
     });
 
-    const sessionId = await givenASessionExists(module, {
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
       templateId,
       examinerId: 'examiner-2',
       timeLimitMinutes: 90,

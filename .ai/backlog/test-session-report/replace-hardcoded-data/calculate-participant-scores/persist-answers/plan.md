@@ -16,21 +16,21 @@ MVP Decision:
 Tasks:
 
 Backend - Data Model & Types:
-- [ ] Add `answers` field to TestInstance type (Record<string, string> - questionId → answerId)
-- [ ] Update TestInstanceRepository interface to support answer storage
+- [x] Add `answers` field to TestInstance type (Record<string, string> - questionId → answerId)
+- [x] Update TestInstanceRepository interface to support answer storage
 
 Backend - Use Case:
-- [ ] Update finishTestSession signature to accept answers parameter: `finishTestSession(testInstanceId: string, answers: Record<string, string>)`
-- [ ] Add validation for answers parameter (optional but should be object if provided)
-- [ ] Persist answers to TestInstance.answers field when finishing test
-- [ ] Ensure atomic operation: answers + completion status saved together
+- [x] Update finishTestSession signature to accept answers parameter: `finishTestSession(testInstanceId: string, answers: Record<string, string>)`
+- [x] Add validation for answers parameter (optional but should be object if provided)
+- [x] Persist answers to TestInstance.answers field when finishing test
+- [x] Ensure atomic operation: answers + completion status saved together
 
 Backend - Tests:
-- [ ] Add test: finishing test with valid answers persists them to TestInstance
-- [ ] Add test: finishing test with empty answers object
-- [ ] Add test: finishing test with partial answers (some questions unanswered)
-- [ ] Add test: answers are persisted atomically with completion status
-- [ ] Update existing finishTestSession tests to handle new parameter
+- [x] Add test: finishing test with valid answers persists them to TestInstance
+- [x] Add test: finishing test with empty answers object
+- [x] Add test: finishing test with partial answers (some questions unanswered)
+- [x] Add test: answers are persisted atomically with completion status
+- [x] Update existing finishTestSession tests to handle new parameter
 
 Frontend - Answer Collection:
 - [x] Identify test-taking component(s) that render questions (QuestionListPage.tsx)
@@ -39,9 +39,9 @@ Frontend - Answer Collection:
 - [x] Ensure answers are maintained across all test sections - component-level state covers all sections
 
 Frontend - Submission:
-- [ ] Update finishTestSession API call to include answers in request body (currently only logs to console)
-- [ ] Handle loading/error states during submission
-- [ ] Navigate to TestCompletionPage after successful submission
+- [x] Update finishTestSession API call to include answers in request body (currently only logs to console)
+- [x] Handle loading/error states during submission
+- [x] Navigate to TestCompletionPage after successful submission
 
 Implementation Details:
 

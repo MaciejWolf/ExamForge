@@ -40,7 +40,7 @@ export const getTestQuestions = (deps: GetTestQuestionsDeps) => async (accessCod
   // Check if test is still within time window
   const now = deps.now();
   if (now < session.startTime) {
-    return err({ type: 'TestNotOpenYet', testInstanceId: instance.id, startTime: session.startTime });
+    return err({ type: 'TestNotOpenYet', testInstanceId: instance.id, accessCode: instance.accessCode, startTime: session.startTime });
   }
 
   if (now > session.endTime) {

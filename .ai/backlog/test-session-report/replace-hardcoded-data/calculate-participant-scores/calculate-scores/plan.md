@@ -21,27 +21,27 @@ Tasks:
 
 Score Calculation Logic:
 - [x] Understand TestContentPackage structure and answer data
-- [ ] Implement totalScore calculation by comparing answers with correctAnswerId
-- [ ] Calculate points per question (section.points / questions in section)
-- [ ] Sum points earned for all correct answers
-- [ ] Implement maxScore calculation (sum of section.points across all sections)
-- [ ] Implement timeTakenMinutes calculation (completedAt - startedAt)
+- [x] Implement totalScore calculation by comparing answers with correctAnswerId
+- [x] Calculate points per question (section.points / questions in section)
+- [x] Sum points earned for all correct answers
+- [x] Implement maxScore calculation (sum of section.points across all sections)
+- [x] Implement timeTakenMinutes calculation (completedAt - startedAt)
 
 Integration with finishTestSession:
-- [ ] Add score calculation after answers are persisted
-- [ ] Only calculate scores for completed participants
-- [ ] Store totalScore, maxScore, timeTakenMinutes in TestInstance
-- [ ] Keep statistics and question analysis hardcoded (out of scope)
+- [x] Add score calculation after answers are persisted
+- [x] Only calculate scores for completed participants
+- [x] Store totalScore, maxScore, timeTakenMinutes in TestInstance
+- [x] Keep statistics and question analysis hardcoded (out of scope)
 
 Testing:
-- [ ] Test: all correct answers → totalScore equals maxScore
-- [ ] Test: all incorrect answers → totalScore is 0, maxScore is correct
-- [ ] Test: mixed correct/incorrect answers → partial score
-- [ ] Test: points distributed evenly across questions in a section
-- [ ] Test: timeTakenMinutes calculation with different durations
-- [ ] Test: edge case - empty answers → totalScore is 0
-- [ ] Test: edge case - partial answers → only answered questions scored
-- [ ] Test: scores are calculated and persisted atomically
+- [x] Test: all correct answers → totalScore equals maxScore
+- [x] Test: all incorrect answers → totalScore is 0, maxScore is correct
+- [x] Test: mixed correct/incorrect answers → partial score
+- [x] Test: points distributed evenly across questions in a section
+- [x] Test: timeTakenMinutes calculation with different durations
+- [x] Test: edge case - empty answers → totalScore is 0
+- [x] Test: edge case - partial answers → only answered questions scored
+- [x] Test: scores are calculated and persisted atomically
 
 Resolved Questions:
 - ✅ How are answers stored in TestContentPackage?

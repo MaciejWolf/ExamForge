@@ -21,8 +21,8 @@ Fields to populate:
 - `participant.timeTakenMinutes` (calculated from startedAt/completedAt)
 
 Subplans:
-- [ ] [persist-answers/](persist-answers/plan.md) - Implement answer collection, submission, and storage (backend + frontend)
-- [ ] [calculate-scores/](calculate-scores/plan.md) - Implement scoring logic based on persisted answers
+- [X] [persist-answers/](persist-answers/plan.md) - Implement answer collection, submission, and storage (backend + frontend)
+- [X] [calculate-scores/](calculate-scores/plan.md) - Implement scoring logic based on persisted answers
 
 Resolved Questions:
 - ✅ How are answers stored in TestContentPackage?
