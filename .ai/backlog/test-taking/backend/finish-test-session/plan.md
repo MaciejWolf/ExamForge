@@ -4,7 +4,7 @@ Goal:
 Implement endpoint for participants to finish their test session, recording completion timestamp and finalizing submission.
 
 ## Tasks
-- [ ] implement-endpoint
+- [X] implement-endpoint
 - [X] unit-tests
 
 ## Context

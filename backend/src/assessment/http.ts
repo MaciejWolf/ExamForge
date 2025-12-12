@@ -130,14 +130,14 @@ const handleError = (error: AssessmentError, res: Response): Response => {
       return res.status(404).json({
         error: {
           type: error.type,
-          accessCode: error.accessCode,
+          testInstanceId: error.testInstanceId,
         },
       });
     case 'InvalidAccessCode':
       return res.status(400).json({
         error: {
           type: error.type,
-          accessCode: error.accessCode,
+          testInstanceId: error.testInstanceId,
         },
       });
     case 'SessionClosed':
@@ -152,14 +152,14 @@ const handleError = (error: AssessmentError, res: Response): Response => {
       return res.status(409).json({
         error: {
           type: error.type,
-          accessCode: error.accessCode,
+          testInstanceId: error.testInstanceId,
         },
       });
     case 'TestNotOpenYet':
       return res.status(400).json({
         error: {
           type: error.type,
-          accessCode: error.accessCode,
+          testInstanceId: error.testInstanceId,
           startTime: error.startTime.toISOString(),
         },
       });
@@ -167,8 +167,22 @@ const handleError = (error: AssessmentError, res: Response): Response => {
       return res.status(400).json({
         error: {
           type: error.type,
-          accessCode: error.accessCode,
+          testInstanceId: error.testInstanceId,
           endTime: error.endTime.toISOString(),
+        },
+      });
+    case 'TestNotStarted':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          testInstanceId: error.testInstanceId,
+        },
+      });
+    case 'TestAlreadyFinished':
+      return res.status(400).json({
+        error: {
+          type: error.type,
+          testInstanceId: error.testInstanceId,
         },
       });
     case 'InsufficientQuestions':
@@ -355,6 +369,28 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
         error: {
           type: 'InternalServerError',
           message: 'Failed to start test instance',
+        },
+      });
+    }
+  });
+
+  router.post('/instances/:id/finish', async (req: Request, res: Response) => {
+    try {
+      const { id } = req.params;
+      const result = await module.finishTestInstance(id);
+
+      if (!result.ok) {
+        return handleError(result.error, res);
+      }
+
+      const participantInstance = toParticipantTestInstance(result.value);
+      res.status(200).json(participantInstance);
+    } catch (error) {
+      console.error(error);
+      res.status(500).json({
+        error: {
+          type: 'InternalServerError',
+          message: 'Failed to finish test instance',
         },
       });
     }
