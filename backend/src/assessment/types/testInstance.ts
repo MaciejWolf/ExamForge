@@ -9,5 +9,6 @@ export type TestInstance = {
     startedAt?: Date;
     completedAt?: Date;
     totalScore?: number;
+    answers?: Record<string, string>; // questionId → answerId
     createdAt: Date;
 };

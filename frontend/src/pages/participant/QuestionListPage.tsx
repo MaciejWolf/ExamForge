@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useLocation, Navigate } from 'react-router-dom';
+import { useLocation, useNavigate, Navigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
@@ -11,14 +11,17 @@ import {
   DialogDescription,
   DialogFooter,
 } from '@/components/ui/dialog';
-import type { ParticipantTestInstance } from '@/services/assessment';
+import { assessmentService, type ParticipantTestInstance } from '@/services/assessment';
 
 export const QuestionListPage = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const testInstance = location.state?.testInstance as ParticipantTestInstance;
   const [answers, setAnswers] = useState<Record<string, string>>({});
   const [showUnansweredDialog, setShowUnansweredDialog] = useState(false);
   const [highlightUnanswered, setHighlightUnanswered] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitError, setSubmitError] = useState<string | null>(null);
 
   if (!testInstance) {
     return <Navigate to="/" replace />;
@@ -47,10 +50,25 @@ export const QuestionListPage = () => {
     submitTest();
   };
 
-  const submitTest = () => {
-    // TODO: Implement test submission logic
-    console.log('Test finished', { answers });
+  const submitTest = async () => {
+    setIsSubmitting(true);
+    setSubmitError(null);
     setShowUnansweredDialog(false);
+
+    try {
+      const completedInstance = await assessmentService.finishTestInstance(testInstance.id, answers);
+      navigate('/test-completion', { 
+        state: { testInstance: completedInstance } 
+      });
+    } catch (error) {
+      console.error('Failed to submit test:', error);
+      setSubmitError(
+        error instanceof Error 
+          ? error.message 
+          : 'Failed to submit test. Please try again.'
+      );
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -123,13 +141,19 @@ export const QuestionListPage = () => {
           </div>
         ))}
 
-        <div className="flex justify-end pt-4 pb-8">
+        <div className="flex flex-col items-end gap-4 pt-4 pb-8">
+          {submitError && (
+            <div className="w-full md:w-auto text-sm text-destructive bg-destructive/10 border border-destructive/20 rounded-md p-3">
+              {submitError}
+            </div>
+          )}
           <Button 
             size="lg" 
             onClick={handleFinishTest}
+            disabled={isSubmitting}
             className="w-full md:w-auto text-lg px-8"
           >
-            Finish Test
+            {isSubmitting ? 'Submitting...' : 'Finish Test'}
           </Button>
         </div>
       </div>
@@ -144,11 +168,18 @@ export const QuestionListPage = () => {
             </DialogDescription>
           </DialogHeader>
           <DialogFooter className="gap-2 sm:gap-0">
-            <Button variant="outline" onClick={() => setShowUnansweredDialog(false)}>
+            <Button 
+              variant="outline" 
+              onClick={() => setShowUnansweredDialog(false)}
+              disabled={isSubmitting}
+            >
               Continue Testing
             </Button>
-            <Button onClick={submitTest}>
-              Yes, Finish Test
+            <Button 
+              onClick={submitTest}
+              disabled={isSubmitting}
+            >
+              {isSubmitting ? 'Submitting...' : 'Yes, Finish Test'}
             </Button>
           </DialogFooter>
         </DialogContent>

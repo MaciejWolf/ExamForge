@@ -9,7 +9,7 @@ type FinishTestInstanceDeps = {
   now: () => Date;
 };
 
-export const finishTestInstance = (deps: FinishTestInstanceDeps) => async (testInstanceId: string): Promise<Result<TestInstance, AssessmentError>> => {
+export const finishTestInstance = (deps: FinishTestInstanceDeps) => async (testInstanceId: string, answers?: Record<string, string>): Promise<Result<TestInstance, AssessmentError>> => {
   const instance = await deps.testInstanceRepo.findById(testInstanceId);
   if (!instance) {
     return err({ type: 'TestInstanceNotFound', testInstanceId });
@@ -23,8 +23,15 @@ export const finishTestInstance = (deps: FinishTestInstanceDeps) => async (testI
     return err({ type: 'TestAlreadyFinished', testInstanceId });
   }
 
-  // TODO: Add validation for session expiration if needed, though plan doesn't explicitly mention it for this case yet.
-  // Generally if you are finishing, checking if session is still open or valid might be required, but strictly following the plan tasks.
+  // Validate answers if provided
+  if (answers !== undefined && (typeof answers !== 'object' || answers === null || Array.isArray(answers))) {
+    return err({ type: 'RepositoryError', message: 'Answers must be an object if provided' });
+  }
+
+  // Persist answers atomically with completion status
+  if (answers !== undefined) {
+    instance.answers = answers;
+  }
 
   instance.completedAt = deps.now();
   await deps.testInstanceRepo.save(instance);

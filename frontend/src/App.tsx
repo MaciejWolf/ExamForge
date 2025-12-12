@@ -15,6 +15,7 @@ import TestSessionReportPage from "./pages/examiner/TestSessionReportPage"
 import { ParticipantDetailPage } from "./pages/examiner/ParticipantDetailPage"
 import TestTemplateFormPage from "./pages/examiner/TestTemplateFormPage"
 import { QuestionListPage } from "./pages/participant/QuestionListPage"
+import { TestCompletionPage } from "./pages/participant/TestCompletionPage"
 
 export const App = () => {
   return (
@@ -23,6 +24,7 @@ export const App = () => {
         <Routes>
           <Route path="/" element={<StartPage />} />
           <Route path="/test" element={<QuestionListPage />} />
+          <Route path="/test-completion" element={<TestCompletionPage />} />
           <Route path="/login" element={<ExaminerLoginPage />} />
           <Route path="/register" element={<ExaminerRegistrationPage />} />
           <Route path="/password-recovery" element={<PasswordRecoveryPage />} />

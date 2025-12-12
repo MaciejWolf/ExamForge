@@ -30,7 +30,7 @@ describe('finishTestInstance Use Case', () => {
 
     // When: Current time is 10:00 and we finish the test
     now = new Date('2024-01-01T10:00:00Z');
-    const result = await module.finishTestInstance(testInstanceId);
+    const result = await module.finishTestInstance(testInstanceId, undefined);
 
     // Then: Test should be finished at 10:00
     expect(result.ok).toBe(true);
@@ -51,7 +51,7 @@ describe('finishTestInstance Use Case', () => {
 
     // When: Participant requests to finish the test
     now = new Date('2024-01-01T10:00:00Z');
-    const result = await module.finishTestInstance(testInstance.id);
+    const result = await module.finishTestInstance(testInstance.id, undefined);
 
     // Then: Operation should fail
     expect(result.ok).toBe(false);
@@ -78,11 +78,11 @@ describe('finishTestInstance Use Case', () => {
 
     // And: Test instance is already finished
     now = new Date('2024-01-01T10:00:00Z');
-    await module.finishTestInstance(testInstanceId);
+    await module.finishTestInstance(testInstanceId, undefined);
 
     // When: Participant requests to finish the test again
     now = new Date('2024-01-01T10:05:00Z');
-    const result = await module.finishTestInstance(testInstanceId);
+    const result = await module.finishTestInstance(testInstanceId, undefined);
 
     // Then: Operation should fail
     expect(result.ok).toBe(false);
@@ -99,7 +99,7 @@ describe('finishTestInstance Use Case', () => {
     const testInstanceId = 'non-existent-id';
 
     // When: Participant requests to finish the test
-    const result = await module.finishTestInstance(testInstanceId);
+    const result = await module.finishTestInstance(testInstanceId, undefined);
 
     // Then: Operation should fail
     expect(result.ok).toBe(false);
@@ -124,8 +124,161 @@ describe('finishTestInstance Use Case', () => {
     });
 
     now = new Date('2024-01-01T11:30:00Z');
-    const result = await module.finishTestInstance(testInstanceId);
+    const result = await module.finishTestInstance(testInstanceId, undefined);
     expect(result.ok).toBe(true);
+  });
+
+  it('should persist answers when finishing test with valid answers', async () => {
+    // Given: Session and test instance
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:30:00Z')
+    });
+
+    // When: Finish test with answers
+    now = new Date('2024-01-01T10:00:00Z');
+    const answers = {
+      'question-1': 'answer-a',
+      'question-2': 'answer-b',
+      'question-3': 'answer-c'
+    };
+    const result = await module.finishTestInstance(testInstanceId, answers);
+
+    // Then: Answers should be persisted
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.answers).toEqual(answers);
+      expect(result.value.completedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+    }
+  });
+
+  it('should persist empty answers object when finishing test with empty answers', async () => {
+    // Given: Session and test instance
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:30:00Z')
+    });
+
+    // When: Finish test with empty answers object
+    now = new Date('2024-01-01T10:00:00Z');
+    const result = await module.finishTestInstance(testInstanceId, {});
+
+    // Then: Empty answers object should be persisted
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.answers).toEqual({});
+      expect(result.value.completedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+    }
+  });
+
+  it('should persist partial answers when finishing test with some questions unanswered', async () => {
+    // Given: Session and test instance
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:30:00Z')
+    });
+
+    // When: Finish test with partial answers (only 2 out of 3 questions answered)
+    now = new Date('2024-01-01T10:00:00Z');
+    const answers = {
+      'question-1': 'answer-a',
+      'question-2': 'answer-b'
+      // question-3 is unanswered
+    };
+    const result = await module.finishTestInstance(testInstanceId, answers);
+
+    // Then: Partial answers should be persisted
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.answers).toEqual(answers);
+      expect(result.value.completedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+    }
+  });
+
+  it('should finish test without answers parameter (backward compatibility)', async () => {
+    // Given: Session and test instance
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:30:00Z')
+    });
+
+    // When: Finish test without answers parameter
+    now = new Date('2024-01-01T10:00:00Z');
+    const result = await module.finishTestInstance(testInstanceId);
+
+    // Then: Test should be finished, answers should be undefined
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.answers).toBeUndefined();
+      expect(result.value.completedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+    }
+  });
+
+  it('should persist answers atomically with completion status', async () => {
+    // Given: Session and test instance
+    const sessionId = await givenSession({
+      startTime: new Date('2024-01-01T09:00:00Z'),
+      endTime: new Date('2024-01-01T11:00:00Z'),
+      testDurationMinutes: 60,
+    });
+
+    const { id: testInstanceId } = await givenTestInstance({
+      sessionId,
+      startedAt: new Date('2024-01-01T09:30:00Z')
+    });
+
+    // When: Finish test with answers
+    now = new Date('2024-01-01T10:00:00Z');
+    const answers = {
+      'question-1': 'answer-a',
+      'question-2': 'answer-b'
+    };
+    const result = await module.finishTestInstance(testInstanceId, answers);
+
+    // Then: Both answers and completedAt should be set together
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.answers).toBeDefined();
+      expect(result.value.completedAt).toBeDefined();
+      expect(result.value.answers).toEqual(answers);
+      expect(result.value.completedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+    }
+
+    // And: Verify persistence by fetching the instance again
+    const sessionResult = await module.getSessionById(sessionId);
+    expect(sessionResult.ok).toBe(true);
+    if (sessionResult.ok) {
+      const persistedInstance = sessionResult.value.instances.find(i => i.id === testInstanceId);
+      expect(persistedInstance).toBeDefined();
+      if (persistedInstance) {
+        expect(persistedInstance.answers).toEqual(answers);
+        expect(persistedInstance.completedAt).toEqual(new Date('2024-01-01T10:00:00Z'));
+      }
+    }
   });
 
   // --- Test Helpers ---

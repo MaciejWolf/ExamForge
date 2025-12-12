@@ -378,7 +378,20 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
   router.post('/instances/:id/finish', async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const result = await module.finishTestInstance(id);
+      const { answers } = req.body;
+
+      // Validate answers if provided (must be an object, not array or null)
+      if (answers !== undefined && (typeof answers !== 'object' || answers === null || Array.isArray(answers))) {
+        return res.status(400).json({
+          error: {
+            type: 'ValidationError',
+            message: 'Invalid request body',
+            errors: ['answers must be an object if provided'],
+          },
+        });
+      }
+
+      const result = await module.finishTestInstance(id, answers);
 
       if (!result.ok) {
         return handleError(result.error, res);

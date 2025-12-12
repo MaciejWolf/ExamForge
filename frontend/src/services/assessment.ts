@@ -41,5 +41,11 @@ export const assessmentService = {
       method: 'POST',
       body: JSON.stringify({ accessCode }),
       skipAuth: true
+    }),
+  finishTestInstance: (testInstanceId: string, answers: Record<string, string>) => 
+    apiRequest<ParticipantTestInstance>(`/assessment/instances/${testInstanceId}/finish`, {
+      method: 'POST',
+      body: JSON.stringify({ answers }),
+      skipAuth: true
     })
 };
