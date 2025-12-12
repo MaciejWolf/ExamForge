@@ -9,7 +9,7 @@ import { completedSessions } from './seeds/sessions/completedSessions';
 import { futureSessions } from './seeds/sessions/futureSessions';
 import { configureAssessmentModule } from '../assessment/index';
 import { createSeededRandomSelector, createSeededAnswerShuffler } from '../design/useCases/shared/deterministicHelpers';
-import { hashString } from '../shared/seededRandom';
+import { hashString, createSeededRng } from '../shared/seededRandom';
 import type { Result } from '../shared/result';
 import type { TestContentPackage } from '../design/types/testContentPackage';
 import type { DesignError } from '../design/types/designError';
@@ -260,7 +260,7 @@ const seedTestTemplates = async (
   console.log(`\n📊 Template Seed Summary:`);
   console.log(`   ✅ Successfully created: ${templateSuccessCount} templates`);
   console.log(`   ❌ Failed: ${templateErrorCount} templates`);
-  
+
   return templateNameToIdMap;
 };
 
@@ -269,14 +269,14 @@ const seedActiveSessions = async (
   templateNameToIdMap: Map<string, string>
 ) => {
   console.log(`\n🎯 Seeding ${activeSessions.length} active test sessions...`);
-  
+
   let sessionSuccessCount = 0;
   let sessionErrorCount = 0;
-  const sessionSummaries: Array<{ 
-    sessionId: string; 
-    templateName: string; 
-    participantCount: number; 
-    accessCodes: Map<string, string> 
+  const sessionSummaries: Array<{
+    sessionId: string;
+    templateName: string;
+    participantCount: number;
+    accessCodes: Map<string, string>
   }> = [];
 
   for (const sessionSeed of activeSessions) {
@@ -302,7 +302,7 @@ const seedActiveSessions = async (
       const materializeTemplate = async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
         const participantName = participantIdentifiers[participantIndex];
         const participantSeed = participantSeedMap.get(participantName);
-        
+
         if (!participantSeed) {
           throw new Error(`No seed found for participant: ${participantName}`);
         }
@@ -353,7 +353,7 @@ const seedActiveSessions = async (
         // Get access codes for logging by fetching the session
         const sessionResult = await assessmentModule.getSessionById(result.value);
         const accessCodes = new Map<string, string>();
-        
+
         if (sessionResult.ok && sessionResult.value.instances) {
           sessionResult.value.instances.forEach(instance => {
             accessCodes.set(instance.identifier, instance.accessCode);
@@ -384,7 +384,7 @@ const seedActiveSessions = async (
   console.log(`\n📊 Active Sessions Seed Summary:`);
   console.log(`   ✅ Successfully created: ${sessionSuccessCount} sessions`);
   console.log(`   ❌ Failed: ${sessionErrorCount} sessions`);
-  
+
   if (sessionSummaries.length > 0) {
     console.log(`\n📋 Seeded Active Sessions:`);
     for (const summary of sessionSummaries) {
@@ -406,14 +406,14 @@ const seedCompletedSessions = async (
   templateNameToIdMap: Map<string, string>
 ) => {
   console.log(`\n📜 Seeding ${completedSessions.length} completed test sessions...`);
-  
+
   let sessionSuccessCount = 0;
   let sessionErrorCount = 0;
-  const sessionSummaries: Array<{ 
-    sessionId: string; 
-    templateName: string; 
+  const sessionSummaries: Array<{
+    sessionId: string;
+    templateName: string;
     status: 'completed' | 'aborted';
-    participantCount: number; 
+    participantCount: number;
   }> = [];
 
   for (const sessionSeed of completedSessions) {
@@ -439,7 +439,7 @@ const seedCompletedSessions = async (
       const materializeTemplate = async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
         const participantName = participantIdentifiers[participantIndex];
         const participantSeed = participantSeedMap.get(participantName);
-        
+
         if (!participantSeed) {
           throw new Error(`No seed found for participant: ${participantName}`);
         }
@@ -539,13 +539,13 @@ const seedCompletedSessions = async (
         continue;
       }
 
-      // Update instances with startedAt and completedAt dates
+      // Update instances with startedAt, completedAt, answers, and scores
       const instanceUpdates: Array<{ id: string; data: TestInstance }> = [];
-      
+
       for (const instanceDoc of instanceData as Array<{ id: string; data: TestInstance }>) {
         const instance = instanceDoc.data;
         const participant = sessionSeed.participants.find(p => p.name === instance.identifier);
-        
+
         if (!participant) {
           continue;
         }
@@ -571,10 +571,63 @@ const seedCompletedSessions = async (
           // If less than 100%, leave completedAt undefined (in progress when aborted)
         }
 
+        // Generate answers and calculate score
+        const answers: Record<string, string> = {};
+        let totalScore = 0;
+        let maxScore = 0;
+
+        // Flatten all questions from all sections with correct point distribution
+        const allQuestionsWithPoints = instance.testContent.sections.flatMap(section => {
+          const questionsInSection = section.questions.length;
+          if (questionsInSection === 0) return [];
+          
+          const pointsPerQuestion = section.points / questionsInSection;
+          return section.questions.map(q => ({ 
+            question: q, 
+            points: pointsPerQuestion 
+          }));
+        });
+
+        // Calculate total possible score
+        maxScore = instance.testContent.sections.reduce((sum, section) => sum + section.points, 0);
+
+        // Determine how many questions to answer based on completionPercentage
+        const questionsToAnswerCount = Math.floor(allQuestionsWithPoints.length * (participant.completionPercentage / 100));
+
+        // Create a seeded RNG for consistent answer generation
+        const answerRng = createSeededRng(`${participant.seed}-answers`);
+
+        // Answer the first N questions (simulating linear progress)
+        for (let i = 0; i < questionsToAnswerCount; i++) {
+          const { question, points } = allQuestionsWithPoints[i];
+
+          // 80% chance of being correct
+          const isCorrect = answerRng() < 0.8;
+
+          if (isCorrect) {
+            answers[question.id] = question.correctAnswerId;
+            totalScore += points;
+          } else {
+            // Pick a wrong answer
+            const wrongAnswers = question.answers.filter(a => a.id !== question.correctAnswerId);
+            if (wrongAnswers.length > 0) {
+              const wrongIndex = Math.floor(answerRng() * wrongAnswers.length);
+              answers[question.id] = wrongAnswers[wrongIndex].id;
+            } else {
+              // Fallback if no wrong answers exist (rare)
+              answers[question.id] = question.correctAnswerId;
+              totalScore += points;
+            }
+          }
+        }
+
         const updatedInstance: TestInstance = {
           ...instance,
           startedAt: actualStartTime,
           completedAt: completedAt,
+          answers,
+          totalScore,
+          maxScore,
         };
 
         instanceUpdates.push({
@@ -615,7 +668,7 @@ const seedCompletedSessions = async (
   console.log(`\n📊 Completed Sessions Seed Summary:`);
   console.log(`   ✅ Successfully created: ${sessionSuccessCount} sessions`);
   console.log(`   ❌ Failed: ${sessionErrorCount} sessions`);
-  
+
   if (sessionSummaries.length > 0) {
     console.log(`\n📋 Seeded Completed Sessions:`);
     // Sort by date (oldest first)
@@ -637,15 +690,15 @@ const seedFutureSessions = async (
   templateNameToIdMap: Map<string, string>
 ) => {
   console.log(`\n📅 Seeding ${futureSessions.length} future test sessions...`);
-  
+
   let sessionSuccessCount = 0;
   let sessionErrorCount = 0;
-  const sessionSummaries: Array<{ 
-    sessionId: string; 
-    templateName: string; 
+  const sessionSummaries: Array<{
+    sessionId: string;
+    templateName: string;
     scheduledTime: string;
-    participantCount: number; 
-    accessCodes: Map<string, string> 
+    participantCount: number;
+    accessCodes: Map<string, string>
   }> = [];
 
   for (const sessionSeed of futureSessions) {
@@ -669,7 +722,7 @@ const seedFutureSessions = async (
       const materializeTemplate = async (templateId: string): Promise<Result<TestContentPackage, DesignError>> => {
         const participantName = participantIdentifiers[participantIndex];
         const participantSeed = participantSeedMap.get(participantName);
-        
+
         if (!participantSeed) {
           throw new Error(`No seed found for participant: ${participantName}`);
         }
@@ -720,7 +773,7 @@ const seedFutureSessions = async (
         // Get access codes for logging by fetching the session
         const sessionResult = await assessmentModule.getSessionById(result.value);
         const accessCodes = new Map<string, string>();
-        
+
         if (sessionResult.ok && sessionResult.value.instances) {
           sessionResult.value.instances.forEach(instance => {
             accessCodes.set(instance.identifier, instance.accessCode);
@@ -755,7 +808,7 @@ const seedFutureSessions = async (
   console.log(`\n📊 Future Sessions Seed Summary:`);
   console.log(`   ✅ Successfully created: ${sessionSuccessCount} sessions`);
   console.log(`   ❌ Failed: ${sessionErrorCount} sessions`);
-  
+
   if (sessionSummaries.length > 0) {
     console.log(`\n📋 Seeded Future Sessions:`);
     for (const summary of sessionSummaries) {
@@ -792,16 +845,16 @@ const seed = async () => {
 
   const { seedIdToDbIdMap, designModule } = await seedQuestions(supabaseClient);
   const templateNameToIdMap = await seedTestTemplates(supabaseClient, seedIdToDbIdMap, designModule);
-  
+
   // Seed active sessions
   await seedActiveSessions(supabaseClient, templateNameToIdMap);
-  
+
   // Seed completed sessions (oldest first)
   await seedCompletedSessions(supabaseClient, templateNameToIdMap);
-  
+
   // Seed future sessions (scheduled but not started)
   await seedFutureSessions(supabaseClient, templateNameToIdMap);
-  
+
   console.log(`\n✨ Seed process completed!`);
 };
 
