@@ -13,7 +13,7 @@ export type TestTemplateSeed = {
   pools: Array<{
     name: string;
     questionsToDraw: number;
-    points: number;
+    pointsPerQuestion: number;
     questionSeedIds: string[];
   }>;
 };

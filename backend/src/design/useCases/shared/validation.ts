@@ -104,7 +104,7 @@ export const validatePools = async (pools: Omit<Pool, 'id'>[]): Promise<PoolVali
             };
         }
 
-        if (pool.points < 0) {
+        if (pool.pointsPerQuestion < 0) {
             return {
                 valid: false,
                 message: `Pool "${pool.name}" cannot have negative points`,

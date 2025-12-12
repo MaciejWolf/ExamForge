@@ -96,7 +96,7 @@ const givenTemplate = async (
       {
         name: 'Default Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [questionId]
       }
     ]

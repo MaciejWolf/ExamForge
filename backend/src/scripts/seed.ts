@@ -228,7 +228,7 @@ const seedTestTemplates = async (
         pools: template.pools.map(pool => ({
           name: pool.name,
           questionsToDraw: pool.questionsToDraw,
-          points: pool.points,
+          pointsPerQuestion: pool.pointsPerQuestion,
           questionIds: pool.questionSeedIds
             .map(seedId => seedIdToDbIdMap.get(seedId))
             .filter((id): id is string => !!id),

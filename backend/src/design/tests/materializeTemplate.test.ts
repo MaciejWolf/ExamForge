@@ -17,7 +17,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Math Pool',
         questionsToDraw: 5,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: questionIds.slice(0, 10),
       }],
     });
@@ -36,7 +36,7 @@ describe('materializeTemplate Use Case', () => {
       expect(result.value.sections).toHaveLength(1);
       expect(result.value.sections[0].questions).toHaveLength(5);
       expect(result.value.sections[0].poolName).toBe('Math Pool');
-      expect(result.value.sections[0].points).toBe(10);
+      expect(result.value.sections[0].points).toBe(50);
       // Verify questions are from the pool
       const materializedQuestionIds = result.value.sections[0].questions.map(q => q.id);
       materializedQuestionIds.forEach(id => {
@@ -53,13 +53,13 @@ describe('materializeTemplate Use Case', () => {
         {
           name: 'Pool 1',
           questionsToDraw: 3,
-          points: 15,
+          pointsPerQuestion: 15,
           questionIds: questionIds.slice(0, 10),
         },
         {
           name: 'Pool 2',
           questionsToDraw: 2,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: questionIds.slice(10, 15),
         },
       ],
@@ -80,12 +80,12 @@ describe('materializeTemplate Use Case', () => {
       // Verify first pool
       expect(result.value.sections[0].questions).toHaveLength(3);
       expect(result.value.sections[0].poolName).toBe('Pool 1');
-      expect(result.value.sections[0].points).toBe(15);
+      expect(result.value.sections[0].points).toBe(45);
 
       // Verify second pool
       expect(result.value.sections[1].questions).toHaveLength(2);
       expect(result.value.sections[1].poolName).toBe('Pool 2');
-      expect(result.value.sections[1].points).toBe(10);
+      expect(result.value.sections[1].points).toBe(20);
     }
   });
 
@@ -96,7 +96,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Small Pool',
         questionsToDraw: 5,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: questionIds.slice(0, 3), // Only 3 questions but requires 5
       }],
     });
@@ -126,7 +126,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Empty Pool',
         questionsToDraw: 5,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [], // Empty pool
       }],
     });
@@ -172,7 +172,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Exact Pool',
         questionsToDraw: 5,
-        points: 20,
+        pointsPerQuestion: 20,
         questionIds: questionIds.slice(0, 5), // Exactly 5 questions
       }],
     });
@@ -205,7 +205,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Snapshot Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [questionIds[0]],
       }],
     });
@@ -264,7 +264,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Two Answer Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [twoAnswerResult.value.id],
       }],
     });
@@ -308,7 +308,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Three Answer Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [threeAnswerResult.value.id],
       }],
     });
@@ -353,7 +353,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Four Answer Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [fourAnswerResult.value.id],
       }],
     });
@@ -400,7 +400,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Six Answer Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [sixAnswerResult.value.id],
       }],
     });
@@ -464,7 +464,7 @@ describe('materializeTemplate Use Case', () => {
       pools: [{
         name: 'Shuffle Pool',
         questionsToDraw: 1,
-        points: 10,
+        pointsPerQuestion: 10,
         questionIds: [questionResult.value.id],
       }],
     });

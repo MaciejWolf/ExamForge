@@ -19,13 +19,13 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Life Sciences',
         questionsToDraw: 3,
-        points: 10,
+        pointsPerQuestion: 10,
         questionSeedIds: getQuestionIds(biologyCells),
       },
       {
         name: 'Physical Sciences',
         questionsToDraw: 6,
-        points: 8,
+        pointsPerQuestion: 8,
         questionSeedIds: [
           ...getQuestionIds(chemistryFoundations),
           ...getQuestionIds(physicsAdvanced),
@@ -40,13 +40,13 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Math Core',
         questionsToDraw: 10,
-        points: 3,
+        pointsPerQuestion: 3,
         questionSeedIds: getQuestionIds(mathematicsBasic),
       },
       {
         name: 'CS Concepts',
         questionsToDraw: 15,
-        points: 5,
+        pointsPerQuestion: 5,
         questionSeedIds: getQuestionIds(computerScience),
       },
     ],
@@ -58,7 +58,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'World War II Knowledge',
         questionsToDraw: 10,
-        points: 1,
+        pointsPerQuestion: 1,
         questionSeedIds: getQuestionIds(historyWWII),
       },
     ],
@@ -70,13 +70,13 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Quantitative Reasoning',
         questionsToDraw: 5,
-        points: 2,
+        pointsPerQuestion: 2,
         questionSeedIds: getQuestionIds(mathematicsBasic),
       },
       {
         name: 'Scientific Literacy',
         questionsToDraw: 5,
-        points: 5,
+        pointsPerQuestion: 5,
         questionSeedIds: [
           ...getQuestionIds(biologyCells),
           ...getQuestionIds(chemistryFoundations),
@@ -86,7 +86,7 @@ export const testTemplates: TestTemplateSeed[] = [
       {
         name: 'Humanities & Tech',
         questionsToDraw: 5,
-        points: 3,
+        pointsPerQuestion: 3,
         questionSeedIds: [
           ...getQuestionIds(historyWWII),
           ...getQuestionIds(computerScience),

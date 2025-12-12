@@ -20,13 +20,13 @@ describe('createTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 2,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: questionIds.slice(0, 5),
         },
         {
           name: 'Science Pool',
           questionsToDraw: 1,
-          points: 5,
+          pointsPerQuestion: 5,
           questionIds: questionIds.slice(5, 10),
         },
       ],
@@ -44,7 +44,7 @@ describe('createTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0]],
         },
       ],
@@ -76,13 +76,13 @@ describe('createTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0]],
         },
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 5,
+          pointsPerQuestion: 5,
           questionIds: [questionIds[1]],
         },
       ],
@@ -111,7 +111,7 @@ describe('createTemplate Use Case', () => {
         {
           name: '',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0]],
         },
       ],
@@ -128,7 +128,7 @@ describe('createTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: ['non-existent-question-id'],
         },
       ],
@@ -147,7 +147,7 @@ describe('createTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 3,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0]], // Only 1 question but requires 3
         },
       ],
@@ -172,7 +172,7 @@ describe('createTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0]],
         },
       ],
@@ -231,7 +231,7 @@ const aValidTemplate = (overrides: Partial<CreateTemplateCommand> = {}): CreateT
     {
       name: 'Math Pool',
       questionsToDraw: 1,
-      points: 10,
+      pointsPerQuestion: 10,
       questionIds: ['question-1'],
     },
   ],
@@ -254,7 +254,7 @@ const thenTemplateShouldBeCreated = (
     result.value.pools.forEach((pool, index) => {
       expect(pool.name).toBe(originalCommand.pools[index].name);
       expect(pool.questionsToDraw).toBe(originalCommand.pools[index].questionsToDraw);
-      expect(pool.points).toBe(originalCommand.pools[index].points);
+      expect(pool.pointsPerQuestion).toBe(originalCommand.pools[index].pointsPerQuestion);
       expect(pool.questionIds).toEqual(originalCommand.pools[index].questionIds);
       expect(pool.id).toBeTruthy(); // Verify pool has an ID
     });

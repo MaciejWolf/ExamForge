@@ -19,8 +19,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -33,7 +33,7 @@ describe('updateTemplate Use Case', () => {
         {
           name: 'Science Pool',
           questionsToDraw: 2,
-          points: 15,
+          pointsPerQuestion: 15,
           questionIds: [questionIds[2], questionIds[3]],
         },
       ],
@@ -46,8 +46,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Science Pool',
-          questionCount: 2,
-          points: 15,
+          questionsToDraw: 2,
+          pointsPerQuestion: 15,
           questionIds: [questionIds[2], questionIds[3]],
         },
       ],
@@ -61,7 +61,7 @@ describe('updateTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionCount: 2,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: questionIds.slice(0, 2),
         },
       ],
@@ -89,7 +89,7 @@ describe('updateTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionCount: 2,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: questionIds.slice(0, 2),
         },
       ],
@@ -112,8 +112,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -127,7 +127,7 @@ describe('updateTemplate Use Case', () => {
         {
           name: 'Math Pool', // Same name
           questionsToDraw: 2,
-          points: 15, // Updated points
+          pointsPerQuestion: 15, // Updated points
           questionIds: [questionIds[2], questionIds[3]], // Different questions
         },
       ],
@@ -136,7 +136,7 @@ describe('updateTemplate Use Case', () => {
     expect(result.ok).toBe(true);
     if (result.ok) {
       expect(result.value.pools[0].id).toBe(originalPoolId); // ID preserved
-      expect(result.value.pools[0].points).toBe(15); // Points updated
+      expect(result.value.pools[0].pointsPerQuestion).toBe(15); // Points updated
       expect(result.value.pools[0].questionIds).toEqual([questionIds[2], questionIds[3]]); // Questions updated
     }
   });
@@ -156,8 +156,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -177,8 +177,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -188,8 +188,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -209,8 +209,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -222,13 +222,13 @@ describe('updateTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0]],
         },
         {
           name: 'Math Pool', // Duplicate name
           questionsToDraw: 1,
-          points: 5,
+          pointsPerQuestion: 5,
           questionIds: [questionIds[1]],
         },
       ],
@@ -243,8 +243,8 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
-          points: 10,
+          questionsToDraw: 2,
+          pointsPerQuestion: 10,
           questionIds: [questionIds[0], questionIds[1]],
         },
       ],
@@ -256,7 +256,7 @@ describe('updateTemplate Use Case', () => {
         {
           name: 'Math Pool',
           questionsToDraw: 1,
-          points: 10,
+          pointsPerQuestion: 10,
           questionIds: ['non-existent-question-id'],
         },
       ],
@@ -310,7 +310,7 @@ const givenExistingTemplate = async (
     pools: Array<{
       name: string;
       questionCount: number;
-      points: number;
+      pointsPerQuestion: number;
       questionIds: string[];
     }>;
   }
@@ -336,8 +336,8 @@ const thenTemplateShouldBeUpdated = (
     originalCreatedAt: Date;
     pools: Array<{
       name: string;
-      questionCount: number;
-      points: number;
+      questionsToDraw: number;
+      pointsPerQuestion: number;
       questionIds: string[];
     }>;
   }
@@ -356,8 +356,8 @@ const thenTemplateShouldBeUpdated = (
   expected.pools.forEach((expectedPool, index) => {
     const actualPool = result.value.pools[index];
     expect(actualPool.name).toBe(expectedPool.name);
-    expect(actualPool.questionsToDraw).toBe(expectedPool.questionCount);
-    expect(actualPool.points).toBe(expectedPool.points);
+    expect(actualPool.questionsToDraw).toBe(expectedPool.questionsToDraw);
+    expect(actualPool.pointsPerQuestion).toBe(expectedPool.pointsPerQuestion);
     expect(actualPool.questionIds).toEqual(expectedPool.questionIds);
   });
 };

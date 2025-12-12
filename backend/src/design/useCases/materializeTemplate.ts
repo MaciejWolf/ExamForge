@@ -70,7 +70,7 @@ export const materializeTemplate = ({
             sections.push({
                 poolId: pool.id,
                 poolName: pool.name,
-                points: pool.points,
+                points: pool.pointsPerQuestion * pool.questionsToDraw,
                 questions: frozenQuestions,
             });
         }
