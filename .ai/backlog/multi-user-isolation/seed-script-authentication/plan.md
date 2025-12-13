@@ -24,24 +24,38 @@ Required architecture:
 2.  Use `SUPABASE_SERVICE_ROLE_KEY` to create an Admin/Service Role Supabase client.
 3.  Use `supabaseAdmin.auth.admin.listUsers()` to find the user by email.
 4.  Pass the resolved `ownerId` to seed functions.
-5.  Seed functions must pass `ownerId` down to Use Cases/Repositories.
-6.  Repositories must map `ownerId` from the domain object to the `owner_id` database column.
+5.  Pass `ownerId` to `configureDesignModule`.
+6.  `configureDesignModule` passes `ownerId` to Repository factories.
+7.  Repositories map `explicitOwnerId` to the `owner_id` database column (Already implemented).
 
 Tasks:
 - [x] Add `SUPABASE_SERVICE_ROLE_KEY` to environment variables.
 - [ ] Update `backend/src/scripts/seed.ts` to read email from CLI.
-- [ ] Implement `getUserIdByEmail` helper using Admin API.
-- [ ] Update `seedQuestions`, `seedTestTemplates`, etc., to accept `ownerId`.
-- [ ] Update Domain Types (`Question`, `CreateQuestionCommand`) to include `ownerId`.
-- [ ] Update Repositories to map `ownerId` to DB column `owner_id`.
+- [ ] Implement `getUserIdByEmail` helper using Admin API in `seed.ts`.
+- [ ] Update `backend/src/design/index.ts` (`configureDesignModule`) to accept `ownerId` in config and pass it to repositories.
+- [ ] Update `seedQuestions`, `seedTestTemplates`, etc. in `seed.ts` to accept `ownerId` and pass it to `configureDesignModule`.
+- [x] Update Repositories to map `ownerId` to DB column `owner_id` (Already implemented in `backend/src/design/repository.ts`).
 
 Necessary updates:
 - `backend/src/scripts/seed.ts`
-- `backend/src/design/types/question.ts` (and other domain types)
-- `backend/src/design/useCases/createQuestion.ts`
-- `backend/src/design/repository.ts`
+- `backend/src/design/index.ts`
 
 Example implementation:
+
+```typescript
+// backend/src/design/index.ts
+export type DesignModuleConfig = {
+  // ...
+  ownerId?: string; // New config option
+};
+
+export const configureDesignModule = (config: DesignModuleConfig = {}) => {
+  const repo = config.supabaseClient
+    ? createSupabaseQuestionRepository(config.supabaseClient, config.ownerId) // Pass ownerId
+    : createInMemoryQuestionRepository();
+  // ...
+}
+```
 
 ```typescript
 // backend/src/scripts/seed.ts
@@ -79,4 +93,12 @@ const seed = async () => {
   await seedQuestions(supabaseAdmin, ownerId);
   // ...
 };
+
+const seedQuestions = async (supabaseClient: SupabaseClient, ownerId: string) => {
+    const designModule = configureDesignModule({
+        supabaseClient,
+        ownerId, // Pass to module
+    });
+    // ...
+}
 ```
