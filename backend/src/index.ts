@@ -1,40 +1,23 @@
 import express, { Express, Request, Response } from 'express';
 import cors from 'cors';
-import { configureDesignModule, DesignModuleConfig } from './design/index';
 import { createDesignRouter } from './design/http';
-import { configureAssessmentModule } from './assessment/index';
 import { createAssessmentRouter } from './assessment/http';
-import { createSupabaseClient } from './lib/supabase';
-import { requireAuth } from './middleware/auth';
+import { requireAuth, createModules } from './middleware/auth';
+import { configureDesignModule, DesignModuleConfig } from './design/index';
+import { configureAssessmentModule } from './assessment/index';
+import { SupabaseClient } from '@supabase/supabase-js';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 
 dotenv.config();
 
-export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = {}): Express => {
+type TestConfig = {
+  designModuleConfig?: DesignModuleConfig & { supabaseClient?: SupabaseClient };
+};
+
+export const createApp = (testConfig?: TestConfig): Express => {
   const app = express();
-  const designModule = configureDesignModule(config.designModuleConfig);
-  const assessmentModule = configureAssessmentModule({
-    materializeTemplate: designModule.materializeTemplate,
-    supabaseClient: config.designModuleConfig?.supabaseClient,
-    templateProvider: {
-      getTemplateNames: async (ids: string[]) => {
-        const uniqueIds = Array.from(new Set(ids));
-        const names = new Map<string, string>();
-
-        const result = await designModule.getTemplatesByIds(uniqueIds);
-
-        if (result.ok) {
-          result.value.forEach(template => {
-            names.set(template.id, template.name);
-          });
-        }
-
-        return names;
-      }
-    }
-  });
 
   app.use(cors({
     origin: (origin, callback) => {
@@ -92,9 +75,49 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
     res.status(200).json({ received: req.body });
   });
 
-  // Apply authentication middleware to all design routes
-  app.use('/api/design', requireAuth, createDesignRouter(designModule));
-  app.use('/api/assessment', createAssessmentRouter(assessmentModule));
+  // For tests: create modules using provided Supabase client
+  if (testConfig?.designModuleConfig?.supabaseClient) {
+    const designModule = configureDesignModule(testConfig.designModuleConfig);
+    const assessmentModule = configureAssessmentModule({
+      supabaseClient: testConfig.designModuleConfig.supabaseClient,
+      materializeTemplate: designModule.materializeTemplate,
+      templateProvider: {
+        getTemplateNames: async (ids: string[]) => {
+          const uniqueIds = Array.from(new Set(ids));
+          const names = new Map<string, string>();
+          const result = await designModule.getTemplatesByIds(uniqueIds);
+          if (result.ok) {
+            result.value.forEach(template => {
+              names.set(template.id, template.name);
+            });
+          }
+          return names;
+        }
+      }
+    });
+
+    // Test middleware that attaches modules to request
+    app.use('/api/design', (req, res, next) => {
+      (req as any).designModule = designModule;
+      (req as any).assessmentModule = assessmentModule;
+      next();
+    });
+    app.use('/api/design', createDesignRouter());
+
+    app.use('/api/assessment', (req, res, next) => {
+      (req as any).designModule = designModule;
+      (req as any).assessmentModule = assessmentModule;
+      next();
+    });
+    app.use('/api/assessment', createAssessmentRouter());
+  } else {
+    // Production: use request-scoped modules with authentication
+    // Apply authentication middleware to all design routes (creates request-scoped modules)
+    app.use('/api/design', requireAuth, createDesignRouter());
+
+    // Assessment routes: some require auth (creates scoped modules), some don't (use anon modules)
+    app.use('/api/assessment', createModules, createAssessmentRouter());
+  }
 
   return app;
 };
@@ -110,16 +133,7 @@ if (process.env.NODE_ENV !== 'test') {
     process.exit(1);
   }
 
-  const supabaseClient = createSupabaseClient({
-    supabaseUrl,
-    supabaseAnonKey,
-  });
-
-  const app = createApp({
-    designModuleConfig: {
-      supabaseClient,
-    },
-  });
+  const app = createApp();
 
   app.listen(port, () => {
     console.log(`Server running on http://localhost:${port}`);

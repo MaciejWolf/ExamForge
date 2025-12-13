@@ -1,10 +1,13 @@
 import { Router, Request, Response } from 'express';
-import { AssessmentModule } from './index';
 import { AssessmentError } from './types/assessmentError';
 import { ParticipantTestContent, ParticipantQuestion } from './types/participantQuestion';
 import { Question } from '../design/types/question';
 import { TestInstance } from './types/testInstance';
-import { requireAuth } from '../middleware/auth';
+import { requireAuth, AuthenticatedRequest } from '../middleware/auth';
+
+type RequestWithAssessmentModule = Request & {
+  assessmentModule: NonNullable<AuthenticatedRequest['assessmentModule']>;
+};
 
 type StartSessionRequestBody = {
   templateId: string;
@@ -241,13 +244,13 @@ const handleError = (error: AssessmentError, res: Response): Response => {
   }
 };
 
-export const createAssessmentRouter = (module: AssessmentModule): Router => {
+export const createAssessmentRouter = (): Router => {
   const router = Router();
 
   // Protected routes - require authentication
   router.get('/sessions', requireAuth, async (req: Request, res: Response) => {
     try {
-      const sessions = await module.listSessions();
+      const sessions = await (req as AuthenticatedRequest).assessmentModule.listSessions();
       res.status(200).json(sessions);
     } catch (error) {
       console.error(error);
@@ -275,7 +278,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
 
     try {
       const body: StartSessionRequestBody = req.body;
-      const result = await module.startSession({
+      const result = await (req as AuthenticatedRequest).assessmentModule.startSession({
         templateId: body.templateId,
         examinerId: body.examinerId,
         timeLimitMinutes: body.timeLimitMinutes,
@@ -302,7 +305,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
   router.get('/sessions/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
-      const result = await module.getSessionById(id);
+      const result = await (req as AuthenticatedRequest).assessmentModule.getSessionById(id);
 
       if (!result.ok) {
         return handleError(result.error, res);
@@ -326,7 +329,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
   router.get('/sessions/:sessionId/report', requireAuth, async (req: Request, res: Response) => {
     try {
       const { sessionId } = req.params;
-      const result = await module.getSessionReport(sessionId);
+      const result = await (req as AuthenticatedRequest).assessmentModule.getSessionReport(sessionId);
 
       if (!result.ok) {
         console.error('getSessionReport error:', result.error);
@@ -348,7 +351,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
   router.get('/sessions/:sessionId/participants/:participantId', requireAuth, async (req: Request, res: Response) => {
     try {
       const { sessionId, participantId } = req.params;
-      const result = await module.getParticipantDetails(sessionId, participantId);
+      const result = await (req as AuthenticatedRequest).assessmentModule.getParticipantDetails(sessionId, participantId);
 
       if (!result.ok) {
         return handleError(result.error, res);
@@ -381,7 +384,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
 
     try {
       const body: StartTestInstanceRequestBody = req.body;
-      const result = await module.startTestInstance(body.accessCode);
+      const result = await (req as RequestWithAssessmentModule).assessmentModule.startTestInstance(body.accessCode);
 
       if (!result.ok) {
         return handleError(result.error, res);
@@ -416,7 +419,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
         });
       }
 
-      const result = await module.finishTestInstance(id, answers);
+      const result = await (req as RequestWithAssessmentModule).assessmentModule.finishTestInstance(id, answers);
 
       if (!result.ok) {
         return handleError(result.error, res);

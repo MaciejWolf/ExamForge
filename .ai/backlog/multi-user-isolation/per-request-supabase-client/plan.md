@@ -25,11 +25,11 @@ Required architecture:
 - Token extracted by auth middleware needs to be passed to client factory
 
 Tasks:
-- [ ] Update `lib/supabase.ts` to accept optional `accessToken` parameter
-- [ ] Refactor `index.ts` to use middleware that creates request-scoped clients
-- [ ] Update module instantiation to happen per-request instead of at startup
-- [ ] Attach scoped modules to request object for route handlers to use
-- [ ] Update route handlers (`design/http.ts`, `assessment/http.ts`) to use request-attached modules
+- [x] Update `lib/supabase.ts` to accept optional `accessToken` parameter
+- [x] Refactor `index.ts` to use middleware that creates request-scoped clients
+- [x] Update module instantiation to happen per-request instead of at startup
+- [x] Attach scoped modules to request object for route handlers to use
+- [x] Update route handlers (`design/http.ts`, `assessment/http.ts`) to use request-attached modules
 
 Necessary updates:
 - `backend/src/lib/supabase.ts`: Add `accessToken?: string` parameter and pass to client options

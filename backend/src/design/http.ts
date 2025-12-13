@@ -1,9 +1,9 @@
 import { Router, Request, Response } from 'express';
-import { DesignModule } from './index';
 import { CreateQuestionCommand, UpdateQuestionCommand, CreateTemplateCommand, UpdateTemplateCommand } from './useCases';
 import { DesignError } from './types/designError';
+import { AuthenticatedRequest } from '../middleware/auth';
 
-export const createDesignRouter = (module: DesignModule): Router => {
+export const createDesignRouter = (): Router => {
   const router = Router();
 
   /**
@@ -233,7 +233,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
         tags: req.body.tags,
       };
 
-      const result = await module.createQuestion(command);
+      const result = await (req as AuthenticatedRequest).designModule.createQuestion(command);
 
       if (result.ok) {
         return res.status(201).json(result.value);
@@ -325,7 +325,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
       tags: req.body.tags,
     };
 
-    const result = await module.updateQuestion(command);
+    const result = await (req as AuthenticatedRequest).designModule.updateQuestion(command);
 
     if (result.ok) {
       return res.status(200).json(result.value);
@@ -382,7 +382,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
         ? (Array.isArray(tags) ? tags : [tags]).map(t => String(t))
         : undefined;
 
-      const result = await module.listQuestions({ tags: tagArray });
+      const result = await (req as AuthenticatedRequest).designModule.listQuestions({ tags: tagArray });
 
       if (result.ok) {
         return res.status(200).json(result.value);
@@ -434,7 +434,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
    *                 questionId: "q-123"
    */
   router.get('/questions/:id', async (req: Request, res: Response) => {
-    const result = await module.getQuestion(req.params.id);
+    const result = await (req as AuthenticatedRequest).designModule.getQuestion(req.params.id);
 
     if (result.ok) {
       return res.status(200).json(result.value);
@@ -482,7 +482,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
    *                 questionId: "q-123"
    */
   router.delete('/questions/:id', async (req: Request, res: Response) => {
-    const result = await module.deleteQuestion(req.params.id);
+    const result = await (req as AuthenticatedRequest).designModule.deleteQuestion(req.params.id);
 
     if (result.ok) {
       return res.status(200).json({ message: 'Question deleted successfully' });
@@ -549,7 +549,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
         pools: req.body.pools,
       };
 
-      const result = await module.createTemplate(command);
+      const result = await (req as AuthenticatedRequest).designModule.createTemplate(command);
 
       if (result.ok) {
         return res.status(201).json(result.value);
@@ -587,7 +587,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
    *         description: Template not found
    */
   router.get('/templates/:id', async (req: Request, res: Response) => {
-    const result = await module.getTemplate(req.params.id);
+    const result = await (req as AuthenticatedRequest).designModule.getTemplate(req.params.id);
 
     if (result.ok) {
       return res.status(200).json(result.value);
@@ -641,7 +641,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
       pools: req.body.pools,
     };
 
-    const result = await module.updateTemplate(command);
+    const result = await (req as AuthenticatedRequest).designModule.updateTemplate(command);
 
     if (result.ok) {
       return res.status(200).json(result.value);
@@ -671,7 +671,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
    *         description: Template not found
    */
   router.delete('/templates/:id', async (req: Request, res: Response) => {
-    const result = await module.deleteTemplate(req.params.id);
+    const result = await (req as AuthenticatedRequest).designModule.deleteTemplate(req.params.id);
 
     if (result.ok) {
       return res.status(200).json({ message: 'Template deleted successfully' });
@@ -693,7 +693,7 @@ export const createDesignRouter = (module: DesignModule): Router => {
    *         description: List of templates retrieved successfully
    */
   router.get('/templates', async (req: Request, res: Response) => {
-    const result = await module.listTemplates();
+    const result = await (req as AuthenticatedRequest).designModule.listTemplates();
 
     if (result.ok) {
       return res.status(200).json(result.value);
