@@ -23,15 +23,15 @@ Required changes:
     - **Crucial**: If `explicitOwnerId` is undefined, do NOT include `owner_id` in the object sent to Supabase. This ensures `upsert` doesn't overwrite existing ownership with `null`.
 
 Tasks:
-- [ ] Update `Document<T>` in `backend/src/design/repository.ts` and `backend/src/assessment/repository.ts` to include `owner_id?: string`.
-- [ ] Update `createSupabaseQuestionRepository` to accept `explicitOwnerId`.
-    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
-- [ ] Update `createSupabaseTemplateRepository` to accept `explicitOwnerId`.
-    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
-- [ ] Update `createSupabaseSessionRepository` to accept `explicitOwnerId`.
-    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
-- [ ] Update `createSupabaseTestInstanceRepository` to accept `explicitOwnerId`.
-    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [x] Update `Document<T>` in `backend/src/design/repository.ts` and `backend/src/assessment/repository.ts` to include `owner_id?: string`.
+- [x] Update `createSupabaseQuestionRepository` to accept `explicitOwnerId`.
+    - [x] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [x] Update `createSupabaseTemplateRepository` to accept `explicitOwnerId`.
+    - [x] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [x] Update `createSupabaseSessionRepository` to accept `explicitOwnerId`.
+    - [x] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [x] Update `createSupabaseTestInstanceRepository` to accept `explicitOwnerId`.
+    - [x] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
 
 Example implementation:
 

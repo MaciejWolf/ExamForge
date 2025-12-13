@@ -5,6 +5,7 @@ import { TestInstance } from './types/testInstance';
 export type Document<T> = {
   id: string;
   data: T;
+  owner_id?: string;
 };
 
 export interface SessionRepository {
@@ -33,13 +34,6 @@ const mapDocumentToSession = (doc: Document<TestSession>): TestSession => {
   };
 };
 
-const mapSessionToDocument = (session: TestSession): Document<TestSession> => {
-  return {
-    id: session.id,
-    data: session,
-  };
-};
-
 const mapDocumentToInstance = (doc: Document<TestInstance>): TestInstance => {
   const instance = doc.data as any;
   return {
@@ -54,14 +48,25 @@ const mapDocumentToInstance = (doc: Document<TestInstance>): TestInstance => {
   };
 };
 
-const mapInstanceToDocument = (instance: TestInstance): Document<TestInstance> => {
-  return {
-    id: instance.id,
-    data: instance,
-  };
-};
+export const createSupabaseSessionRepository = (
+  supabase: SupabaseClient,
+  explicitOwnerId?: string
+): SessionRepository => {
+  const mapSessionToDocument = (session: TestSession): Document<TestSession> => {
+    const doc: Document<TestSession> = {
+      id: session.id,
+      data: session,
+    };
 
-export const createSupabaseSessionRepository = (supabase: SupabaseClient): SessionRepository => {
+    // CRITICAL: Only set if explicitly provided.
+    // If undefined, we omit the key so Postgres keeps existing value (on update) or uses default (on insert).
+    if (explicitOwnerId) {
+      doc.owner_id = explicitOwnerId;
+    }
+
+    return doc;
+  };
+
   return {
     save: async (session: TestSession) => {
       const doc = mapSessionToDocument(session);
@@ -104,7 +109,25 @@ export const createSupabaseSessionRepository = (supabase: SupabaseClient): Sessi
   };
 };
 
-export const createSupabaseTestInstanceRepository = (supabase: SupabaseClient): TestInstanceRepository => {
+export const createSupabaseTestInstanceRepository = (
+  supabase: SupabaseClient,
+  explicitOwnerId?: string
+): TestInstanceRepository => {
+  const mapInstanceToDocument = (instance: TestInstance): Document<TestInstance> => {
+    const doc: Document<TestInstance> = {
+      id: instance.id,
+      data: instance,
+    };
+
+    // CRITICAL: Only set if explicitly provided.
+    // If undefined, we omit the key so Postgres keeps existing value (on update) or uses default (on insert).
+    if (explicitOwnerId) {
+      doc.owner_id = explicitOwnerId;
+    }
+
+    return doc;
+  };
+
   return {
     save: async (instance: TestInstance) => {
       const doc = mapInstanceToDocument(instance);

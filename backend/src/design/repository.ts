@@ -5,6 +5,7 @@ import { TestTemplate } from "./types/testTemplate";
 export type Document<T> = {
   id: string;
   data: T;
+  owner_id?: string;
 };
 
 export type QuestionRepository = {
@@ -19,14 +20,25 @@ const mapDocumentToQuestion = (doc: Document<Question>): Question => {
   return doc.data;
 };
 
-const mapQuestionToDocument = (question: Question): Document<Question> => {
-  return {
-    id: question.id,
-    data: question,
-  };
-};
+export const createSupabaseQuestionRepository = (
+  supabase: SupabaseClient,
+  explicitOwnerId?: string
+): QuestionRepository => {
+  const mapQuestionToDocument = (question: Question): Document<Question> => {
+    const doc: Document<Question> = {
+      id: question.id,
+      data: question,
+    };
 
-export const createSupabaseQuestionRepository = (supabase: SupabaseClient): QuestionRepository => {
+    // CRITICAL: Only set if explicitly provided.
+    // If undefined, we omit the key so Postgres keeps existing value (on update) or uses default (on insert).
+    if (explicitOwnerId) {
+      doc.owner_id = explicitOwnerId;
+    }
+
+    return doc;
+  };
+
   return {
     save: async (question: Question) => {
       const doc = mapQuestionToDocument(question);
@@ -170,14 +182,25 @@ const mapDocumentToTemplate = (doc: Document<TestTemplate>): TestTemplate => {
   return doc.data;
 };
 
-const mapTemplateToDocument = (template: TestTemplate): Document<TestTemplate> => {
-  return {
-    id: template.id,
-    data: template,
-  };
-};
+export const createSupabaseTemplateRepository = (
+  supabase: SupabaseClient,
+  explicitOwnerId?: string
+): TemplateRepository => {
+  const mapTemplateToDocument = (template: TestTemplate): Document<TestTemplate> => {
+    const doc: Document<TestTemplate> = {
+      id: template.id,
+      data: template,
+    };
 
-export const createSupabaseTemplateRepository = (supabase: SupabaseClient): TemplateRepository => {
+    // CRITICAL: Only set if explicitly provided.
+    // If undefined, we omit the key so Postgres keeps existing value (on update) or uses default (on insert).
+    if (explicitOwnerId) {
+      doc.owner_id = explicitOwnerId;
+    }
+
+    return doc;
+  };
+
   return {
     save: async (template: TestTemplate) => {
       const doc = mapTemplateToDocument(template);
