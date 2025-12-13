@@ -61,7 +61,7 @@ export interface Pool {
   id: string;
   name: string;
   questionsToDraw: number;
-  points: number;
+  pointsPerQuestion: number;
   questionIds: string[];
 }
 

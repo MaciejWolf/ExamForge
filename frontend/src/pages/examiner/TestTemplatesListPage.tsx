@@ -103,7 +103,7 @@ const TestTemplatesListPage = () => {
   };
 
   const getTotalPoints = (template: TestTemplate): number => {
-    return template.pools.reduce((sum, pool) => sum + pool.points * pool.questionsToDraw, 0);
+    return template.pools.reduce((sum, pool) => sum + pool.pointsPerQuestion * pool.questionsToDraw, 0);
   };
 
   return (
@@ -219,7 +219,7 @@ const TestTemplatesListPage = () => {
                           <span className="font-medium">{pool.name}</span>
                           <span className="text-sm text-muted-foreground">
                             {pool.questionsToDraw} question{pool.questionsToDraw !== 1 ? 's' : ''} •{' '}
-                            {pool.points} point{pool.points !== 1 ? 's' : ''} each
+                            {pool.pointsPerQuestion} point{pool.pointsPerQuestion !== 1 ? 's' : ''} each
                           </span>
                         </div>
                         {pool.questionIds.length > 0 && (

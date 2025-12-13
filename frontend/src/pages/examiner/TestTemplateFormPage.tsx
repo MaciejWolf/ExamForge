@@ -25,7 +25,7 @@ import { toast } from 'sonner';
 type PoolFormData = {
   name: string;
   questionsToDraw: number;
-  points: number;
+  pointsPerQuestion: number;
   questionIds: string[];
 };
 
@@ -64,7 +64,7 @@ const TestTemplateFormPage = () => {
         template.pools.map((pool) => ({
           name: pool.name,
           questionsToDraw: pool.questionsToDraw,
-          points: pool.points,
+          pointsPerQuestion: pool.pointsPerQuestion,
           questionIds: [...pool.questionIds],
         }))
       );
@@ -91,7 +91,7 @@ const TestTemplateFormPage = () => {
       {
         name: '',
         questionsToDraw: 0,
-        points: 1,
+        pointsPerQuestion: 1,
         questionIds: [],
       },
     ]);
@@ -174,7 +174,7 @@ const TestTemplateFormPage = () => {
         return false;
       }
 
-      if (pool.points <= 0) {
+      if (pool.pointsPerQuestion <= 0) {
         toast.error(`Pool "${pool.name}" points must be greater than 0`);
         return false;
       }
@@ -202,7 +202,7 @@ const TestTemplateFormPage = () => {
           pools: pools.map((pool) => ({
             name: pool.name.trim(),
             questionsToDraw: pool.questionsToDraw,
-            points: pool.points,
+            pointsPerQuestion: pool.pointsPerQuestion,
             questionIds: pool.questionIds,
           })),
         });
@@ -214,7 +214,7 @@ const TestTemplateFormPage = () => {
           pools: pools.map((pool) => ({
             name: pool.name.trim(),
             questionsToDraw: pool.questionsToDraw,
-            points: pool.points,
+            pointsPerQuestion: pool.pointsPerQuestion,
             questionIds: pool.questionIds,
           })),
         });
@@ -363,9 +363,9 @@ const TestTemplateFormPage = () => {
                                 type="number"
                                 min="0.01"
                                 step="0.01"
-                                value={pool.points}
+                                value={pool.pointsPerQuestion}
                                 onChange={(e) =>
-                                  updatePool(poolIndex, { points: parseFloat(e.target.value) || 0 })
+                                  updatePool(poolIndex, { pointsPerQuestion: parseFloat(e.target.value) || 0 })
                                 }
                               />
                             </div>
@@ -443,7 +443,7 @@ const TestTemplateFormPage = () => {
                   <div className="flex justify-between items-center">
                     <Label className="text-base font-semibold">Total Points:</Label>
                     <span className="text-lg font-bold">
-                      {pools.reduce((sum, pool) => sum + pool.points * pool.questionsToDraw, 0)}
+                      {pools.reduce((sum, pool) => sum + pool.pointsPerQuestion * pool.questionsToDraw, 0)}
                     </span>
                   </div>
                 </div>
