@@ -39,13 +39,13 @@ Analysis Conclusions:
   - `POST /api/assessment/instances/:id/finish` (Participant finishing a test)
 
 Tasks:
-- [ ] Create `backend/src/middleware/auth.ts`
-- [ ] Implement `requireAuth` middleware that extracts Bearer token
-- [ ] Attach token to request object for downstream use
-- [ ] Add TypeScript types for authenticated requests (extend Express Request type)
-- [ ] Apply middleware to `backend/src/index.ts`
-    - [ ] Apply to all `/api/design` routes
-    - [ ] Apply authentication middleware selectively inside `backend/src/assessment/http.ts` to protect only the necessary `/api/assessment` routes, making sure public endpoints (`POST /api/assessment/start` and `POST /api/assessment/instances/:id/finish`) remain unprotected.
+- [x] Create `backend/src/middleware/auth.ts`
+- [x] Implement `requireAuth` middleware that extracts Bearer token
+- [x] Attach token to request object for downstream use
+- [x] Add TypeScript types for authenticated requests (extend Express Request type)
+- [x] Apply middleware to `backend/src/index.ts`
+    - [x] Apply to all `/api/design` routes
+    - [x] Apply authentication middleware selectively inside `backend/src/assessment/http.ts` to protect only the necessary `/api/assessment` routes, making sure public endpoints (`POST /api/assessment/start` and `POST /api/assessment/instances/:id/finish`) remain unprotected.
 
 Necessary updates:
 - `backend/src/index.ts`: Apply middleware logic.
