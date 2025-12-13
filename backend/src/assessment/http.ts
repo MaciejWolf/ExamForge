@@ -4,6 +4,7 @@ import { AssessmentError } from './types/assessmentError';
 import { ParticipantTestContent, ParticipantQuestion } from './types/participantQuestion';
 import { Question } from '../design/types/question';
 import { TestInstance } from './types/testInstance';
+import { requireAuth } from '../middleware/auth';
 
 type StartSessionRequestBody = {
   templateId: string;
@@ -243,7 +244,8 @@ const handleError = (error: AssessmentError, res: Response): Response => {
 export const createAssessmentRouter = (module: AssessmentModule): Router => {
   const router = Router();
 
-  router.get('/sessions', async (req: Request, res: Response) => {
+  // Protected routes - require authentication
+  router.get('/sessions', requireAuth, async (req: Request, res: Response) => {
     try {
       const sessions = await module.listSessions();
       res.status(200).json(sessions);
@@ -258,7 +260,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
     }
   });
 
-  router.post('/sessions', async (req: Request, res: Response) => {
+  router.post('/sessions', requireAuth, async (req: Request, res: Response) => {
     // Validate request body
     const validation = validateStartSessionRequest(req.body);
     if (!validation.valid) {
@@ -297,7 +299,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
     }
   });
 
-  router.get('/sessions/:id', async (req: Request, res: Response) => {
+  router.get('/sessions/:id', requireAuth, async (req: Request, res: Response) => {
     try {
       const { id } = req.params;
       const result = await module.getSessionById(id);
@@ -321,7 +323,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
     }
   });
 
-  router.get('/sessions/:sessionId/report', async (req: Request, res: Response) => {
+  router.get('/sessions/:sessionId/report', requireAuth, async (req: Request, res: Response) => {
     try {
       const { sessionId } = req.params;
       const result = await module.getSessionReport(sessionId);
@@ -343,7 +345,7 @@ export const createAssessmentRouter = (module: AssessmentModule): Router => {
     }
   });
 
-  router.get('/sessions/:sessionId/participants/:participantId', async (req: Request, res: Response) => {
+  router.get('/sessions/:sessionId/participants/:participantId', requireAuth, async (req: Request, res: Response) => {
     try {
       const { sessionId, participantId } = req.params;
       const result = await module.getParticipantDetails(sessionId, participantId);

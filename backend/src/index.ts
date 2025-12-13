@@ -5,6 +5,7 @@ import { createDesignRouter } from './design/http';
 import { configureAssessmentModule } from './assessment/index';
 import { createAssessmentRouter } from './assessment/http';
 import { createSupabaseClient } from './lib/supabase';
+import { requireAuth } from './middleware/auth';
 import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
@@ -91,7 +92,8 @@ export const createApp = (config: { designModuleConfig?: DesignModuleConfig } = 
     res.status(200).json({ received: req.body });
   });
 
-  app.use('/api/design', createDesignRouter(designModule));
+  // Apply authentication middleware to all design routes
+  app.use('/api/design', requireAuth, createDesignRouter(designModule));
   app.use('/api/assessment', createAssessmentRouter(assessmentModule));
 
   return app;
