@@ -28,17 +28,28 @@ export const verifyAuth = async (req: AuthRequest, res: Response, next: NextFunc
 }
 ```
 
+Analysis Conclusions:
+- Frontend is ready: `apiRequest` in `frontend/src/services/core.ts` automatically sends Auth header when session exists.
+- Frontend uses `skipAuth: true` for participant endpoints (`assessmentService`), so backend MUST NOT require auth for these specific routes.
+- **Protected Routes:**
+  - All `/api/design` routes
+  - Most `/api/assessment` routes (sessions, reports, participant details)
+- **Public Routes (Unprotected):**
+  - `POST /api/assessment/start` (Participant starting a test)
+  - `POST /api/assessment/instances/:id/finish` (Participant finishing a test)
+
 Tasks:
 - [ ] Create `backend/src/middleware/auth.ts`
 - [ ] Implement `requireAuth` middleware that extracts Bearer token
 - [ ] Attach token to request object for downstream use
 - [ ] Add TypeScript types for authenticated requests (extend Express Request type)
-- [ ] Apply middleware to protected routes in `backend/src/index.ts`
+- [ ] Apply middleware to `backend/src/index.ts`
+    - [ ] Apply to all `/api/design` routes
+    - [ ] Apply authentication middleware selectively inside `backend/src/assessment/http.ts` to protect only the necessary `/api/assessment` routes, making sure public endpoints (`POST /api/assessment/start` and `POST /api/assessment/instances/:id/finish`) remain unprotected.
 
 Necessary updates:
-- `backend/src/index.ts`: Apply middleware to `/api/design` and `/api/assessment` routes
+- `backend/src/index.ts`: Apply middleware logic.
 - Create new file: `backend/src/middleware/auth.ts`
 
-Open questions:
-- Should we validate the token in middleware, or defer to Supabase client?
-- Do we need different middleware for optional vs required auth?
+Decisions:
+- Validate token in middleware using `supabase.auth.getUser(token)` to reject invalid requests early (Fail Fast strategy).
