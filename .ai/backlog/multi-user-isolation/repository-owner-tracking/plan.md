@@ -1,73 +1,79 @@
 # repository-owner-tracking
 
 Goal:
-Update repositories to automatically set `owner_id` when saving entities, ensuring RLS policies work correctly.
+Update repositories to map an explicitly provided `ownerId` (injected at repository creation time) to the `owner_id` database column. This supports Seed Scripts setting explicit ownership while keeping Domain Models pure.
 
 Context:
-Database now has `owner_id UUID REFERENCES auth.users(id)` columns on `questions`, `templates`, and `test_sessions` tables. RLS policies use `auth.uid() = owner_id` to enforce isolation.
+Database now has `owner_id` columns with `default auth.uid()`.
+- **User Request**: `auth.uid()` provides the ID implicitly via the DB default.
+- **Seed Script**: The script provides an explicit ID. This ID will be passed to the Repository Factory.
+- **Domain Purity**: Domain objects (`Question`, `Template`) should NOT contain infrastructure concerns like `ownerId`.
+- **TestInstances (Shared Resource)**: 
+    - Created by Examiner (Owner).
+    - Updated by Candidate (Non-Owner).
+    - **Critical**: Updates by Candidates must NOT overwrite `owner_id`. If `explicitOwnerId` is undefined, the repository must NOT send the field to the DB, allowing the existing value to persist.
 
-Current implementation analysis:
-```typescript
-// backend/src/design/repository.ts
-// Currently saves only { id, data } without owner_id
-save: async (question: Question) => {
-  const doc = mapQuestionToDocument(question); // { id, data }
-  const { data, error } = await supabase
-    .from('questions')
-    .upsert(doc)
-    .select()
-    .single();
-  // ...
-}
-```
-
-With RLS enabled and `WITH CHECK (auth.uid() = owner_id)`, inserts will fail unless `owner_id` matches the authenticated user's ID.
+Strategy: **Context-Based Repository Injection**
+We will inject the `ownerId` into the Repository Factory. The Repository will then attach this ID to the `Document<T>` when saving, BUT ONLY IF explicitly provided.
 
 Required changes:
-- Get the authenticated user's ID from the Supabase client
-- Include `owner_id` in the document structure when saving
-- Ensure queries still work (RLS automatically filters by owner_id)
+1.  Update `Document<T>` to include `owner_id?: string`.
+2.  Update Repository Factories (e.g., `createSupabaseQuestionRepository`) to accept an optional `explicitOwnerId: string`.
+3.  Update Repositories to map this injected `explicitOwnerId` to the `owner_id` field on the `Document` during `save`.
+    - **Crucial**: If `explicitOwnerId` is undefined, do NOT include `owner_id` in the object sent to Supabase. This ensures `upsert` doesn't overwrite existing ownership with `null`.
 
 Tasks:
-- [ ] Update `createSupabaseQuestionRepository` save method to include `owner_id`
-- [ ] Update `createSupabaseTemplateRepository` save method to include `owner_id`
-- [ ] Update `createSupabaseSessionRepository` save method to include `owner_id`
-- [ ] Update `createSupabaseTestInstanceRepository` - determine ownership model for instances
-- [ ] Verify that read operations still work (RLS filters automatically)
-
-Necessary updates:
-- `backend/src/design/repository.ts`: Update both question and template save methods
-- `backend/src/assessment/repository.ts`: Update session and test instance save methods
+- [ ] Update `Document<T>` in `backend/src/design/repository.ts` and `backend/src/assessment/repository.ts` to include `owner_id?: string`.
+- [ ] Update `createSupabaseQuestionRepository` to accept `explicitOwnerId`.
+    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [ ] Update `createSupabaseTemplateRepository` to accept `explicitOwnerId`.
+    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [ ] Update `createSupabaseSessionRepository` to accept `explicitOwnerId`.
+    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
+- [ ] Update `createSupabaseTestInstanceRepository` to accept `explicitOwnerId`.
+    - [ ] Ensure `owner_id` is only added to payload if `explicitOwnerId` is defined.
 
 Example implementation:
+
+**Repository Type:**
 ```typescript
-// Updated save method
-save: async (question: Question) => {
-  // Get the authenticated user from the client
-  const { data: { user } } = await supabase.auth.getUser();
-  
-  if (!user) throw new Error("Authenticated user required");
-
-  const doc = {
-    id: question.id,
-    owner_id: user.id, // Add top-level owner_id
-    data: question,
-  };
-
-  const { data, error } = await supabase
-    .from('questions')
-    .upsert(doc)
-    .select()
-    .single();
-  // ...
-}
+export type Document<T> = {
+  id: string;
+  data: T;
+  owner_id?: string; // Optional
+};
 ```
 
-Open questions:
-- Should test_instances have their own owner_id, or inherit from the session?
-- Do we need to migrate existing data to have owner_ids?
-- Should we add indexes on owner_id columns for performance?
+**Repository Factory & Implementation:**
+```typescript
+// repository.ts
+export const createSupabaseQuestionRepository = (
+  supabase: SupabaseClient, 
+  explicitOwnerId?: string // <--- Injected here
+): QuestionRepository => {
+  
+  // Helper to map with owner
+  const mapQuestionToDocument = (question: Question): Document<Question> => {
+    const doc: Document<Question> = {
+      id: question.id,
+      data: question,
+    };
+    
+    // CRITICAL: Only set if explicitly provided. 
+    // If undefined, we omit the key so Postgres keeps existing value (on update) or uses default (on insert).
+    if (explicitOwnerId) {
+        doc.owner_id = explicitOwnerId;
+    }
+    
+    return doc;
+  };
 
-Risks:
-- Existing data without owner_id will be inaccessible until migrated
-- Need to ensure seed scripts also set owner_id correctly
+  return {
+    save: async (question: Question) => {
+      const doc = mapQuestionToDocument(question);
+      // ... upsert doc ...
+    },
+    // ...
+  };
+};
+```

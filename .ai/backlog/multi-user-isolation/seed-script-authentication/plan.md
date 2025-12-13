@@ -1,107 +1,82 @@
 # seed-script-authentication
 
 Goal:
-Update the seed script to accept an email parameter, authenticate as that user, and create all seed data owned by that user.
+Update the seed script to accept an email parameter, resolve the user ID using the Supabase Admin API, and create seed data owned by that user using the Service Role Key (bypassing RLS).
 
 Context:
-Current seed script uses hardcoded examiner IDs like `'examiner-001'` which aren't real UUIDs from `auth.users`. With RLS enabled, the script needs to authenticate as a real user.
+Current seed script uses hardcoded examiner IDs and the anonymous client. With RLS enabled, we need to explicitly set `owner_id` for inserted rows. Using the Service Role Key allows us to bypass RLS restrictions during seeding, but we must manually provide the correct `owner_id`.
 
 Current implementation analysis:
 ```typescript
 // backend/src/scripts/seed.ts
 // Currently uses anonymous client
 const supabaseClient = createSupabaseClient({ supabaseUrl, supabaseAnonKey });
-
-// Hardcoded examiner IDs in seed data
-// backend/src/scripts/seeds/sessions/activeSessions.ts
-examinerId: 'examiner-001', // Not a real UUID!
 ```
 
 Command line usage:
 ```bash
-# Current (no parameters)
-npm run seed
-
 # Desired
-npm run seed -- admin1@gmail.com
+npm run seed -- user1@gmail.com
 ```
 
 Required architecture:
-1. Read email from `process.argv[2]`
-2. Use Supabase Admin API to create/find the user
-3. Sign in as that user to get an access token
-4. Create Supabase client with that token
-5. Replace hardcoded examiner IDs with the real user ID
+1.  Read email from `process.argv[2]`.
+2.  Use `SUPABASE_SERVICE_ROLE_KEY` to create an Admin/Service Role Supabase client.
+3.  Use `supabaseAdmin.auth.admin.listUsers()` to find the user by email.
+4.  Pass the resolved `ownerId` to seed functions.
+5.  Seed functions must pass `ownerId` down to Use Cases/Repositories.
+6.  Repositories must map `ownerId` from the domain object to the `owner_id` database column.
 
 Tasks:
-- [ ] Add `SUPABASE_SERVICE_ROLE_KEY` to environment variables (for admin operations)
-- [ ] Create `getOrCreateTestUser(email)` helper function
-- [ ] Create `getAuthenticatedUserClient(email)` function that returns client + userId
-- [ ] Update seed script to read email from command line args
-- [ ] Update `seedActiveSessions` to accept `examinerId` parameter
-- [ ] Update `seedCompletedSessions` to accept `examinerId` parameter  
-- [ ] Update `seedFutureSessions` to accept `examinerId` parameter
-- [ ] Replace hardcoded `sessionSeed.examinerId` with passed-in userId
+- [x] Add `SUPABASE_SERVICE_ROLE_KEY` to environment variables.
+- [ ] Update `backend/src/scripts/seed.ts` to read email from CLI.
+- [ ] Implement `getUserIdByEmail` helper using Admin API.
+- [ ] Update `seedQuestions`, `seedTestTemplates`, etc., to accept `ownerId`.
+- [ ] Update Domain Types (`Question`, `CreateQuestionCommand`) to include `ownerId`.
+- [ ] Update Repositories to map `ownerId` to DB column `owner_id`.
 
 Necessary updates:
-- `backend/src/scripts/seed.ts`: Major refactor to add authentication
-- `backend/src/scripts/seeds/sessions/activeSessions.ts`: Keep as-is (data only)
-- `.env`: Add `SUPABASE_SERVICE_ROLE_KEY` variable
+- `backend/src/scripts/seed.ts`
+- `backend/src/design/types/question.ts` (and other domain types)
+- `backend/src/design/useCases/createQuestion.ts`
+- `backend/src/design/repository.ts`
 
 Example implementation:
+
 ```typescript
-// Helper to create/authenticate user
-const getAuthenticatedUserClient = async (email: string) => {
-  const adminClient = createClient(supabaseUrl, process.env.SUPABASE_SERVICE_ROLE_KEY!);
-  const defaultPassword = 'Password123!';
+// backend/src/scripts/seed.ts
 
-  // Find or create user
-  const { data: { users } } = await adminClient.auth.admin.listUsers();
-  let user = users.find(u => u.email === email);
-
-  if (!user) {
-    const { data, error } = await adminClient.auth.admin.createUser({
-      email,
-      password: defaultPassword,
-      email_confirm: true
-    });
-    if (error) throw error;
-    user = data.user;
-  }
-
-  // Sign in to get token
-  const authClient = createClient(supabaseUrl, supabaseAnonKey);
-  const { data: signInData, error } = await authClient.auth.signInWithPassword({
-    email,
-    password: defaultPassword
-  });
-
-  if (error || !signInData.session) throw error;
-
-  return {
-    client: createSupabaseClient({ supabaseUrl, supabaseAnonKey }, signInData.session.access_token),
-    userId: user.id
-  };
+// 1. Helper to find user by email using Admin API
+const getUserIdByEmail = async (supabaseAdmin: ReturnType<typeof createSupabaseClient>, email: string) => {
+  console.log(`🔍 Looking up user: ${email}...`);
+  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+  if (error) throw error;
+  
+  const user = users.find(u => u.email === email);
+  if (!user) throw new Error(`User with email ${email} not found!`);
+  
+  return user.id;
 };
 
-// Usage in seed()
+// 2. Main seed function
 const seed = async () => {
-  const email = process.argv[2];
-  if (!email) {
+  const targetEmail = process.argv[2];
+  if (!targetEmail) {
     console.error('Usage: npm run seed -- user@example.com');
     process.exit(1);
   }
 
-  const { client: userClient, userId } = await getAuthenticatedUserClient(email);
-  await seedQuestions(userClient);
-  await seedActiveSessions(userClient, templateMap, userId); // Pass userId!
+  // Use Service Role Key to bypass RLS and act as Admin
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+  const supabaseAdmin = createSupabaseClient({
+    supabaseUrl,
+    supabaseAnonKey: supabaseServiceKey,
+  });
+
+  const ownerId = await getUserIdByEmail(supabaseAdmin, targetEmail);
+
+  // Pass ownerId to seed functions
+  await seedQuestions(supabaseAdmin, ownerId);
+  // ...
 };
 ```
-
-Open questions:
-- Should we allow seeding for multiple users in one run?
-- What default password should we use for test users?
-- Should we clean the database before seeding, or append?
-
-Dependencies:
-- Requires `per-request-supabase-client` to be implemented (need updated createSupabaseClient)
