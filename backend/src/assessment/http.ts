@@ -292,11 +292,15 @@ export const createAssessmentRouter = (): Router => {
       }
 
       res.status(201).json({ sessionId: result.value });
-    } catch (error) {
+    } catch (error: any) {
+      // Log the full error to the console
+      console.error('AAA Failed to start session:', error);
+
       res.status(500).json({
         error: {
           type: 'InternalServerError',
-          message: 'Failed to start session',
+          // Return the actual error message if available
+          message: `BBB Failed to start session: ${error.message || 'Unknown error'}`,
         },
       });
     }

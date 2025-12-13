@@ -75,8 +75,9 @@ export const createSupabaseSessionRepository = (
         .upsert(doc);
 
       if (error) {
-        console.error('Error saving session:', error);
-        throw new Error('Could not save session');
+        console.error('FULL DB ERROR:', JSON.stringify(error, null, 2)); // improved logging
+        // Include the original error message in the new error
+        throw new Error(`Could not save session: ${error.message} (Code: ${error.code})`);
       }
     },
     findById: async (id: string) => {
@@ -113,6 +114,8 @@ export const createSupabaseTestInstanceRepository = (
   supabase: SupabaseClient,
   explicitOwnerId?: string
 ): TestInstanceRepository => {
+  console.log('createSupabaseTestInstanceRepository initialized with ownerId:', explicitOwnerId);
+
   const mapInstanceToDocument = (instance: TestInstance): Document<TestInstance> => {
     const doc: Document<TestInstance> = {
       id: instance.id,
@@ -133,22 +136,24 @@ export const createSupabaseTestInstanceRepository = (
       const doc = mapInstanceToDocument(instance);
       const { error } = await supabase
         .from('test_instances')
-        .upsert(doc);
+        .insert(doc);
 
       if (error) {
-        console.error('Error saving test instance:', error);
-        throw new Error('Could not save test instance');
+        console.error('FULL DB ERROR:', JSON.stringify(error, null, 2));
+        throw new Error(`Could not save test instance: ${error.message} (Code: ${error.code})`);
       }
     },
     saveMany: async (instances: TestInstance[]) => {
       const docs = instances.map(mapInstanceToDocument);
+      console.log('Saving instances with docs:', JSON.stringify(docs, null, 2));
+
       const { error } = await supabase
         .from('test_instances')
-        .upsert(docs);
+        .insert(docs);
 
       if (error) {
-        console.error('Error saving multiple test instances:', error);
-        throw new Error('Could not save test instances');
+        console.error('FULL DB ERROR:', JSON.stringify(error, null, 2));
+        throw new Error(`Could not save test instances: ${error.message} (Code: ${error.code})`);
       }
     },
     findBySessionId: async (sessionId: string) => {

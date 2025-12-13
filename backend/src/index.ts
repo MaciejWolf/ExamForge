@@ -10,7 +10,7 @@ import dotenv from 'dotenv';
 import swaggerUi from 'swagger-ui-express';
 import swaggerSpec from './swagger';
 
-dotenv.config();
+dotenv.config({ debug: true });
 
 type TestConfig = {
   designModuleConfig?: DesignModuleConfig & { supabaseClient?: SupabaseClient };

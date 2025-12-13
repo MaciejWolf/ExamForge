@@ -39,6 +39,7 @@ const createScopedModules = (accessToken?: string, ownerId?: string) => {
 
   const assessmentModule = configureAssessmentModule({
     supabaseClient: scopedClient,
+    ownerId,
     materializeTemplate: designModule.materializeTemplate,
     templateProvider: {
       getTemplateNames: async (ids: string[]) => {
