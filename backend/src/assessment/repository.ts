@@ -136,7 +136,7 @@ export const createSupabaseTestInstanceRepository = (
       const doc = mapInstanceToDocument(instance);
       const { error } = await supabase
         .from('test_instances')
-        .insert(doc);
+        .upsert(doc);
 
       if (error) {
         console.error('FULL DB ERROR:', JSON.stringify(error, null, 2));
