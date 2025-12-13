@@ -30,10 +30,10 @@ Required architecture:
 
 Tasks:
 - [x] Add `SUPABASE_SERVICE_ROLE_KEY` to environment variables.
-- [ ] Update `backend/src/scripts/seed.ts` to read email from CLI.
-- [ ] Implement `getUserIdByEmail` helper using Admin API in `seed.ts`.
-- [ ] Update `backend/src/design/index.ts` (`configureDesignModule`) to accept `ownerId` in config and pass it to repositories.
-- [ ] Update `seedQuestions`, `seedTestTemplates`, etc. in `seed.ts` to accept `ownerId` and pass it to `configureDesignModule`.
+- [x] Update `backend/src/scripts/seed.ts` to read email from CLI.
+- [x] Implement `getUserIdByEmail` helper using Admin API in `seed.ts`.
+- [x] Update `backend/src/design/index.ts` (`configureDesignModule`) to accept `ownerId` in config and pass it to repositories.
+- [x] Update `seedQuestions`, `seedTestTemplates`, etc. in `seed.ts` to accept `ownerId` and pass it to `configureDesignModule`.
 - [x] Update Repositories to map `ownerId` to DB column `owner_id` (Already implemented in `backend/src/design/repository.ts`).
 
 Necessary updates:

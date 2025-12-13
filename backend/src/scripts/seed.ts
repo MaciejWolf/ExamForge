@@ -18,6 +18,19 @@ import type { TestInstance } from '../assessment/types/testInstance';
 
 dotenv.config();
 
+// Helper to find user by email using Admin API
+const getUserIdByEmail = async (supabaseAdmin: ReturnType<typeof createSupabaseClient>, email: string) => {
+  console.log(`🔍 Looking up user: ${email}...`);
+  const { data: { users }, error } = await supabaseAdmin.auth.admin.listUsers();
+  if (error) throw error;
+
+  const user = users.find(u => u.email === email);
+  if (!user) throw new Error(`User with email ${email} not found!`);
+
+  console.log(`✅ Found user: ${user.email} (ID: ${user.id})\n`);
+  return user.id;
+};
+
 const cleanDatabase = async (supabaseClient: ReturnType<typeof createSupabaseClient>) => {
   console.log('🧹 Cleaning database...\n');
 
@@ -120,11 +133,12 @@ const cleanDatabase = async (supabaseClient: ReturnType<typeof createSupabaseCli
   console.log('✅ Database cleaned successfully\n');
 };
 
-const seedQuestions = async (supabaseClient: ReturnType<typeof createSupabaseClient>) => {
+const seedQuestions = async (supabaseClient: ReturnType<typeof createSupabaseClient>, ownerId: string) => {
   console.log('🌱 Starting seed process...\n');
 
   const designModule = configureDesignModule({
     supabaseClient,
+    ownerId,
   });
 
   const createQuestionWithDate = async (
@@ -150,6 +164,7 @@ const seedQuestions = async (supabaseClient: ReturnType<typeof createSupabaseCli
 
     const moduleWithDate = configureDesignModule({
       supabaseClient,
+      ownerId,
       now: () => createdAt,
     });
 
@@ -213,7 +228,8 @@ const seedQuestions = async (supabaseClient: ReturnType<typeof createSupabaseCli
 const seedTestTemplates = async (
   supabaseClient: ReturnType<typeof createSupabaseClient>,
   seedIdToDbIdMap: Map<string, string>,
-  designModule: ReturnType<typeof configureDesignModule>
+  designModule: ReturnType<typeof configureDesignModule>,
+  ownerId: string
 ): Promise<Map<string, string>> => {
   console.log(`\n📄 Seeding ${testTemplates.length} test templates...`);
   let templateSuccessCount = 0;
@@ -266,7 +282,8 @@ const seedTestTemplates = async (
 
 const seedActiveSessions = async (
   supabaseClient: ReturnType<typeof createSupabaseClient>,
-  templateNameToIdMap: Map<string, string>
+  templateNameToIdMap: Map<string, string>,
+  ownerId: string
 ) => {
   console.log(`\n🎯 Seeding ${activeSessions.length} active test sessions...`);
 
@@ -311,6 +328,7 @@ const seedActiveSessions = async (
         const participantBaseSeed = hashString(participantSeed);
         const participantDesignModule = configureDesignModule({
           supabaseClient,
+          ownerId,
           randomSelector: createSeededRandomSelector(participantBaseSeed),
           answerShuffler: createSeededAnswerShuffler(participantBaseSeed),
         });
@@ -342,7 +360,7 @@ const seedActiveSessions = async (
       // Start the session
       const result = await assessmentModule.startSession({
         templateId,
-        examinerId: sessionSeed.examinerId,
+        examinerId: ownerId,
         timeLimitMinutes: sessionSeed.timeLimitMinutes,
         startTime: sessionSeed.startTime,
         endTime: sessionSeed.endTime,
@@ -403,7 +421,8 @@ const seedActiveSessions = async (
 
 const seedCompletedSessions = async (
   supabaseClient: ReturnType<typeof createSupabaseClient>,
-  templateNameToIdMap: Map<string, string>
+  templateNameToIdMap: Map<string, string>,
+  ownerId: string
 ) => {
   console.log(`\n📜 Seeding ${completedSessions.length} completed test sessions...`);
 
@@ -479,7 +498,7 @@ const seedCompletedSessions = async (
       // Start the session
       const result = await assessmentModule.startSession({
         templateId,
-        examinerId: sessionSeed.examinerId,
+        examinerId: ownerId,
         timeLimitMinutes: sessionSeed.timeLimitMinutes,
         startTime: sessionSeed.startTime,
         endTime: sessionSeed.endTime,
@@ -687,7 +706,8 @@ const seedCompletedSessions = async (
 
 const seedFutureSessions = async (
   supabaseClient: ReturnType<typeof createSupabaseClient>,
-  templateNameToIdMap: Map<string, string>
+  templateNameToIdMap: Map<string, string>,
+  ownerId: string
 ) => {
   console.log(`\n📅 Seeding ${futureSessions.length} future test sessions...`);
 
@@ -731,6 +751,7 @@ const seedFutureSessions = async (
         const participantBaseSeed = hashString(participantSeed);
         const participantDesignModule = configureDesignModule({
           supabaseClient,
+          ownerId,
           randomSelector: createSeededRandomSelector(participantBaseSeed),
           answerShuffler: createSeededAnswerShuffler(participantBaseSeed),
         });
@@ -762,7 +783,7 @@ const seedFutureSessions = async (
       // Start the session (status will be 'open' automatically since dates are in future)
       const result = await assessmentModule.startSession({
         templateId,
-        examinerId: sessionSeed.examinerId,
+        examinerId: ownerId,
         timeLimitMinutes: sessionSeed.timeLimitMinutes,
         startTime: sessionSeed.startTime,
         endTime: sessionSeed.endTime,
@@ -827,33 +848,50 @@ const seedFutureSessions = async (
 };
 
 const seed = async () => {
+  const targetEmail = process.argv[2];
+  if (!targetEmail) {
+    console.error('❌ Error: Email parameter is required');
+    console.error('Usage: npm run seed -- user@example.com');
+    process.exit(1);
+  }
+
   const supabaseUrl = process.env.SUPABASE_URL;
   const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+  const supabaseServiceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!supabaseUrl || !supabaseAnonKey) {
     console.error('❌ Error: SUPABASE_URL and SUPABASE_ANON_KEY must be set in environment variables');
     process.exit(1);
   }
 
-  const supabaseClient = createSupabaseClient({
+  if (!supabaseServiceKey) {
+    console.error('❌ Error: SUPABASE_SERVICE_ROLE_KEY must be set in environment variables');
+    process.exit(1);
+  }
+
+  // Use Service Role Key to bypass RLS and act as Admin
+  const supabaseAdmin = createSupabaseClient({
     supabaseUrl,
-    supabaseAnonKey,
+    supabaseAnonKey: supabaseServiceKey,
   });
 
-  // Clean database before seeding
-  await cleanDatabase(supabaseClient);
+  // Resolve user ID from email
+  const ownerId = await getUserIdByEmail(supabaseAdmin, targetEmail);
 
-  const { seedIdToDbIdMap, designModule } = await seedQuestions(supabaseClient);
-  const templateNameToIdMap = await seedTestTemplates(supabaseClient, seedIdToDbIdMap, designModule);
+  // Clean database before seeding
+  await cleanDatabase(supabaseAdmin);
+
+  const { seedIdToDbIdMap, designModule } = await seedQuestions(supabaseAdmin, ownerId);
+  const templateNameToIdMap = await seedTestTemplates(supabaseAdmin, seedIdToDbIdMap, designModule, ownerId);
 
   // Seed active sessions
-  await seedActiveSessions(supabaseClient, templateNameToIdMap);
+  await seedActiveSessions(supabaseAdmin, templateNameToIdMap, ownerId);
 
   // Seed completed sessions (oldest first)
-  await seedCompletedSessions(supabaseClient, templateNameToIdMap);
+  await seedCompletedSessions(supabaseAdmin, templateNameToIdMap, ownerId);
 
   // Seed future sessions (scheduled but not started)
-  await seedFutureSessions(supabaseClient, templateNameToIdMap);
+  await seedFutureSessions(supabaseAdmin, templateNameToIdMap, ownerId);
 
   console.log(`\n✨ Seed process completed!`);
 };

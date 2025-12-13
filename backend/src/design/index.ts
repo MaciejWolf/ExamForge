@@ -5,6 +5,7 @@ import { SupabaseClient } from '@supabase/supabase-js';
 
 export type DesignModuleConfig = {
   supabaseClient?: SupabaseClient;
+  ownerId?: string;
   idGenerator?: () => string;
   now?: () => Date;
   randomSelector?: <T>(items: T[], count: number) => T[];
@@ -13,11 +14,11 @@ export type DesignModuleConfig = {
 
 export const configureDesignModule = (config: DesignModuleConfig = {}) => {
   const repo: QuestionRepository = config.supabaseClient
-    ? createSupabaseQuestionRepository(config.supabaseClient)
+    ? createSupabaseQuestionRepository(config.supabaseClient, config.ownerId)
     : createInMemoryQuestionRepository();
 
   const templateRepo: TemplateRepository = config.supabaseClient
-    ? createSupabaseTemplateRepository(config.supabaseClient)
+    ? createSupabaseTemplateRepository(config.supabaseClient, config.ownerId)
     : createInMemoryTemplateRepository();
 
   const idGenerator = config.idGenerator ?? uuidv4;
