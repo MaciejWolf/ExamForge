@@ -1,5 +1,5 @@
 import { Result, ok, err } from '../../shared/result';
-import { TestSessionReport, Participant, SessionStatistics } from '../types/sessionReport';
+import { TestSessionReport, Participant, SessionStatistics, QuestionAnalysis } from '../types/sessionReport';
 import { AssessmentError } from '../types/assessmentError';
 import { SessionRepository, TestInstanceRepository } from '../repository';
 import { TemplateRepository } from '../../design/repository';
@@ -124,6 +124,104 @@ const calculateStatistics = (participants: Participant[]): SessionStatistics => 
   };
 };
 
+type QuestionStat = {
+  questionId: string;
+  questionContent: string;
+  correctAnswer: string;
+  points: number;
+  participantsCount: number;
+  correctResponses: number;
+  totalResponses: number;
+};
+
+const calculateQuestionAnalysis = (testInstances: TestInstance[]): QuestionAnalysis[] => {
+  // Filter to only completed instances
+  const completedInstances = testInstances.filter(instance => instance.completedAt !== undefined);
+
+  // If no completed instances, return empty array
+  if (completedInstances.length === 0) {
+    return [];
+  }
+
+  // Map to store statistics for each question (keyed by questionId)
+  const questionStatsMap = new Map<string, QuestionStat>();
+
+  // Iterate through each completed instance
+  for (const instance of completedInstances) {
+    // Iterate through each section in the test content
+    for (const section of instance.testContent.sections) {
+      // Calculate points per question for this section
+      const pointsPerQuestion = section.questions.length > 0
+        ? section.points / section.questions.length
+        : 0;
+
+      // Iterate through each question in the section
+      for (const question of section.questions) {
+        // Get or initialize stats for this question
+        let stats = questionStatsMap.get(question.id);
+
+        if (!stats) {
+          // Find the correct answer text
+          const correctAnswerObj = question.answers.find(a => a.id === question.correctAnswerId);
+          const correctAnswerText = correctAnswerObj?.text ?? 'Unknown';
+
+          // Initialize stats for this question
+          stats = {
+            questionId: question.id,
+            questionContent: question.text,
+            correctAnswer: correctAnswerText,
+            points: pointsPerQuestion,
+            participantsCount: 0,
+            correctResponses: 0,
+            totalResponses: 0,
+          };
+          questionStatsMap.set(question.id, stats);
+        }
+
+        // Increment participantsCount (this participant saw this question)
+        stats.participantsCount += 1;
+
+        // Check if this participant answered this question
+        const participantAnswerId = instance.answers?.[question.id];
+        if (participantAnswerId !== undefined && participantAnswerId !== null) {
+          // Increment totalResponses (this participant answered)
+          stats.totalResponses += 1;
+
+          // Check if the answer is correct
+          if (participantAnswerId === question.correctAnswerId) {
+            stats.correctResponses += 1;
+          }
+        }
+      }
+    }
+  }
+
+  // Convert map to array
+  const questionAnalysisArray: QuestionAnalysis[] = Array.from(questionStatsMap.values())
+    // Sort by questionContent for deterministic ordering
+    .sort((a, b) => a.questionContent.localeCompare(b.questionContent))
+    // Assign sequential question numbers and calculate percentages
+    .map((stats, index) => {
+      const correctPercentage = stats.totalResponses > 0
+        ? (stats.correctResponses / stats.totalResponses) * 100
+        : 0;
+
+      return {
+        questionId: stats.questionId,
+        questionNumber: index + 1,
+        questionContent: stats.questionContent,
+        correctAnswer: stats.correctAnswer,
+        points: stats.points,
+        correctResponses: stats.correctResponses,
+        totalResponses: stats.totalResponses,
+        correctPercentage: Math.round(correctPercentage * 100) / 100, // Round to 2 decimal places
+        participantsCount: stats.participantsCount,
+      };
+    });
+
+  return questionAnalysisArray;
+};
+
 export const getSessionReport = ({ sessionRepo, templateRepo, testInstanceRepo, now }: GetSessionReportDeps) => {
   return async (sessionId: string): Promise<Result<TestSessionReport, AssessmentError>> => {
     try {
@@ -153,66 +251,24 @@ export const getSessionReport = ({ sessionRepo, templateRepo, testInstanceRepo, 
       // Calculate statistics from participant data
       const statistics = calculateStatistics(participants);
 
+      // Calculate question analysis from test instances
+      const questionAnalysis = calculateQuestionAnalysis(testInstances);
+
       // Build report with real session data
-    const report: TestSessionReport = {
-      session: {
-        id: session.id,
-        templateId: session.templateId,
-        templateName: templateName,
-        examinerId: session.examinerId,
-        timeLimitMinutes: session.timeLimitMinutes,
-        status: mapSessionStatus(session.status),
-        createdAt: toISOString(session.createdAt),
-      },
-      participants,
-      statistics,
-      questionAnalysis: [
-        {
-          questionId: 'question-1',
-          questionNumber: 1,
-          questionContent: 'What is the derivative of x²?',
-          correctAnswer: '2x',
-          points: 20,
-          correctResponses: 3,
-          totalResponses: 3,
-          correctPercentage: 100.0,
-          participantsCount: 3,
+      const report: TestSessionReport = {
+        session: {
+          id: session.id,
+          templateId: session.templateId,
+          templateName: templateName,
+          examinerId: session.examinerId,
+          timeLimitMinutes: session.timeLimitMinutes,
+          status: mapSessionStatus(session.status),
+          createdAt: toISOString(session.createdAt),
         },
-        {
-          questionId: 'question-2',
-          questionNumber: 2,
-          questionContent: 'Solve for x: 2x + 5 = 15',
-          correctAnswer: 'x = 5',
-          points: 25,
-          correctResponses: 2,
-          totalResponses: 3,
-          correctPercentage: 66.67,
-          participantsCount: 3,
-        },
-        {
-          questionId: 'question-3',
-          questionNumber: 3,
-          questionContent: 'What is the integral of 1/x?',
-          correctAnswer: 'ln|x| + C',
-          points: 30,
-          correctResponses: 1,
-          totalResponses: 3,
-          correctPercentage: 33.33,
-          participantsCount: 3,
-        },
-        {
-          questionId: 'question-4',
-          questionNumber: 4,
-          questionContent: 'Evaluate lim(x→0) sin(x)/x',
-          correctAnswer: '1',
-          points: 25,
-          correctResponses: 3,
-          totalResponses: 3,
-          correctPercentage: 100.0,
-          participantsCount: 3,
-        },
-      ],
-    };
+        participants,
+        statistics,
+        questionAnalysis,
+      };
 
       return ok(report);
     } catch (error) {

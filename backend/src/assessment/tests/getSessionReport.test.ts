@@ -1,13 +1,14 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { configureAssessmentModule, AssessmentModule } from '../index';
 import { ok } from '../../shared/result';
-import { TestContentPackage } from '../../design/types/testContentPackage';
+import { TestContentPackage, MaterializedSection } from '../../design/types/testContentPackage';
 import { TemplateProvider } from '../useCases/listSessions';
 import { createInMemoryTemplateRepository, TemplateRepository } from '../../design/repository';
 import { TestTemplate } from '../../design/types/testTemplate';
 import { createInMemorySessionRepository, createInMemoryTestInstanceRepository, SessionRepository, TestInstanceRepository } from '../repository';
 import { TestSession } from '../types/testSession';
 import { TestInstance } from '../types/testInstance';
+import { Question } from '../../design/types/question';
 
 describe('getSessionReport Use Case', () => {
   let module: AssessmentModule;
@@ -823,6 +824,499 @@ describe('getSessionReport Use Case', () => {
       expect(result.value.statistics.lowestScore).toBe(80);
     }
   });
+
+  it('Generate question analysis with basic correct answers', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: completed participants exist with test content and answers
+    const question1: Question = {
+      id: 'q1',
+      text: 'What is 2 + 2?',
+      answers: [
+        { id: 'a1', text: '3' },
+        { id: 'a2', text: '4' },
+        { id: 'a3', text: '5' }
+      ],
+      correctAnswerId: 'a2',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    const question2: Question = {
+      id: 'q2',
+      text: 'What is 3 * 3?',
+      answers: [
+        { id: 'a4', text: '6' },
+        { id: 'a5', text: '9' },
+        { id: 'a6', text: '12' }
+      ],
+      correctAnswerId: 'a5',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    const testContent: TestContentPackage = {
+      id: 'content-1',
+      templateId,
+      sections: [
+        {
+          poolId: 'pool-1',
+          poolName: 'Math Pool',
+          points: 20, // 10 points per question (2 questions)
+          questions: [question1, question2]
+        }
+      ],
+      createdAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    await givenTestInstancesWithContent(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        answers: { q1: 'a2', q2: 'a5' }, // Both correct
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:25:00Z'),
+        answers: { q1: 'a2', q2: 'a4' }, // q1 correct, q2 incorrect
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-3',
+        identifier: 'Participant 3',
+        accessCode: 'CODE3',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:35:00Z'),
+        answers: { q1: 'a1', q2: 'a5' }, // q1 incorrect, q2 correct
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: question analysis should be calculated correctly
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.questionAnalysis).toHaveLength(2);
+
+      // Find question 1 (sorted by content)
+      const q1Analysis = result.value.questionAnalysis.find(q => q.questionId === 'q1');
+      expect(q1Analysis).toBeDefined();
+      if (q1Analysis) {
+        expect(q1Analysis.questionContent).toBe('What is 2 + 2?');
+        expect(q1Analysis.correctAnswer).toBe('4');
+        expect(q1Analysis.points).toBe(10); // 20 points / 2 questions
+        expect(q1Analysis.participantsCount).toBe(3);
+        expect(q1Analysis.totalResponses).toBe(3);
+        expect(q1Analysis.correctResponses).toBe(2); // Participants 1 and 2 got it right
+        expect(q1Analysis.correctPercentage).toBeCloseTo(66.67, 1);
+      }
+
+      // Find question 2
+      const q2Analysis = result.value.questionAnalysis.find(q => q.questionId === 'q2');
+      expect(q2Analysis).toBeDefined();
+      if (q2Analysis) {
+        expect(q2Analysis.questionContent).toBe('What is 3 * 3?');
+        expect(q2Analysis.correctAnswer).toBe('9');
+        expect(q2Analysis.points).toBe(10);
+        expect(q2Analysis.participantsCount).toBe(3);
+        expect(q2Analysis.totalResponses).toBe(3);
+        expect(q2Analysis.correctResponses).toBe(2); // Participants 1 and 3 got it right
+        expect(q2Analysis.correctPercentage).toBeCloseTo(66.67, 1);
+      }
+    }
+  });
+
+  it('Generate question analysis with mixed correct/incorrect answers', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: a question with mixed answers
+    const question: Question = {
+      id: 'q1',
+      text: 'What is the capital of France?',
+      answers: [
+        { id: 'a1', text: 'London' },
+        { id: 'a2', text: 'Paris' },
+        { id: 'a3', text: 'Berlin' }
+      ],
+      correctAnswerId: 'a2',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    const testContent: TestContentPackage = {
+      id: 'content-1',
+      templateId,
+      sections: [
+        {
+          poolId: 'pool-1',
+          poolName: 'Geography Pool',
+          points: 30,
+          questions: [question]
+        }
+      ],
+      createdAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    await givenTestInstancesWithContent(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        answers: { q1: 'a2' }, // Correct
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:25:00Z'),
+        answers: { q1: 'a1' }, // Incorrect
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-3',
+        identifier: 'Participant 3',
+        accessCode: 'CODE3',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:35:00Z'),
+        answers: { q1: 'a2' }, // Correct
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-4',
+        identifier: 'Participant 4',
+        accessCode: 'CODE4',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:20:00Z'),
+        answers: { q1: 'a3' }, // Incorrect
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: question analysis should show 50% correct (2 out of 4)
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.questionAnalysis).toHaveLength(1);
+      const analysis = result.value.questionAnalysis[0];
+      expect(analysis.questionId).toBe('q1');
+      expect(analysis.participantsCount).toBe(4);
+      expect(analysis.totalResponses).toBe(4);
+      expect(analysis.correctResponses).toBe(2);
+      expect(analysis.correctPercentage).toBe(50);
+    }
+  });
+
+  it('Generate question analysis with participants having different questions', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: participants have different questions (simulating pool materialization)
+    const question1: Question = {
+      id: 'q1',
+      text: 'Question 1',
+      answers: [
+        { id: 'a1', text: 'Answer 1' },
+        { id: 'a2', text: 'Answer 2' }
+      ],
+      correctAnswerId: 'a2',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    const question2: Question = {
+      id: 'q2',
+      text: 'Question 2',
+      answers: [
+        { id: 'a3', text: 'Answer 3' },
+        { id: 'a4', text: 'Answer 4' }
+      ],
+      correctAnswerId: 'a4',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    const question3: Question = {
+      id: 'q3',
+      text: 'Question 3',
+      answers: [
+        { id: 'a5', text: 'Answer 5' },
+        { id: 'a6', text: 'Answer 6' }
+      ],
+      correctAnswerId: 'a6',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    // Participant 1 has questions 1 and 2
+    const testContent1: TestContentPackage = {
+      id: 'content-1',
+      templateId,
+      sections: [
+        {
+          poolId: 'pool-1',
+          poolName: 'Pool 1',
+          points: 20,
+          questions: [question1, question2]
+        }
+      ],
+      createdAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    // Participant 2 has questions 2 and 3
+    const testContent2: TestContentPackage = {
+      id: 'content-2',
+      templateId,
+      sections: [
+        {
+          poolId: 'pool-1',
+          poolName: 'Pool 1',
+          points: 20,
+          questions: [question2, question3]
+        }
+      ],
+      createdAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    await givenTestInstancesWithContent(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        testContent: testContent1,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        answers: { q1: 'a2', q2: 'a4' }, // Both correct
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        testContent: testContent2,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:25:00Z'),
+        answers: { q2: 'a3', q3: 'a6' }, // q2 incorrect, q3 correct
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: question analysis should aggregate across all questions
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      // Should have 3 unique questions
+      expect(result.value.questionAnalysis).toHaveLength(3);
+
+      // Question 1: only participant 1 saw it, got it correct
+      const q1Analysis = result.value.questionAnalysis.find(q => q.questionId === 'q1');
+      expect(q1Analysis).toBeDefined();
+      if (q1Analysis) {
+        expect(q1Analysis.participantsCount).toBe(1);
+        expect(q1Analysis.totalResponses).toBe(1);
+        expect(q1Analysis.correctResponses).toBe(1);
+        expect(q1Analysis.correctPercentage).toBe(100);
+      }
+
+      // Question 2: both participants saw it, 1 correct, 1 incorrect
+      const q2Analysis = result.value.questionAnalysis.find(q => q.questionId === 'q2');
+      expect(q2Analysis).toBeDefined();
+      if (q2Analysis) {
+        expect(q2Analysis.participantsCount).toBe(2);
+        expect(q2Analysis.totalResponses).toBe(2);
+        expect(q2Analysis.correctResponses).toBe(1);
+        expect(q2Analysis.correctPercentage).toBe(50);
+      }
+
+      // Question 3: only participant 2 saw it, got it correct
+      const q3Analysis = result.value.questionAnalysis.find(q => q.questionId === 'q3');
+      expect(q3Analysis).toBeDefined();
+      if (q3Analysis) {
+        expect(q3Analysis.participantsCount).toBe(1);
+        expect(q3Analysis.totalResponses).toBe(1);
+        expect(q3Analysis.correctResponses).toBe(1);
+        expect(q3Analysis.correctPercentage).toBe(100);
+      }
+    }
+  });
+
+  it('Return empty question analysis when no participants completed', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: participants exist but none are completed
+    await givenParticipantsExist(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      },
+      {
+        id: 'participant-2',
+        identifier: 'Participant 2',
+        accessCode: 'CODE2',
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: question analysis should be empty
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.questionAnalysis).toEqual([]);
+    }
+  });
+
+  it('Handle questions with no responses (skipped)', async () => {
+    // Given: a template and session exist
+    const templateId = 'template-1';
+    await givenATemplateExists(templateRepo, {
+      id: templateId,
+      name: 'Test Template'
+    });
+
+    const sessionId = await givenASessionWithStatus(sessionRepo, {
+      templateId,
+      examinerId: 'examiner-1',
+      timeLimitMinutes: 60,
+      status: 'open'
+    });
+
+    // And: a participant completed but didn't answer all questions
+    const question: Question = {
+      id: 'q1',
+      text: 'Question 1',
+      answers: [
+        { id: 'a1', text: 'Answer 1' },
+        { id: 'a2', text: 'Answer 2' }
+      ],
+      correctAnswerId: 'a2',
+      tags: [],
+      createdAt: new Date('2025-01-01T09:00:00Z'),
+      updatedAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    const testContent: TestContentPackage = {
+      id: 'content-1',
+      templateId,
+      sections: [
+        {
+          poolId: 'pool-1',
+          poolName: 'Pool 1',
+          points: 10,
+          questions: [question]
+        }
+      ],
+      createdAt: new Date('2025-01-01T09:00:00Z')
+    };
+
+    await givenTestInstancesWithContent(testInstanceRepo, sessionId, [
+      {
+        id: 'participant-1',
+        identifier: 'Participant 1',
+        accessCode: 'CODE1',
+        testContent,
+        startedAt: new Date('2025-01-01T10:00:00Z'),
+        completedAt: new Date('2025-01-01T10:30:00Z'),
+        answers: {}, // No answers provided
+        createdAt: new Date('2025-01-01T10:00:00Z')
+      }
+    ]);
+
+    // When: fetching the session report
+    const result = await module.getSessionReport(sessionId);
+
+    // Then: question should be included but with 0 responses
+    expect(result.ok).toBe(true);
+    if (result.ok) {
+      expect(result.value.questionAnalysis).toHaveLength(1);
+      const analysis = result.value.questionAnalysis[0];
+      expect(analysis.questionId).toBe('q1');
+      expect(analysis.participantsCount).toBe(1); // Participant saw the question
+      expect(analysis.totalResponses).toBe(0); // But didn't answer
+      expect(analysis.correctResponses).toBe(0);
+      expect(analysis.correctPercentage).toBe(0);
+    }
+  });
 });
 
 // --- Test Helpers ---
@@ -940,6 +1434,44 @@ const givenParticipantsExist = async (
       totalScore: participant.totalScore,
       maxScore: participant.maxScore,
       timeTakenMinutes: participant.timeTakenMinutes
+    };
+    await testInstanceRepo.save(instance);
+  }
+};
+
+const givenTestInstancesWithContent = async (
+  testInstanceRepo: TestInstanceRepository,
+  sessionId: string,
+  instances: Array<{
+    id: string;
+    identifier: string;
+    accessCode: string;
+    testContent: TestContentPackage;
+    startedAt?: Date;
+    completedAt?: Date;
+    answers?: Record<string, string>;
+    createdAt?: Date;
+    totalScore?: number;
+    maxScore?: number;
+    timeTakenMinutes?: number;
+  }>
+): Promise<void> => {
+  const baseDate = new Date('2025-01-01T10:00:00Z');
+
+  for (const instanceData of instances) {
+    const instance: TestInstance = {
+      id: instanceData.id,
+      sessionId,
+      identifier: instanceData.identifier,
+      accessCode: instanceData.accessCode,
+      testContent: instanceData.testContent,
+      startedAt: instanceData.startedAt,
+      completedAt: instanceData.completedAt,
+      answers: instanceData.answers,
+      createdAt: instanceData.createdAt ?? baseDate,
+      totalScore: instanceData.totalScore,
+      maxScore: instanceData.maxScore,
+      timeTakenMinutes: instanceData.timeTakenMinutes
     };
     await testInstanceRepo.save(instance);
   }
