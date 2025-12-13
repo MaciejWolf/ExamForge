@@ -21,14 +21,19 @@ type RequestWithModules = Request & {
 // Helper function to create request-scoped modules
 const createScopedModules = (accessToken?: string, ownerId?: string) => {
   const supabaseUrl = process.env.SUPABASE_URL;
-  const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
 
-  if (!supabaseUrl || !supabaseAnonKey) {
-    throw new Error('Supabase URL and Anon Key must be set in environment variables');
+  // Use Service Role Key for unauthenticated requests to bypass RLS
+  // Use Anon Key for authenticated requests so RLS is enforced
+  const supabaseKey = accessToken
+    ? process.env.SUPABASE_ANON_KEY
+    : (process.env.SUPABASE_SERVICE_ROLE_KEY || process.env.SUPABASE_ANON_KEY);
+
+  if (!supabaseUrl || !supabaseKey) {
+    throw new Error('Supabase URL and Key must be set in environment variables');
   }
 
   const scopedClient = createSupabaseClient(
-    { supabaseUrl, supabaseAnonKey },
+    { supabaseUrl, supabaseAnonKey: supabaseKey },
     accessToken
   );
 
