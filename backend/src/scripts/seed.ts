@@ -340,6 +340,7 @@ const seedActiveSessions = async (
       // Configure assessment module with deterministic materializeTemplate
       const assessmentModule = configureAssessmentModule({
         supabaseClient,
+        ownerId,
         materializeTemplate,
         templateProvider: {
           getTemplateNames: async (templateIds: string[]) => {
@@ -467,6 +468,7 @@ const seedCompletedSessions = async (
         const participantBaseSeed = hashString(participantSeed);
         const participantDesignModule = configureDesignModule({
           supabaseClient,
+          ownerId,
           randomSelector: createSeededRandomSelector(participantBaseSeed),
           answerShuffler: createSeededAnswerShuffler(participantBaseSeed),
         });
@@ -478,6 +480,7 @@ const seedCompletedSessions = async (
       // Configure assessment module with deterministic materializeTemplate
       const assessmentModule = configureAssessmentModule({
         supabaseClient,
+        ownerId,
         materializeTemplate,
         templateProvider: {
           getTemplateNames: async (templateIds: string[]) => {
@@ -763,6 +766,7 @@ const seedFutureSessions = async (
       // Configure assessment module with deterministic materializeTemplate
       const assessmentModule = configureAssessmentModule({
         supabaseClient,
+        ownerId,
         materializeTemplate,
         templateProvider: {
           getTemplateNames: async (templateIds: string[]) => {

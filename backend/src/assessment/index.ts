@@ -29,6 +29,7 @@ export type AssessmentModuleConfig = {
   now?: () => Date;
   materializeTemplate: MaterializeTemplateFn;
   templateProvider: TemplateProvider;
+  ownerId?: string; // Optional owner ID for seed scripts and explicit ownership
   // Allow overriding repositories generic interface (for testing or specific needs)
   sessionRepo?: SessionRepository;
   testInstanceRepo?: TestInstanceRepository;
@@ -49,7 +50,7 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
   if (config.sessionRepo) {
     sessionRepo = config.sessionRepo;
   } else if (config.supabaseClient) {
-    sessionRepo = createSupabaseSessionRepository(config.supabaseClient);
+    sessionRepo = createSupabaseSessionRepository(config.supabaseClient, config.ownerId);
   } else {
     sessionRepo = createInMemorySessionRepository();
   }
@@ -57,7 +58,7 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
   if (config.testInstanceRepo) {
     testInstanceRepo = config.testInstanceRepo;
   } else if (config.supabaseClient) {
-    testInstanceRepo = createSupabaseTestInstanceRepository(config.supabaseClient);
+    testInstanceRepo = createSupabaseTestInstanceRepository(config.supabaseClient, config.ownerId);
   } else {
     testInstanceRepo = createInMemoryTestInstanceRepository();
   }
@@ -66,7 +67,7 @@ export const configureAssessmentModule = (config: AssessmentModuleConfig) => {
   if (config.templateRepo) {
     templateRepo = config.templateRepo;
   } else if (config.supabaseClient) {
-    templateRepo = createSupabaseTemplateRepository(config.supabaseClient);
+    templateRepo = createSupabaseTemplateRepository(config.supabaseClient, config.ownerId);
   } else {
     templateRepo = createInMemoryTemplateRepository();
   }
