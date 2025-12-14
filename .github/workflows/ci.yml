@@ -26,6 +26,11 @@ jobs:
 
       - name: Run Backend Unit Tests
         # Runs vitest excluding the integration folder
+        env:
+          SUPABASE_URL: ${{ secrets.SUPABASE_URL }}
+          SUPABASE_ANON_KEY: ${{ secrets.SUPABASE_ANON_KEY }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          FRONTEND_URL: ${{ secrets.FRONTEND_URL }}
         run: cd backend && npx vitest run --exclude "src/tests/integration/**"
 
       # --- Frontend ---
@@ -40,4 +45,7 @@ jobs:
         run: cd frontend && npm ci
 
       - name: Build Frontend
+        env:
+          VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
+          VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
         run: cd frontend && npm run build
