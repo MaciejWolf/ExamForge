@@ -60,7 +60,7 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
+          questionsToDraw: 2,
           pointsPerQuestion: 10,
           questionIds: questionIds.slice(0, 2),
         },
@@ -88,7 +88,7 @@ describe('updateTemplate Use Case', () => {
       pools: [
         {
           name: 'Math Pool',
-          questionCount: 2,
+          questionsToDraw: 2,
           pointsPerQuestion: 10,
           questionIds: questionIds.slice(0, 2),
         },
@@ -309,7 +309,7 @@ const givenExistingTemplate = async (
     description?: string;
     pools: Array<{
       name: string;
-      questionCount: number;
+      questionsToDraw: number;
       pointsPerQuestion: number;
       questionIds: string[];
     }>;
