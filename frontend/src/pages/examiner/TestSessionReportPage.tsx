@@ -162,9 +162,7 @@ const TestSessionReportPage = () => {
   };
 
   const handleParticipantClick = (participant: Participant) => {
-    if (participant.status !== 'not_started') {
-      navigate(`/test-sessions/${sessionId}/participants/${participant.id}`);
-    }
+    navigate(`/test-sessions/${sessionId}/participants/${participant.id}`);
   };
 
   const getStatusDisplay = (status: string): string => {
@@ -351,13 +349,11 @@ const TestSessionReportPage = () => {
                       const maxScore = participant.maxScore ?? 1;
                       const score = participant.totalScore ?? 0;
                       const percentage = maxScore > 0 ? Math.round((score / maxScore) * 100) : 0;
-                      const isClickable = participant.status !== 'not_started';
-
                       return (
                         <TableRow
                           key={participant.id}
                           onClick={() => handleParticipantClick(participant)}
-                          className={isClickable ? 'cursor-pointer hover:bg-muted/50' : ''}
+                          className="cursor-pointer hover:bg-muted/50"
                         >
                           <TableCell className="font-medium">{participant.identifier}</TableCell>
                           <TableCell>
