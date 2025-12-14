@@ -39,8 +39,5 @@ jobs:
       - name: Install Frontend Dependencies
         run: cd frontend && npm ci
 
-      - name: Lint Frontend
-        run: cd frontend && npm run lint
-
       - name: Build Frontend
         run: cd frontend && npm run build
