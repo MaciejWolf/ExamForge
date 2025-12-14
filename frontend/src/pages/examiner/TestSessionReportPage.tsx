@@ -128,17 +128,19 @@ const TestSessionReportPage = () => {
         aValue = a.totalScore ?? -1;
         bValue = b.totalScore ?? -1;
         break;
-      case 'percentage':
+      case 'percentage': {
         const aMax = a.maxScore ?? 1;
         const bMax = b.maxScore ?? 1;
         aValue = a.totalScore !== undefined ? (a.totalScore / aMax) * 100 : -1;
         bValue = b.totalScore !== undefined ? (b.totalScore / bMax) * 100 : -1;
         break;
-      case 'status':
+      }
+      case 'status': {
         const statusOrder = { completed: 1, in_progress: 2, not_started: 3, timed_out: 4 };
         aValue = statusOrder[a.status] ?? 5;
         bValue = statusOrder[b.status] ?? 5;
         break;
+      }
       default:
         return 0;
     }
