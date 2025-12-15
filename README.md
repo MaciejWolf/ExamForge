@@ -151,17 +151,17 @@ The project is currently **in development**. The focus is on delivering the core
 
 ### MVP Feature Checklist
 
--   [ ] **US-001:** Examiner Account Registration
--   [ ] **US-002:** Examiner Login
--   [ ] **US-003:** Password Recovery
--   [ ] **US-004:** Create Question Pool
--   [ ] **US-005:** Add Question to Pool
--   [ ] **US-006:** Create Test Template
--   [ ] **US-007:** Launch Test from Template
--   [ ] **US-008:** Start Test as Participant
--   [ ] **US-009:** Solve Test as Participant
--   [ ] **US-010:** View Participant Summary
--   [ ] **US-011:** View Examiner Report
+-   [x] **US-001:** Examiner Account Registration
+-   [x] **US-002:** Examiner Login
+-   [x] **US-003:** Password Recovery
+-   [x] **US-004:** Create Question Pool
+-   [x] **US-005:** Add Question to Pool
+-   [x] **US-006:** Create Test Template
+-   [x] **US-007:** Launch Test from Template
+-   [x] **US-008:** Start Test as Participant
+-   [x] **US-009:** Solve Test as Participant
+-   [x] **US-010:** View Participant Summary
+-   [x] **US-011:** View Examiner Report
 
 ## License
 
